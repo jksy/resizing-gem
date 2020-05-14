@@ -1,4 +1,6 @@
 require "resizing/version"
+require "faraday"
+require "json"
 
 module Resizing
   class Error < StandardError; end
@@ -17,21 +19,27 @@ module Resizing
   #   Resizing::Client.new(configuration)
   #++
   class Configuration
-    attr_reader :host, :project_id, :secret_token
+    attr_reader :host, :project_id, :secret_token, :open_timeout, :response_timeout
+    DEFAULT_OPEN_TIMEOUT = 2
+    DEFAULT_RESPONSE_TIMEOUT = 10
 
     def initialize(*attrs)
-      if attr.length == 3
-        @host = attrs[0]
-        @project_id = attrs[1]
-        @secret_token = attrs[2]
+      if attrs.length > 3
+        @host = attrs.pop
+        @project_id = attrs.pop
+        @secret_token = attrs.pop
+        @open_timeout = attrs.pop || DEFAULT_OPEN_TIMEOUT
+        @response_timeout = attrs.pop || DEFAULT_RESPONSE_TIMEOUT
         return
       end
 
-      case attr.first
+      case attr = attrs.first
       when Hash
         @host = attr[:host]
         @project_id = attr[:project_id]
         @secret_token = attr[:secret_token]
+        @open_timeout = attr[:open_timeout] || DEFAULT_OPEN_TIMEOUT
+        @response_timeout = attr[:response_timeout] || DEFAULT_RESPONSE_TIMEOUT
         return
       end
 
@@ -62,7 +70,7 @@ module Resizing
       @config = if attrs.first.is_a? Configuration
                   attrs.first
                 else
-                  Configuration.new(attr)
+                  Configuration.new(*attrs)
                 end
     end
 
@@ -89,15 +97,17 @@ module Resizing
     private
 
     def build_get_url(name)
-      "#{host}/projects/#{project_id}/upload/images/#{name}"
+      "#{config.host}/projects/#{config.project_id}/upload/images/#{name}"
     end
 
     def build_post_url
-      "#{host}/projects/#{project_id}/upload/images/"
+      "#{config.host}/projects/#{config.project_id}/upload/images/"
     end
 
     def http_client
       @http_client ||= Faraday.new(:url => 'https://staging.resizing.net') do |builder|
+        builder.options[:open_timeout] = config.open_timeout
+        builder.options[:timeout] = config.response_timeout
         builder.request :multipart
         builder.request :url_encoded
         builder.adapter Faraday.default_adapter
@@ -105,24 +115,24 @@ module Resizing
     end
 
     def to_io(data)
-      case file_or_binary
+      case data
       when IO
-        file
+        data
       when String
         StringIO.new(body)
       else
-        ArgumentError, "file_or_binary is required IO class or String"
+        raise ArgumentError, "file_or_binary is required IO class or String"
       end
     end
 
-    def ensure_content_type(option)
+    def ensure_content_type(options)
       raise ArgumentError, "need options[:content_type] for #{options.inspect}" unless options[:content_type]
     end
 
     def handle_response(response)
       case response.status
       when HTTP_STATUS_OK, HTTP_STATUS_CREATED
-        JSON.parse(resp.body)
+        JSON.parse(response.body)
       else
         raise PostError, response
       end
