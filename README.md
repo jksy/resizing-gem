@@ -22,7 +22,36 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```
+  # initialize client
+  options = {
+    project_id: '098a2a0d-0000-0000-0000-000000000000',
+    secret_token: '4g1cshg......rbs6'
+  }
+  client = Resizing::Client.new(options)
+
+  # upload image to resizing
+  file = File.open('sample.jpg', 'r')
+  response = client.post(file)
+  => {
+       "id"=>"a4ed2bf0-a4cf-44fa-9c82-b53e581cb469",
+       "project_id"=>"098a2a0d-0000-0000-0000-000000000000",
+       "content_type"=>"image/jpeg",
+       "latest_version_id"=>"LJY5bxBF7Ryxfr5kC1F.63W8bzp3pcUm",
+       "latest_etag"=>"\"190143614e6c342637584f46f18f8c58\"",
+       "created_at"=>"2020-05-15T15:33:10.711Z",
+       "updated_at"=>"2020-05-15T15:33:10.711Z",
+       "url"=>"/projects/098a2a0d-0000-0000-0000-000000000000/upload/images/a4ed2bf0-a4cf-44fa-9c82-b53e581cb469"
+     }
+
+  name = response['url']
+  # get transformation url
+  name = response['url']
+  transform = {width: 200, height: 300}
+
+  transformation_url = Resizing.url(name, transform)
+  => "https://www.resizing.net/projects/098a2a0d-0000-0000-0000-000000000000/upload/images/a4ed2bf0-a4cf-44fa-9c82-b53e581cb469/width_200,height_300"
+```
 
 ## Development
 
@@ -32,7 +61,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/resizing.
+Bug reports and pull requests are welcome on GitHub at https://github.com/jksy/resizing.
 
 
 ## License
