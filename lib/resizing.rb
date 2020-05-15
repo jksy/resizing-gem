@@ -20,12 +20,13 @@ module Resizing
   #++
   class Configuration
     attr_reader :host, :project_id, :secret_token, :open_timeout, :response_timeout
+    DEFAULT_HOST = 'https://www.resizing.net'
     DEFAULT_OPEN_TIMEOUT = 2
     DEFAULT_RESPONSE_TIMEOUT = 10
 
     def initialize(*attrs)
       if attrs.length > 3
-        @host = attrs.pop.dup.freeze
+        @host = attrs.pop.dup.freeze || DEFAULT_HOST
         @project_id = attrs.pop.dup.freeze
         @secret_token = attrs.pop.dup.freeze
         @open_timeout = attrs.pop || DEFAULT_OPEN_TIMEOUT
@@ -35,7 +36,7 @@ module Resizing
 
       case attr = attrs.first
       when Hash
-        @host = attr[:host].dup.freeze
+        @host = attr[:host].dup.freeze || DEFAULT_HOST
         @project_id = attr[:project_id].dup.freeze
         @secret_token = attr[:secret_token].dup.freeze
         @open_timeout = attr[:open_timeout] || DEFAULT_OPEN_TIMEOUT
@@ -48,7 +49,8 @@ module Resizing
 
     def generate_auth_header
       current_timestamp = Time.now.to_i
-      token = Digest::SHA2.hexdigest([current_timestamp, self.secret_token].join('|'))
+      data = [current_timestamp, self.secret_token].join('|')
+      token = Digest::SHA2.hexdigest(data)
       version = "v1"
       [version,current_timestamp,token].join(',')
     end
@@ -176,8 +178,7 @@ module Resizing
       when HTTP_STATUS_OK, HTTP_STATUS_CREATED
         JSON.parse(response.body)
       else
-        puts response.inspect
-        raise PostError, response
+        raise PostError, response.body
       end
     end
   end
