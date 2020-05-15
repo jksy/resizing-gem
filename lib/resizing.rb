@@ -25,9 +25,9 @@ module Resizing
 
     def initialize(*attrs)
       if attrs.length > 3
-        @host = attrs.pop
-        @project_id = attrs.pop
-        @secret_token = attrs.pop
+        @host = attrs.pop.dup.freeze
+        @project_id = attrs.pop.dup.freeze
+        @secret_token = attrs.pop.dup.freeze
         @open_timeout = attrs.pop || DEFAULT_OPEN_TIMEOUT
         @response_timeout = attrs.pop || DEFAULT_RESPONSE_TIMEOUT
         return
@@ -35,15 +35,15 @@ module Resizing
 
       case attr = attrs.first
       when Hash
-        @host = attr[:host]
-        @project_id = attr[:project_id]
-        @secret_token = attr[:secret_token]
+        @host = attr[:host].dup.freeze
+        @project_id = attr[:project_id].dup.freeze
+        @secret_token = attr[:secret_token].dup.freeze
         @open_timeout = attr[:open_timeout] || DEFAULT_OPEN_TIMEOUT
         @response_timeout = attr[:response_timeout] || DEFAULT_RESPONSE_TIMEOUT
         return
       end
 
-      raise ConfigurationError, "need some keys like :host, :project, :secret_token"
+      raise ConfigurationError, "need some keys like :host, :project_id, :secret_token"
     end
 
     def generate_auth_header
@@ -52,6 +52,21 @@ module Resizing
       version = "v1"
       [version,current_timestamp,token].join(',')
     end
+  end
+
+  def self.configure
+    unless defined? @configure
+      @configure = nil
+    end
+
+    @configure.dup
+  end
+
+  def self.configure= new_value
+    unless new_value.is_a? Configuration
+      new_value = Configuration.new(new_value)
+    end
+    @configure = new_value
   end
 
   #= Client class for Resizing
@@ -76,6 +91,8 @@ module Resizing
     def initialize *attrs
       @config = if attrs.first.is_a? Configuration
                   attrs.first
+                elsif attrs.first.nil?
+                  Resizing.configure
                 else
                   Configuration.new(*attrs)
                 end
