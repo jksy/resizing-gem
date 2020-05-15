@@ -45,6 +45,13 @@ module Resizing
 
       raise ConfigurationError, "need some keys like :host, :project, :secret_token"
     end
+
+    def generate_auth_header
+      current_timestamp = Time.now.to_i
+      token = Digest::SHA2.hexdigest([current_timestamp, self.secret_token].join('|'))
+      version = "v1"
+      [version,current_timestamp,token].join(',')
+    end
   end
 
   #= Client class for Resizing
@@ -88,7 +95,9 @@ module Resizing
         image: Faraday::UploadIO.new(body, options[:content_type])
       }
 
-      response = http_client.post(url, params)
+      response = http_client.post(url, params) do |request|
+        request.headers['X-ResizingToken'] = config.generate_auth_header
+      end
 
       result = handle_response(response)
       result
@@ -134,6 +143,7 @@ module Resizing
       when HTTP_STATUS_OK, HTTP_STATUS_CREATED
         JSON.parse(response.body)
       else
+        puts response.inspect
         raise PostError, response
       end
     end
