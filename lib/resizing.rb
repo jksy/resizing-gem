@@ -52,11 +52,23 @@ module Resizing
       version = "v1"
       [version,current_timestamp,token].join(',')
     end
+
+    def generate_image_url(name, transformations=[])
+      if transformations.is_a? Hash
+        transformations = [transformations]
+      end
+
+      transformation_strings = transformations.map do |transform|
+        transform.slice(*TRANSFORM_OPTIONS).map {|key, value| [key, value].join('_')}.join(',')
+      end
+
+      "#{self.host}/projects/#{self.project_id}/upload/images/#{name}/#{transformation_strings.join('/')}"
+    end
   end
 
   def self.configure
     unless defined? @configure
-      @configure = nil
+      raise ConfigurationError, "Resizing.configure is not initialized"
     end
 
     @configure.dup
@@ -99,7 +111,7 @@ module Resizing
     end
 
     def get(name)
-      # url = build_get_url(name)
+      raise NotImplementedError
     end
 
     def post(file_or_binary, options = {})
@@ -118,6 +130,10 @@ module Resizing
 
       result = handle_response(response)
       result
+    end
+
+    def put(name, file_or_binary, options)
+      raise NotImplementedError
     end
 
     private
@@ -167,19 +183,21 @@ module Resizing
   end
 
   def self.get(name)
-    Client.new(config)
+    raise NotImplementedError
   end
+
+  TRANSFORM_OPTIONS = %i(w width h height f format)
 
   def self.url(name, transformations=[])
+    Resizing.configure.generate_image_url(name, transformations)
   end
 
-  def self.post
+  def self.post file_or_binary, options
+    client = Resizing::Client.new
+    client.post
   end
 
   def self.put(name)
+    raise NotImplementedError
   end
-
-  def build_post_url
-  end
-
 end
