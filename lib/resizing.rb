@@ -55,16 +55,24 @@ module Resizing
       [version,current_timestamp,token].join(',')
     end
 
-    def generate_image_url(name, transformations=[])
+    def generate_image_url(image_id, transforms=[])
+      path = transformation_path(transforms)
+      "#{self.host}/projects/#{self.project_id}/upload/images/#{image_id}/#{path}"
+    end
+
+    def generate_public_id_from(image_id, transforms=[])
+      path = transformation_path(transforms)
+      "upload/images/#{image_id}/#{path}"
+    end
+
+    def transformation_path transformations
       if transformations.is_a? Hash
         transformations = [transformations]
       end
 
       transformation_strings = transformations.map do |transform|
         transform.slice(*TRANSFORM_OPTIONS).map {|key, value| [key, value].join('_')}.join(',')
-      end
-
-      "#{self.host}/projects/#{self.project_id}/upload/images/#{name}/#{transformation_strings.join('/')}"
+      end.join('/')
     end
   end
 
@@ -163,7 +171,7 @@ module Resizing
       when IO
         data
       when String
-        StringIO.new(body)
+        StringIO.new(data)
       else
         raise ArgumentError, "file_or_binary is required IO class or String"
       end
@@ -187,10 +195,10 @@ module Resizing
     raise NotImplementedError
   end
 
-  TRANSFORM_OPTIONS = %i(w width h height f format)
+  TRANSFORM_OPTIONS = %i(w width h height f format c crop q quality)
 
-  def self.url(name, transformations=[])
-    Resizing.configure.generate_image_url(name, transformations)
+  def self.url_from_image_id(image_id, transformations=[])
+    Resizing.configure.generate_image_url(image_id, transformations)
   end
 
   def self.post file_or_binary, options
