@@ -146,6 +146,10 @@ module Resizing
       raise NotImplementedError
     end
 
+    def delete(name)
+      raise NotImplementedError
+    end
+
     private
 
     def build_get_url(name)
