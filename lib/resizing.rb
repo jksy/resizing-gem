@@ -55,9 +55,19 @@ module Resizing
       [version,current_timestamp,token].join(',')
     end
 
-    def generate_image_url(image_id, transforms=[])
+    def generate_image_url(image_id, version_id = nil, transforms=[])
       path = transformation_path(transforms)
-      "#{self.host}/projects/#{self.project_id}/upload/images/#{image_id}/#{path}"
+      version = if version_id == nil
+                  nil
+                else
+                  "v#{version_id}"
+                end
+
+      parts = []
+      parts << image_id
+      parts << version if version
+      parts << path
+      "#{self.host}/projects/#{self.project_id}/upload/images/#{parts.join('/')}"
     end
 
     def generate_public_id_from(image_id, transforms=[])
@@ -211,8 +221,8 @@ module Resizing
 
   TRANSFORM_OPTIONS = %i(w width h height f format c crop q quality)
 
-  def self.url_from_image_id(image_id, transformations=[])
-    Resizing.configure.generate_image_url(image_id, transformations)
+  def self.url_from_image_id(image_id, version_id = nil, transformations=[])
+    Resizing.configure.generate_image_url(image_id, version_id, transformations)
   end
 
   def self.post file_or_binary, options
