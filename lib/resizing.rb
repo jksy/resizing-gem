@@ -102,6 +102,16 @@ module Resizing
   #   client = Resizing::Client.new(options)
   #   file = File.open('sample.jpg', 'r')
   #   response = client.post(file)
+  #   {
+  #     "id"=>"fde443bb-0b29-4be2-a04e-2da8f19716ac",
+  #     "project_id"=>"098a2a0d-0000-0000-0000-000000000000",
+  #     "content_type"=>"image/jpeg",
+  #     "latest_version_id"=>"Ot0NL4rptk6XxQNFP2kVojn5yKG44cYH",
+  #     "latest_etag"=>"\"069ec178a367089c3f0306dd716facf2\"",
+  #     "created_at"=>"2020-05-17T15:02:30.548Z",
+  #     "updated_at"=>"2020-05-17T15:02:30.548Z"
+  #   }
+  #
   #++
   class Client
     # TODO
