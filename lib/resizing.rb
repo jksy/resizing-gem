@@ -3,6 +3,8 @@ require "faraday"
 require "json"
 
 module Resizing
+  autoload :CarrierWave, 'resizing/carrier_wave'
+
   class Error < StandardError; end
   class ConfigurationError < Error; end
   class PostError < Error; end
