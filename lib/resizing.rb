@@ -165,7 +165,21 @@ module Resizing
     end
 
     def put(name, file_or_binary, options)
-      raise NotImplementedError
+      ensure_content_type(options)
+
+      url = build_put_url(name)
+
+      body = to_io(file_or_binary)
+      params = {
+        image: Faraday::UploadIO.new(body, options[:content_type])
+      }
+
+      response = http_client.put(url, params) do |request|
+        request.headers['X-ResizingToken'] = config.generate_auth_header
+      end
+
+      result = handle_response(response)
+      result
     end
 
     def delete(name)
@@ -180,6 +194,10 @@ module Resizing
 
     def build_post_url
       "#{config.host}/projects/#{config.project_id}/upload/images/"
+    end
+
+    def build_put_url(name)
+      "#{config.host}/projects/#{config.project_id}/upload/images/#{name}"
     end
 
     def http_client
@@ -229,10 +247,11 @@ module Resizing
 
   def self.post file_or_binary, options
     client = Resizing::Client.new
-    client.post
+    client.post file_or_binary, options
   end
 
-  def self.put(name)
-    raise NotImplementedError
+  def self.put name, file_or_binary, options
+    client = Resizing::Client.new
+    client.put name, file_or_binary, options
   end
 end
