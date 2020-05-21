@@ -86,6 +86,12 @@ module Resizing
         transform.slice(*TRANSFORM_OPTIONS).map {|key, value| [key, value].join('_')}.join(',')
       end.join('/')
     end
+
+    def generate_identifier
+      @image_id ||= SecureRandom.uuid
+
+      "/projects/#{self.project_id}/upload/images/#{@image_id}"
+    end
   end
 
   def self.configure
@@ -147,6 +153,7 @@ module Resizing
     end
 
     def post(file_or_binary, options = {})
+      puts "Resizing.post(#{file_or_binary.to_s[0..30]}, #{options})"
       ensure_content_type(options)
 
       url = build_post_url
@@ -159,12 +166,14 @@ module Resizing
       response = http_client.post(url, params) do |request|
         request.headers['X-ResizingToken'] = config.generate_auth_header
       end
+      puts response.inspect
 
       result = handle_response(response)
       result
     end
 
     def put(name, file_or_binary, options)
+      puts "Resizing.put(#{name}, ..., #{options})"
       ensure_content_type(options)
 
       url = build_put_url(name)
@@ -177,13 +186,25 @@ module Resizing
       response = http_client.put(url, params) do |request|
         request.headers['X-ResizingToken'] = config.generate_auth_header
       end
+      puts response.inspect
 
       result = handle_response(response)
       result
     end
 
     def delete(name)
-      raise NotImplementedError
+      puts "Resizing.delete(#{name})"
+      url = build_delete_url(name)
+
+      response = http_client.delete(url) do |request|
+        request.headers['X-ResizingToken'] = config.generate_auth_header
+      end
+      return if response.status == 404
+
+      puts response.inspect
+
+      result = handle_response(response)
+      result
     end
 
     private
@@ -197,6 +218,10 @@ module Resizing
     end
 
     def build_put_url(name)
+      "#{config.host}/projects/#{config.project_id}/upload/images/#{name}"
+    end
+
+    def build_delete_url(name)
       "#{config.host}/projects/#{config.project_id}/upload/images/#{name}"
     end
 
@@ -253,5 +278,9 @@ module Resizing
   def self.put name, file_or_binary, options
     client = Resizing::Client.new
     client.put name, file_or_binary, options
+  end
+
+  def self.generate_identifier
+    name = Resizing.configure.generate_identifier
   end
 end

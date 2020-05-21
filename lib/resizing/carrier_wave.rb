@@ -27,7 +27,7 @@ module Resizing
       while version = args.pop
         transforms << self.versions[version].transform_string
       end
-      "#{Resizing.configure.host}#{default_url}/#{transforms.join('/')}"
+      "#{Resizing.configure.host}/#{default_url}/#{transforms.join('/')}"
     end
 
     def transform_string
@@ -50,10 +50,10 @@ module Resizing
       transforms.join('/')
     end
 
-    def default_url
-      @public_id ||= self.model.attributes[self.mounted_as.to_s]
-      @public_id
-    end
+    # def default_url
+    #   @public_id ||= self.model.attributes[self.mounted_as.to_s]
+    #   @public_id
+    # end
 
     def filename
       @filename ||= SecureRandom.uuid
@@ -67,7 +67,12 @@ module Resizing
     def identifier
       # generate uuid if no identifier
       # using this identifier save name
-      @identifier ||= SecureRandom.uuid
+      public_id
+    end
+
+    def public_id
+      binding.pry
+      @public_id ||= Resizing.generate_identifier
     end
 
     def rename
@@ -102,12 +107,18 @@ module Resizing
       # NOP
     end
 
+    # store_versions! is called after delete
+    # Disable on Resizing, because transform the image when browser fetch the image URL
+    # https://github.com/carrierwaveuploader/carrierwave/blob/28190e99299a6131c0424a5d10205f471e39f3cd/lib/carrierwave/uploader/versions.rb#L18
+    def remove_versions! *args
+      # NOP
+    end
+
     module Storage
       # ref.
       # https://github.com/carrierwaveuploader/carrierwave/blob/master/lib/carrierwave/storage/abstract.rb
       class Remote < ::CarrierWave::Storage::Abstract
         def store!(file)
-          binding.pry
           f = Resizing::CarrierWave::Storage::File.new(uploader, self, uploader.store_path)
           f.store(file)
           @filename = f.public_url
@@ -133,15 +144,17 @@ module Resizing
         end
 
         def clean_cache!(seconds)
-          connection.directories.new(
-            :key    => uploader.fog_directory,
-            :public => uploader.fog_public
-          ).files.all(:prefix => uploader.cache_dir).each do |file|
-            # generate_cache_id returns key formated TIMEINT-PID(-COUNTER)-RND
-            time = file.key.scan(/(\d+)-\d+-\d+(?:-\d+)?/).first.map { |t| t.to_i }
-            time = Time.at(*time)
-            file.destroy if time < (Time.now.utc - seconds)
-          end
+          # do nothing
+          #
+          # connection.directories.new(
+          #   :key    => uploader.fog_directory,
+          #   :public => uploader.fog_public
+          # ).files.all(:prefix => uploader.cache_dir).each do |file|
+          #   # generate_cache_id returns key formated TIMEINT-PID(-COUNTER)-RND
+          #   time = file.key.scan(/(\d+)-\d+-\d+(?:-\d+)?/).first.map { |t| t.to_i }
+          #   time = Time.at(*time)
+          #   file.destroy if time < (Time.now.utc - seconds)
+          # end
         end
       end
 
@@ -171,10 +184,30 @@ module Resizing
         end
 
         def delete
-          # avoid a get by just using local reference
-          directory.files.new(:key => path).destroy.tap do |result|
-            @file = nil if result
+          column = uploader.model.send(:_mounter, uploader.mounted_as).send(:serialization_column)
+          public_id = uploader.model.send :read_attribute, column
+          puts "delete => #{public_id}"
+          resp = connection.delete(public_id)
+          if resp.nil?
+            puts "already deleted"
+            uploader.model.send :write_attribute, column, nil
+            return
           end
+          puts resp
+
+          if public_id == resp['public_id']
+            public_id = uploader.model.send :write_attribute, column, nil
+          end
+
+          self.model
+          puts self.inspect
+          p caller()
+          raise NotImplementedError, "delete is not implemented"
+
+          # # avoid a get by just using local reference
+          # directory.files.new(:key => path).destroy.tap do |result|
+          #   @file = nil if result
+          # end
         end
 
         def extension
@@ -211,13 +244,25 @@ module Resizing
         end
 
         def store(new_file)
+          puts "store(#{new_file})"
           if new_file.is_a?(self.class)
             # new_file.copy_to(path)
             raise NotImplementedError, "new file is required duplicating"
           else
-            binding.pry
             @content_type ||= new_file.content_type
-            @response = Resizing.post(new_file.read, {content_type: @content_type})
+            @response = Resizing.put(identifier, new_file.read, {content_type: @content_type})
+
+            @public_id = @response['public_id']
+
+            # write public_id to mounted column
+            column = uploader.model.send(:_mounter, uploader.mounted_as).send(:serialization_column)
+            model_klass = uploader.model.class
+            primary_key = model_klass.primary_key.to_sym
+
+            # force update column
+            model_klass.where(primary_key => uploader.model.send(primary_key)).update_all(column=>@public_id)
+            # save new value to model class
+            uploader.model.send :write_attribute, column, @public_id
 
             # fog_file = new_file.to_file
             # @content_type ||= new_file.content_type
@@ -230,6 +275,10 @@ module Resizing
             # fog_file.close if fog_file && !fog_file.closed?
           end
           true
+        end
+
+        def uploader
+          @uploader
         end
 
         def public_url
@@ -331,7 +380,8 @@ module Resizing
         # [Fog::#{provider}::Storage] connection to service
         #
         def connection
-          @base.connection
+          @connection ||= Resizing::Client.new
+          # @base.connection
         end
 
         ##
@@ -342,6 +392,7 @@ module Resizing
         # [Fog::#{provider}::Directory] containing directory
         #
         def directory
+          raise NotImplementedError, "directory is not implemementedle. #{self.inspect}"
           @directory ||= begin
             connection.directories.new(
               :key    => @uploader.fog_directory,
