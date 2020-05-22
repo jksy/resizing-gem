@@ -153,7 +153,6 @@ module Resizing
     end
 
     def post(file_or_binary, options = {})
-      puts "Resizing.post(#{file_or_binary.to_s[0..30]}, #{options})"
       ensure_content_type(options)
 
       url = build_post_url
@@ -166,14 +165,12 @@ module Resizing
       response = http_client.post(url, params) do |request|
         request.headers['X-ResizingToken'] = config.generate_auth_header
       end
-      puts response.inspect
 
       result = handle_response(response)
       result
     end
 
     def put(name, file_or_binary, options)
-      puts "Resizing.put(#{name}, ..., #{options})"
       ensure_content_type(options)
 
       url = build_put_url(name)
@@ -186,22 +183,18 @@ module Resizing
       response = http_client.put(url, params) do |request|
         request.headers['X-ResizingToken'] = config.generate_auth_header
       end
-      puts response.inspect
 
       result = handle_response(response)
       result
     end
 
     def delete(name)
-      puts "Resizing.delete(#{name})"
       url = build_delete_url(name)
 
       response = http_client.delete(url) do |request|
         request.headers['X-ResizingToken'] = config.generate_auth_header
       end
       return if response.status == 404
-
-      puts response.inspect
 
       result = handle_response(response)
       result

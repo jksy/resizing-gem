@@ -50,18 +50,8 @@ module Resizing
       transforms.join('/')
     end
 
-    # def default_url
-    #   @public_id ||= self.model.attributes[self.mounted_as.to_s]
-    #   @public_id
-    # end
-
     def filename
       @filename ||= SecureRandom.uuid
-      # binding.pry
-      # SecureRandom.uuid
-      # self.sanitized_file.file.name
-      # # self.sanitized_file.to_file, {content_type: sanitized_file.content_type})
-      # raise NotImplementedError, "filename is not implemented:#{self.inspect}"
     end
 
     def identifier
@@ -71,7 +61,6 @@ module Resizing
     end
 
     def public_id
-      binding.pry
       @public_id ||= Resizing.generate_identifier
     end
 
@@ -186,22 +175,16 @@ module Resizing
         def delete
           column = uploader.model.send(:_mounter, uploader.mounted_as).send(:serialization_column)
           public_id = uploader.model.send :read_attribute, column
-          puts "delete => #{public_id}"
           resp = connection.delete(public_id)
           if resp.nil?
-            puts "already deleted"
             uploader.model.send :write_attribute, column, nil
             return
           end
-          puts resp
 
           if public_id == resp['public_id']
             public_id = uploader.model.send :write_attribute, column, nil
           end
 
-          self.model
-          puts self.inspect
-          p caller()
           raise NotImplementedError, "delete is not implemented"
 
           # # avoid a get by just using local reference
@@ -244,7 +227,6 @@ module Resizing
         end
 
         def store(new_file)
-          puts "store(#{new_file})"
           if new_file.is_a?(self.class)
             # new_file.copy_to(path)
             raise NotImplementedError, "new file is required duplicating"
@@ -263,16 +245,6 @@ module Resizing
             model_klass.where(primary_key => uploader.model.send(primary_key)).update_all(column=>@public_id)
             # save new value to model class
             uploader.model.send :write_attribute, column, @public_id
-
-            # fog_file = new_file.to_file
-            # @content_type ||= new_file.content_type
-            # @file = directory.files.create({
-            #   :body         => fog_file ? fog_file : new_file.read,
-            #   :content_type => @content_type,
-            #   :key          => path,
-            #   :public       => @uploader.fog_public
-            # }.merge(@uploader.fog_attributes))
-            # fog_file.close if fog_file && !fog_file.closed?
           end
           true
         end
@@ -281,92 +253,12 @@ module Resizing
           @uploader
         end
 
-        def public_url
-          'public_url'
-          # encoded_path = encode_path(path)
-          # if host = @uploader.asset_host
-          #   if host.respond_to? :call
-          #     "#{host.call(self)}/#{encoded_path}"
-          #   else
-          #     "#{host}/#{encoded_path}"
-          #   end
-          # else
-          #   # AWS/Google optimized for speed over correctness
-          #   case fog_provider
-          #   when 'AWS'
-          #     # check if some endpoint is set in fog_credentials
-          #     if @uploader.fog_credentials.has_key?(:endpoint)
-          #       "#{@uploader.fog_credentials[:endpoint]}/#{@uploader.fog_directory}/#{encoded_path}"
-          #     else
-          #       protocol = @uploader.fog_use_ssl_for_aws ? "https" : "http"
-
-          #       subdomain_regex = /^(?:[a-z]|\d(?!\d{0,2}(?:\d{1,3}){3}$))(?:[a-z0-9\.]|(?![\-])|\-(?![\.])){1,61}[a-z0-9]$/
-          #       valid_subdomain = @uploader.fog_directory.to_s =~ subdomain_regex && !(protocol == 'https' && @uploader.fog_directory =~ /\./)
-
-          #       # if directory is a valid subdomain, use that style for access
-          #       if valid_subdomain
-          #         s3_subdomain = @uploader.fog_aws_accelerate ? "s3-accelerate" : "s3"
-          #         "#{protocol}://#{@uploader.fog_directory}.#{s3_subdomain}.amazonaws.com/#{encoded_path}"
-          #       else
-          #         # directory is not a valid subdomain, so use path style for access
-          #         "#{protocol}://s3.amazonaws.com/#{@uploader.fog_directory}/#{encoded_path}"
-          #       end
-          #     end
-          #   when 'Google'
-          #     # https://cloud.google.com/storage/docs/access-public-data
-          #     "https://storage.googleapis.com/#{@uploader.fog_directory}/#{encoded_path}"
-          #   else
-          #     # avoid a get by just using local reference
-          #     directory.files.new(:key => path).public_url
-          #   end
-          # end
-        end
-
-        ##
-        # Return url to file, if avaliable
-        #
-        # === Returns
-        #
-        # [String] url
-        #   or
-        # [NilClass] no url available
-        #
-        def url(options = {})
-          public_url
-          # if !@uploader.fog_public
-          #   authenticated_url(options)
-          # else
-          #   public_url
-          # end
-        end
-
-        ##
-        # Return file name, if available
-        #
-        # === Returns
-        #
-        # [String] file name
-        #   or
-        # [NilClass] no file name available
-        #
         def filename(options = {})
           return unless file_url = url(options)
           CGI.unescape(file_url.split('?').first).gsub(/.*\/(.*?$)/, '\1')
         end
 
-        ##
-        # Creates a copy of this file and returns it.
-        #
-        # === Parameters
-        #
-        # [new_path (String)] The path where the file should be copied to.
-        #
-        # === Returns
-        #
-        # @return [CarrierWave::Storage::Fog::File] the location where the file will be stored.
-        #
         def copy_to(new_path)
-          # connection.copy_object(@uploader.fog_directory, file.key, @uploader.fog_directory, new_path, acl_header)
           CarrierWave::Storage::Fog::File.new(@uploader, @base, new_path)
         end
 
@@ -382,23 +274,6 @@ module Resizing
         def connection
           @connection ||= Resizing::Client.new
           # @base.connection
-        end
-
-        ##
-        # local reference to directory containing file
-        #
-        # === Returns
-        #
-        # [Fog::#{provider}::Directory] containing directory
-        #
-        def directory
-          raise NotImplementedError, "directory is not implemementedle. #{self.inspect}"
-          @directory ||= begin
-            connection.directories.new(
-              :key    => @uploader.fog_directory,
-              :public => @uploader.fog_public
-            )
-          end
         end
 
         ##
@@ -440,11 +315,6 @@ module Resizing
           parameters.count == 2 && parameters[1].include?(:options)
         end
 
-        # # def initialize(*)
-        # #   super
-        # #   @store_response = nil
-        # # end
-
         def identifier
           return SecureRandom.uuid
           uploader.filename
@@ -476,14 +346,6 @@ module Resizing
         # def clean_cache!(seconds)
         #   raise NotImplementedError "Need to implement #clean_cache! if you want to use #{self.class.name} as a cache storage."
         # end
-
-        # # def default_url
-        # #   raise NotImpmemented, 'default_url is not implemented'
-        # # end
-
-        # # def url
-        # #   raise NotImpmemented, 'url is not implemented'
-        # # end
       end
     end
   end
