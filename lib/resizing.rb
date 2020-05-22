@@ -3,6 +3,8 @@ require "faraday"
 require "json"
 
 module Resizing
+  autoload :CarrierWave, 'resizing/carrier_wave'
+
   class Error < StandardError; end
   class ConfigurationError < Error; end
   class PostError < Error; end
@@ -84,6 +86,12 @@ module Resizing
         transform.slice(*TRANSFORM_OPTIONS).map {|key, value| [key, value].join('_')}.join(',')
       end.join('/')
     end
+
+    def generate_identifier
+      @image_id ||= SecureRandom.uuid
+
+      "/projects/#{self.project_id}/upload/images/#{@image_id}"
+    end
   end
 
   def self.configure
@@ -163,11 +171,33 @@ module Resizing
     end
 
     def put(name, file_or_binary, options)
-      raise NotImplementedError
+      ensure_content_type(options)
+
+      url = build_put_url(name)
+
+      body = to_io(file_or_binary)
+      params = {
+        image: Faraday::UploadIO.new(body, options[:content_type])
+      }
+
+      response = http_client.put(url, params) do |request|
+        request.headers['X-ResizingToken'] = config.generate_auth_header
+      end
+
+      result = handle_response(response)
+      result
     end
 
     def delete(name)
-      raise NotImplementedError
+      url = build_delete_url(name)
+
+      response = http_client.delete(url) do |request|
+        request.headers['X-ResizingToken'] = config.generate_auth_header
+      end
+      return if response.status == 404
+
+      result = handle_response(response)
+      result
     end
 
     private
@@ -178,6 +208,14 @@ module Resizing
 
     def build_post_url
       "#{config.host}/projects/#{config.project_id}/upload/images/"
+    end
+
+    def build_put_url(name)
+      "#{config.host}/projects/#{config.project_id}/upload/images/#{name}"
+    end
+
+    def build_delete_url(name)
+      "#{config.host}/projects/#{config.project_id}/upload/images/#{name}"
     end
 
     def http_client
@@ -227,10 +265,15 @@ module Resizing
 
   def self.post file_or_binary, options
     client = Resizing::Client.new
-    client.post
+    client.post file_or_binary, options
   end
 
-  def self.put(name)
-    raise NotImplementedError
+  def self.put name, file_or_binary, options
+    client = Resizing::Client.new
+    client.put name, file_or_binary, options
+  end
+
+  def self.generate_identifier
+    name = Resizing.configure.generate_identifier
   end
 end
