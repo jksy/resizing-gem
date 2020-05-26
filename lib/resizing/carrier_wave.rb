@@ -110,7 +110,7 @@ module Resizing
         def store!(file)
           f = Resizing::CarrierWave::Storage::File.new(uploader, self, uploader.store_path)
           f.store(file)
-          @filename = f.public_url
+          @filename = f.public_id
           f
         end
 
@@ -247,6 +247,10 @@ module Resizing
             uploader.model.send :write_attribute, column, @public_id
           end
           true
+        end
+
+        def public_id
+          @public_id
         end
 
         def uploader
