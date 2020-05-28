@@ -55,7 +55,7 @@ module Resizing
       parts = []
       parts << image_id
       parts << version if version
-      parts << path
+      parts << path if path.length != 0
       "#{self.host}/projects/#{self.project_id}/upload/images/#{parts.join('/')}"
     end
 

@@ -82,5 +82,25 @@ module Resizing
       end
     end
 
+    def test_that_it_return_image_url
+      template = @template.dup
+      image_id = 'some-image-id'
+      config = Resizing::Configuration.new template
+      assert_equal(
+        'hostname/projects/project_id/upload/images/some-image-id',
+        config.generate_image_url(image_id)
+      )
+    end
+
+    def test_that_it_return_image_url_with_version_id
+      template = @template.dup
+      image_id = 'some-image-id'
+      version_id = 'version-id'
+      config = Resizing::Configuration.new template
+      assert_equal(
+        'hostname/projects/project_id/upload/images/some-image-id/vversion-id',
+        config.generate_image_url(image_id, version_id)
+      )
+    end
   end
 end
