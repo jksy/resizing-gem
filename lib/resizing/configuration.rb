@@ -19,15 +19,6 @@ module Resizing
     TRANSFORM_OPTIONS = %i(w width h height f format c crop q quality)
 
     def initialize(*attrs)
-      if attrs.length > 3
-        @host = attrs.pop.dup.freeze || DEFAULT_HOST
-        @project_id = attrs.pop.dup.freeze
-        @secret_token = attrs.pop.dup.freeze
-        @open_timeout = attrs.pop || DEFAULT_OPEN_TIMEOUT
-        @response_timeout = attrs.pop || DEFAULT_RESPONSE_TIMEOUT
-        return
-      end
-
       case attr = attrs.first
       when Hash
         if attr[:project_id] == nil || attr[:secret_token] == nil
