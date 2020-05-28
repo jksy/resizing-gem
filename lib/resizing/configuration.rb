@@ -30,6 +30,9 @@ module Resizing
 
       case attr = attrs.first
       when Hash
+        if attr[:project_id] == nil || attr[:secret_token] == nil
+          raise_configiration_error
+        end
         @host = attr[:host].dup.freeze || DEFAULT_HOST
         @project_id = attr[:project_id].dup.freeze
         @secret_token = attr[:secret_token].dup.freeze
@@ -38,7 +41,7 @@ module Resizing
         return
       end
 
-      raise ConfigurationError, "need some keys like :host, :project_id, :secret_token"
+      raise_configiration_error
     end
 
     def generate_auth_header
@@ -74,7 +77,7 @@ module Resizing
         transformations = [transformations]
       end
 
-      transformation_strings = transformations.map do |transform|
+      transformations.map do |transform|
         transform.slice(*TRANSFORM_OPTIONS).map {|key, value| [key, value].join('_')}.join(',')
       end.join('/')
     end
@@ -83,6 +86,12 @@ module Resizing
       @image_id ||= SecureRandom.uuid
 
       "/projects/#{self.project_id}/upload/images/#{@image_id}"
+    end
+
+    private
+
+    def raise_configiration_error
+      raise ConfigurationError, "need hash and some keys like :host, :project_id, :secret_token"
     end
   end
 end

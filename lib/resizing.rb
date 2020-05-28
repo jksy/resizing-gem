@@ -45,6 +45,6 @@ module Resizing
   end
 
   def self.generate_identifier
-    name = Resizing.configure.generate_identifier
+    Resizing.configure.generate_identifier
   end
 end
