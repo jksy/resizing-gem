@@ -59,11 +59,7 @@ module Resizing
       "#{self.host}/projects/#{self.project_id}/upload/images/#{parts.join('/')}"
     end
 
-    def generate_public_id_from(image_id, transforms=[])
-      path = transformation_path(transforms)
-      "upload/images/#{image_id}/#{path}"
-    end
-
+    # this method should be divided other class
     def transformation_path transformations
       if transformations.is_a? Hash
         transformations = [transformations]

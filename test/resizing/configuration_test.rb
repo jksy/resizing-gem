@@ -102,5 +102,22 @@ module Resizing
         config.generate_image_url(image_id, version_id)
       )
     end
+
+    def test_that_it_return_transformation_path
+      data = [
+        {args: {w: 100}, path: 'w_100'},
+        {args: {h: 100}, path: 'h_100'},
+        {args: {f: 'webp'}, path: 'f_webp'},
+        {args: {c: 'fill'}, path: 'c_fill'},
+      ]
+      config = Resizing::Configuration.new @template
+      data.each do |v|
+        assert_equal(
+          v[:path],
+          config.transformation_path(v[:args])
+        )
+      end
+    end
+
   end
 end
