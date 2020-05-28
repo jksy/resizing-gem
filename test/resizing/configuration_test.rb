@@ -34,7 +34,7 @@ module Resizing
       template = @template.dup
       template.delete(:project_id)
       assert_raises ConfigurationError do
-        config = Resizing::Configuration.new template
+        Resizing::Configuration.new template
       end
     end
 
@@ -48,7 +48,7 @@ module Resizing
       template = @template.dup
       template.delete(:project_id)
       assert_raises ConfigurationError do
-        config = Resizing::Configuration.new template
+        Resizing::Configuration.new template
       end
     end
 
@@ -71,8 +71,16 @@ module Resizing
       assert_equal(config.open_timeout, template[:open_timeout])
     end
 
-    def test_it_does_something_useful
-      # assert false
+    def test_that_it_return_auth_header_token
+      Timecop.freeze(Time.parse('2020-05-29 05:40:00 +0900')) do
+        template = @template.dup
+        config = Resizing::Configuration.new template
+        assert_equal(
+          'v1,1590698400,475b698ca98abaccd03dc38966615e9f3072ae07055196f63a3a5d2a3b18d818',
+          config.generate_auth_header
+        )
+      end
     end
+
   end
 end

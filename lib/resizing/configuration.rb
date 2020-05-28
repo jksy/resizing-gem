@@ -1,3 +1,4 @@
+require 'digest/sha2'
 module Resizing
   #= Configuration class for Resizing client
   #--
