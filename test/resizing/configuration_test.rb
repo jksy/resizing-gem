@@ -1,7 +1,7 @@
 require "test_helper"
 
 module Resizing
-  class ResizingConfigurationTest < Minitest::Test
+  class ConfigurationTest < Minitest::Test
     def setup
       # @configration = Resizing::Configuration.new
       @template = {
