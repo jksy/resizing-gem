@@ -38,7 +38,7 @@ module Resizing
 
       client = Resizing::Client.new
       VCR.use_cassette 'client/post' do
-        f = File.open('sample1.jpg', 'r')
+        f = File.open('test/data/images/sample1.jpg', 'r')
         r = client.post(f, content_type: 'image/jpeg')
         assert_equal(r['id'], "bfdaf2b3-7ec5-41f4-9caa-d53247dd9666")
         assert_equal(r['project_id'], Resizing.configure.project_id)
@@ -56,7 +56,7 @@ module Resizing
 
       client = Resizing::Client.new
       VCR.use_cassette 'client/put' do
-        f = File.open('sample1.jpg', 'r')
+        f = File.open('test/data/images/sample1.jpg', 'r')
         name = "AWEaewfAreaweFAFASfwe"
         r = client.put(name, f, content_type: 'image/jpeg')
         assert_equal(r['id'], name)
