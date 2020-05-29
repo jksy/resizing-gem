@@ -26,7 +26,7 @@ module Resizing
 
         def delete
           public_id = model.send :read_attribute, serialization_column
-          resp = connection.delete(public_id)
+          resp = client.delete(public_id)
           if resp.nil?
             model.send :write_attribute, serialization_column, nil
             return
@@ -64,7 +64,7 @@ module Resizing
           read_source_file(file_body) if ::File.exist?(file_body.path)
 
           # If the source file doesn't exist, the remote content is read
-          @file = nil # rubocop:disable Gitlab/ModuleWithInstanceVariables
+          @file = nil
           file.body
         end
 
@@ -100,10 +100,6 @@ module Resizing
           @public_id
         end
 
-        def uploader
-          @uploader
-        end
-
         def filename(options = {})
           return unless file_url = url(options)
           CGI.unescape(file_url.split('?').first).gsub(/.*\/(.*?$)/, '\1')
@@ -114,6 +110,10 @@ module Resizing
         # end
 
         private
+
+        def uploader
+          @uploader
+        end
 
         def model
           @model ||= uploader.model
@@ -133,15 +133,9 @@ module Resizing
 
 
         ##
-        # connection to service
-        #
-        # === Returns
-        #
-        # [Fog::#{provider}::Storage] connection to service
-        #
-        def connection
-          @connection ||= Resizing::Client.new
-          # @base.connection
+        # client of Resizing
+        def client
+          @client ||= Resizing::Client.new
         end
 
         ##

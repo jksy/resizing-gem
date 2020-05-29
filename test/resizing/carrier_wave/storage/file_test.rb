@@ -10,15 +10,15 @@ module Resizing
           # NOP
         end
 
-        def test_afadf
-          f = Resizing::CarrierWave::Storage::File.new(
-            uploader,
-            uploader.cache_path
-          )
-          File.new(uploader, path)
+        def test_store
+          f = Resizing::CarrierWave::Storage::File.new(uploader)
+          upload_file = File.new(uploader, path)
+          f.store(upload_file)
+          f.save!
         end
 
         def uploader
+          MiniTest::Mock.expect(:cache_path)
         end
       end
     end
