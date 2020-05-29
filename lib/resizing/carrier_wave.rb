@@ -13,7 +13,7 @@ module Resizing
         # NOP
       end
 
-      ActiveSupport.on_load(:some_class_name) do
+      ActiveSupport.on_load(:active_record) do
         # NOP
       end
     end
@@ -21,6 +21,14 @@ module Resizing
     def self.included(base)
       base.storage Resizing::CarrierWave::Storage::Remote
       base.extend ClassMethods
+    end
+
+    def self.write_uploader(column, identifier)
+      raise "error"
+    end
+
+    def self.read_uploader(column)
+      raise "error"
     end
 
     def url(*args)
