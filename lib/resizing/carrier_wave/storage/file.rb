@@ -27,16 +27,15 @@ module Resizing
         end
 
         def delete
-          column = uploader.model.send(:_mounter, uploader.mounted_as).send(:serialization_column)
-          public_id = uploader.model.send :read_attribute, column
+          public_id = model.send :read_attribute, serialization_column
           resp = connection.delete(public_id)
           if resp.nil?
-            uploader.model.send :write_attribute, column, nil
+            model.send :write_attribute, serialization_column, nil
             return
           end
 
           if public_id == resp['public_id']
-            public_id = uploader.model.send :write_attribute, column, nil
+            public_id = model.send :write_attribute, serialization_column, nil
           end
 
           raise NotImplementedError, "delete is not implemented"
@@ -89,15 +88,13 @@ module Resizing
             @response = Resizing.put(identifier, new_file.read, {content_type: @content_type})
             @public_id = @response['public_id']
 
-            # write public_id to mounted column
-            column = uploader.model.send(:_mounter, uploader.mounted_as).send(:serialization_column)
-            model_klass = uploader.model.class
-            primary_key = model_klass.primary_key.to_sym
-
             # force update column
-            model_klass.where(primary_key => uploader.model.send(primary_key)).update_all(column=>@public_id)
+            model_class
+              .where(primary_key_name => model.send(primary_key_name))
+              .update_all(serialization_column=>@public_id)
+
             # save new value to model class
-            uploader.model.send :write_attribute, column, @public_id
+            model.send :write_attribute, serialization_column, @public_id
           end
           true
         end
@@ -120,6 +117,23 @@ module Resizing
         end
 
         private
+
+        def model
+          @model ||= uploader.model
+        end
+
+        def model_class
+          @model_class ||= model.class
+        end
+
+        def primary_key_name
+          @primary_key_name ||= model_class.primary_key.to_sym
+        end
+
+        def serialization_column
+          @serialization_column ||= model.send(:_mounter, uploader.mounted_as).send(:serialization_column)
+        end
+
 
         ##
         # connection to service
