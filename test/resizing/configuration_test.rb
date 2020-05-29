@@ -4,7 +4,7 @@ module Resizing
   class ConfigurationTest < Minitest::Test
     def setup
       @template = {
-        host: 'hostname',
+        host: 'https://test.example.com',
         project_id: 'project_id',
         secret_token: 'secret_token',
         open_timeout: 10,
@@ -86,7 +86,7 @@ module Resizing
       image_id = 'some-image-id'
       config = Resizing::Configuration.new template
       assert_equal(
-        'hostname/projects/project_id/upload/images/some-image-id',
+        'https://test.example.com/projects/project_id/upload/images/some-image-id',
         config.generate_image_url(image_id)
       )
     end
@@ -97,7 +97,7 @@ module Resizing
       version_id = 'version-id'
       config = Resizing::Configuration.new template
       assert_equal(
-        'hostname/projects/project_id/upload/images/some-image-id/vversion-id',
+        'https://test.example.com/projects/project_id/upload/images/some-image-id/vversion-id',
         config.generate_image_url(image_id, version_id)
       )
     end
