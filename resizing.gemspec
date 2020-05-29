@@ -33,4 +33,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "carrierwave"
   spec.add_development_dependency "rails", "> 5.0"
   spec.add_development_dependency "mysql2"
+  spec.add_development_dependency "sqlite3"
 end
