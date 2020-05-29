@@ -7,10 +7,6 @@ require 'rails'
 require 'active_record'
 require 'fog-aws'
 require 'carrierwave'
-# need this require for call activerecord hook
-# https://github.com/carrierwaveuploader/carrierwave/blob/67800fdeb796a7b2efe1192e06f619dcc3c64f05/lib/carrierwave/orm/activerecord.rb#L59
-require 'carrierwave/orm/activerecord'
-
 require 'resizing'
 require 'pry-byebug'
 

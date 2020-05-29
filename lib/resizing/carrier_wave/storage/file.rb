@@ -175,10 +175,9 @@ module Resizing
         #   @store_response = client.post(sanitized_file.to_file, {content_type: sanitized_file.content_type})
         # end
 
-        # def retrieve! identifier
-        #   binding.pry
-        #   raise NotImplementedError, "retrieve! #{identifier}"
-        # end
+        def retrieve! identifier
+          raise NotImplementedError, "retrieve! #{identifier}"
+        end
 
         # def cache!(new_file)
         #   raise NotImplementedError, "Need to implement #cache! if you want to use #{self.class.name} as a cache storage."

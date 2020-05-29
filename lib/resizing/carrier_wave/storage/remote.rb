@@ -16,10 +16,9 @@ module Resizing
         end
 
         def cache!(new_file)
-          # NOP
-          # f = Resizing::CarrierWave::Storage::File.new(uploader, uploader.cache_path)
-          # f.store(new_file)
-          # f
+          f = Resizing::CarrierWave::Storage::File.new(uploader)
+          f.store(new_file)
+          f
         end
 
         def retrieve_from_cache!(identifier)

@@ -23,14 +23,6 @@ module Resizing
       base.extend ClassMethods
     end
 
-    def self.write_uploader(column, identifier)
-      raise "error"
-    end
-
-    def self.read_uploader(column)
-      raise "error"
-    end
-
     def url(*args)
       return nil unless default_url.present?
 
@@ -38,7 +30,11 @@ module Resizing
       while version = args.pop
         transforms << self.versions[version].transform_string
       end
-      "#{Resizing.configure.host}/#{default_url}/#{transforms.join('/')}"
+      "#{default_url}/#{transforms.join('/')}"
+    end
+
+    def default_url
+      "#{Resizing.configure.host}#{@file.public_id}"
     end
 
     def transform_string
