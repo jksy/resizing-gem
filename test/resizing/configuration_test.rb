@@ -3,7 +3,6 @@ require "test_helper"
 module Resizing
   class ConfigurationTest < Minitest::Test
     def setup
-      # @configration = Resizing::Configuration.new
       @template = {
         host: 'hostname',
         project_id: 'project_id',
