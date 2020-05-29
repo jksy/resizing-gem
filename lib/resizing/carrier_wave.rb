@@ -3,7 +3,7 @@ require 'resizing/carrier_wave/storage/remote'
 
 module Resizing
   module CarrierWave
-    class Railtie < Rails::Railtie
+    class Railtie < ::Rails::Railtie
       # Railtie skelton codes
       rake_tasks do
         # NOP

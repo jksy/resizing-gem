@@ -1,8 +1,11 @@
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 require 'resizing'
+require 'rails'
+require 'active_record'
 require 'time'
 require 'timecop'
 require 'vcr'
+require 'carrierwave'
 
 require 'minitest/autorun'
 

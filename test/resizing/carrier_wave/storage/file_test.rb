@@ -1,3 +1,5 @@
+require "test_helper"
+
 module Resizing
   module CarrierWave
     module Storage
@@ -20,6 +22,18 @@ module Resizing
         def uploader
           MiniTest::Mock.expect(:cache_path)
         end
+      end
+
+      class TestModel < ::ActiveRecord::Base
+        establish_connection({
+          adapter: 'mysql2',
+          host: '127.0.0.1',
+          pool: 5,
+          port: 3306,
+          username: 'test',
+          password: 'secret',
+          database: 'test',
+        })
       end
     end
   end

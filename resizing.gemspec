@@ -30,4 +30,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "minitest"
   spec.add_development_dependency "timecop"
   spec.add_development_dependency "vcr"
+  spec.add_development_dependency "carrierwave"
+  spec.add_development_dependency "rails", "> 5.0"
+  spec.add_development_dependency "mysql2"
 end
