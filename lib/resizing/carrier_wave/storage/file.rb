@@ -87,7 +87,6 @@ module Resizing
           else
             @content_type ||= new_file.content_type
             @response = Resizing.put(identifier, new_file.read, {content_type: @content_type})
-
             @public_id = @response['public_id']
 
             # write public_id to mounted column
@@ -145,18 +144,6 @@ module Resizing
           @file ||= directory.files.head(path)
         end
 
-        def acl_header
-          if fog_provider == 'AWS'
-            { 'x-amz-acl' => @uploader.fog_public ? 'public-read' : 'private' }
-          else
-            {}
-          end
-        end
-
-        def fog_provider
-          @uploader.fog_credentials[:provider].to_s
-        end
-
         def read_source_file(file_body)
           return unless ::File.exist?(file_body.path)
 
@@ -174,8 +161,7 @@ module Resizing
         end
 
         def identifier
-          return SecureRandom.uuid
-          uploader.filename
+          @identifier ||= SecureRandom.uuid
         end
 
         # def store! sanitized_file

@@ -53,20 +53,6 @@ module Resizing
       transforms.join('/')
     end
 
-    def filename
-      @filename ||= SecureRandom.uuid
-    end
-
-    def identifier
-      # generate uuid if no identifier
-      # using this identifier save name
-      public_id
-    end
-
-    def public_id
-      @public_id ||= Resizing.generate_identifier
-    end
-
     def rename
       raise NotImplementedError, 'rename is not implemented'
     end
