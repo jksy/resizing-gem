@@ -5,24 +5,24 @@ module Resizing
       # https://github.com/carrierwaveuploader/carrierwave/blob/master/lib/carrierwave/storage/abstract.rb
       class Remote < ::CarrierWave::Storage::Abstract
         def store!(file)
-          f = Resizing::CarrierWave::Storage::File.new(uploader, self, uploader.store_path)
+          f = Resizing::CarrierWave::Storage::File.new(uploader, uploader.store_path)
           f.store(file)
           @filename = f.public_id
           f
         end
 
         def retrieve!(identifier)
-          Resizing::CarrierWave::Storage::File.new(uploader, self, uploader.store_path(identifier))
+          Resizing::CarrierWave::Storage::File.new(uploader, uploader.store_path(identifier))
         end
 
         def cache!(new_file)
-          f = Resizing::CarrierWave::Storage::File.new(uploader, self, uploader.cache_path)
+          f = Resizing::CarrierWave::Storage::File.new(uploader, uploader.cache_path)
           f.store(new_file)
           f
         end
 
         def retrieve_from_cache!(identifier)
-          Resizing::CarrierWave::Storage::File..new(uploader, self, uploader.cache_path(identifier))
+          Resizing::CarrierWave::Storage::File..new(uploader, uploader.cache_path(identifier))
         end
 
         def delete_dir!(path)

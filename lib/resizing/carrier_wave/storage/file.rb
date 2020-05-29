@@ -6,8 +6,8 @@ module Resizing
 
         attr_reader :path
 
-        def initialize(uploader, base, path)
-          @uploader, @base, @path, @content_type = uploader, base, path, nil
+        def initialize(uploader, path)
+          @uploader, @path, @content_type = uploader, path, nil
         end
 
         def attributes
