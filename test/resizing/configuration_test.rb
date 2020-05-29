@@ -119,5 +119,9 @@ module Resizing
       end
     end
 
+    def test_that_it_generated_identifier_path
+      config = Resizing::Configuration.new @template
+      assert_match %r(/projects/#{config.project_id}/upload/images/[\da-z-]), config.generate_identifier
+    end
   end
 end

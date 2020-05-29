@@ -1,4 +1,5 @@
 require 'digest/sha2'
+require 'securerandom'
 module Resizing
   #= Configuration class for Resizing client
   #--
@@ -70,8 +71,10 @@ module Resizing
       end.join('/')
     end
 
+    # たぶんここにおくものではない
+    # もしくはキャッシュしない
     def generate_identifier
-      @image_id ||= SecureRandom.uuid
+      @image_id ||= ::SecureRandom.uuid
 
       "/projects/#{self.project_id}/upload/images/#{@image_id}"
     end
