@@ -4,10 +4,8 @@ module Resizing
       class File
         include ::CarrierWave::Utilities::Uri
 
-        attr_reader :path
-
-        def initialize(uploader, path)
-          @uploader, @path, @content_type = uploader, path, nil
+        def initialize(uploader)
+          @uploader, @content_type = uploader, nil
         end
 
         def attributes
@@ -47,8 +45,7 @@ module Resizing
         end
 
         def extension
-          path_elements = path.split('.')
-          path_elements.last if path_elements.size > 1
+          raise NotImplementedError, 'this method is do not used. maybe'
         end
 
         ##
@@ -112,9 +109,9 @@ module Resizing
           CGI.unescape(file_url.split('?').first).gsub(/.*\/(.*?$)/, '\1')
         end
 
-        def copy_to(new_path)
-          CarrierWave::Storage::Fog::File.new(@uploader, @base, new_path)
-        end
+        # def copy_to(new_path)
+        #   CarrierWave::Storage::Fog::File.new(@uploader, @base, new_path)
+        # end
 
         private
 
@@ -154,9 +151,9 @@ module Resizing
         #
         # [Fog::#{provider}::File] file data from remote service
         #
-        def file
-          @file ||= directory.files.head(path)
-        end
+        # def file
+        #   @file ||= directory.files.head(path)
+        # end
 
         def read_source_file(file_body)
           return unless ::File.exist?(file_body.path)
