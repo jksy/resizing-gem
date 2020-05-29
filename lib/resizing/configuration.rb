@@ -79,6 +79,13 @@ module Resizing
       "/projects/#{self.project_id}/upload/images/#{@image_id}"
     end
 
+    def == value
+      return false unless self.class == value.class
+
+      %i(host project_id secret_token open_timeout response_timeout).all? do |name|
+        self.send(name) == value.send(name)
+      end
+    end
     private
 
     def raise_configiration_error

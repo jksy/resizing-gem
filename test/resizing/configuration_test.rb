@@ -4,9 +4,9 @@ module Resizing
   class ConfigurationTest < Minitest::Test
     def setup
       @template = {
-        host: 'https://test.example.com',
-        project_id: 'project_id',
-        secret_token: 'secret_token',
+        host: 'http://192.168.56.101:5000',
+        project_id: '098a2a0d-c387-4135-a071-1254d6d7e70a',
+        secret_token: '4g1cshg2lq8j93ufhvqrpjswxmtjz12yhfvq6w79jpwi7cr7nnknoqgwzkwerbs6',
         open_timeout: 10,
         response_timeout: 20,
       }.freeze
@@ -75,7 +75,7 @@ module Resizing
         template = @template.dup
         config = Resizing::Configuration.new template
         assert_equal(
-          'v1,1590698400,475b698ca98abaccd03dc38966615e9f3072ae07055196f63a3a5d2a3b18d818',
+          'v1,1590698400,2b35ee78cd6ce32edb9b4d97b69306c678ce8dea871638ff6144b7be0d26173c',
           config.generate_auth_header
         )
       end
@@ -86,7 +86,7 @@ module Resizing
       image_id = 'some-image-id'
       config = Resizing::Configuration.new template
       assert_equal(
-        'https://test.example.com/projects/project_id/upload/images/some-image-id',
+        'http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/some-image-id',
         config.generate_image_url(image_id)
       )
     end
@@ -97,7 +97,7 @@ module Resizing
       version_id = 'version-id'
       config = Resizing::Configuration.new template
       assert_equal(
-        'https://test.example.com/projects/project_id/upload/images/some-image-id/vversion-id',
+        'http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/some-image-id/vversion-id',
         config.generate_image_url(image_id, version_id)
       )
     end
