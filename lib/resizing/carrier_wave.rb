@@ -34,7 +34,7 @@ module Resizing
     end
 
     def default_url
-      "#{Resizing.configure.host}#{@file.public_id}"
+      "#{Resizing.configure.host}#{self.model.read_attribute(self.mounted_as)}"
     end
 
     def transform_string
