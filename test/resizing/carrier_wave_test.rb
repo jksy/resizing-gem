@@ -16,13 +16,19 @@ module Resizing
     def teardown
     end
 
-    def test_WIP
+    def test_picture_url_return_correct_value_and_when_model_reloaded
       VCR.use_cassette 'carrier_wave_test/save' do
         SecureRandom.stub :uuid, '28c49144-c00d-4cb5-8619-98ce95977b9c' do
           model = TestModel.new
           file = File.open('test/data/images/sample1.jpg','r')
           model.resizing_picture = file
           model.save!
+          assert_equal(
+            'http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850__tqNsnoGWWUibtIBZ5NgjV45M/c_limit,w_1000',
+            model.resizing_picture_url
+          )
+
+          model.reload
           assert_equal(
             'http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850__tqNsnoGWWUibtIBZ5NgjV45M/c_limit,w_1000',
             model.resizing_picture_url
