@@ -38,7 +38,6 @@ module Resizing
     end
 
     def default_url
-      # "#{Resizing.configure.host}#{self.model.read_attribute(self.mounted_as)}"
       "#{Resizing.configure.host}#{self.model.read_attribute(self.mounted_as)}"
     end
 
@@ -81,40 +80,22 @@ module Resizing
       @transform.push(:resize_to_fit, *args)
     end
 
-    # def cache!(new_file)
-    #   # DO NOTHING
-    #   super
-    # end
+    def cache!(new_file)
+      return if new_file.nil?
 
-    # def store!
-    #   # DO NOTHING
-    #   super
-    # end
+      file = storage.store!(new_file)
+      # do not assign @cache_id, bacause resizing do not support cache
+      # save to resizing directly
+      # @cache_id = file.public_id
 
-    # called from https://github.com/carrierwaveuploader/carrierwave/blob/master/lib/carrierwave/orm/activerecord.rb#L60
-    # def write_resizing_picture_identifier
-    #   super
-    # end
+      @filename = file.public_id
+      @file = file
+    end
 
-    # def store_previous_changes_for_resizing_picture
-    #   super
-    # end
-
-    # def remove_resizing_picture!
-    #   super
-    # end
-
-    # def mark_remove_resizing_picture
-    #   super
-    # end
-
-    # def remove_previously_stored_resizing_picture!
-    #   super
-    # end
-
-    # def store_resizing_picture!
-    #   super
-    # end
+    def store!
+      # DO NOTHING
+      super
+    end
 
     module ClassMethods
     end
