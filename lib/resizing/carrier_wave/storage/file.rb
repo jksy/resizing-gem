@@ -100,6 +100,14 @@ module Resizing
           @public_id
         end
 
+        def identifier
+          if public_id.present?
+            public_id
+          else
+            @identifier = SecureRandom.uuid
+          end
+        end
+
         def filename(options = {})
           return unless file_url = url(options)
           CGI.unescape(file_url.split('?').first).gsub(/.*\/(.*?$)/, '\1')
@@ -165,9 +173,6 @@ module Resizing
           parameters.count == 2 && parameters[1].include?(:options)
         end
 
-        def identifier
-          @identifier ||= SecureRandom.uuid
-        end
 
         # def store! sanitized_file
         #   puts sanitized_file.inspect

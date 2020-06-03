@@ -24,7 +24,7 @@ module Resizing
     end
 
     def url(*args)
-      return nil unless default_url.present?
+      return nil unless read_column.present?
 
       transforms = [self.transform_string]
       while version = args.pop
@@ -33,7 +33,12 @@ module Resizing
       "#{default_url}/#{transforms.join('/')}"
     end
 
+    def read_column
+      self.model.read_attribute(self.mounted_as)
+    end
+
     def default_url
+      # "#{Resizing.configure.host}#{self.model.read_attribute(self.mounted_as)}"
       "#{Resizing.configure.host}#{self.model.read_attribute(self.mounted_as)}"
     end
 
@@ -76,7 +81,39 @@ module Resizing
       @transform.push(:resize_to_fit, *args)
     end
 
-    # def process! *args
+    # def cache!(new_file)
+    #   # DO NOTHING
+    #   super
+    # end
+
+    # def store!
+    #   # DO NOTHING
+    #   super
+    # end
+
+    # called from https://github.com/carrierwaveuploader/carrierwave/blob/master/lib/carrierwave/orm/activerecord.rb#L60
+    # def write_resizing_picture_identifier
+    #   super
+    # end
+
+    # def store_previous_changes_for_resizing_picture
+    #   super
+    # end
+
+    # def remove_resizing_picture!
+    #   super
+    # end
+
+    # def mark_remove_resizing_picture
+    #   super
+    # end
+
+    # def remove_previously_stored_resizing_picture!
+    #   super
+    # end
+
+    # def store_resizing_picture!
+    #   super
     # end
 
     module ClassMethods
