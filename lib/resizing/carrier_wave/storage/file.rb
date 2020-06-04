@@ -4,8 +4,8 @@ module Resizing
       class File
         include ::CarrierWave::Utilities::Uri
 
-        def initialize(uploader)
-          @uploader, @content_type = uploader, nil
+        def initialize(uploader, identifier=nil)
+          @uploader, @content_type, @identifier = uploader, nil, identifier
         end
 
         def attributes
@@ -78,6 +78,7 @@ module Resizing
 
         def store(new_file)
           if new_file.is_a?(self.class)
+            binding.pry
             # new_file.copy_to(path)
             raise NotImplementedError, "new file is required duplicating"
           else
@@ -86,9 +87,9 @@ module Resizing
             @public_id = @response['public_id']
 
             # force update column
-            model_class
-              .where(primary_key_name => model.send(primary_key_name))
-              .update_all(serialization_column=>@public_id)
+            # model_class
+            #   .where(primary_key_name => model.send(primary_key_name))
+            #   .update_all(serialization_column=>@public_id)
 
             # save new value to model class
             model.send :write_attribute, serialization_column, @public_id

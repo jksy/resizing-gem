@@ -12,7 +12,7 @@ module Resizing
         end
 
         def retrieve!(identifier)
-          Resizing::CarrierWave::Storage::File.new(uploader)
+          Resizing::CarrierWave::Storage::File.new(uploader, identifier)
         end
 
         def cache!(new_file)
