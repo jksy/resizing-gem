@@ -31,7 +31,6 @@ jobs:
 
       - restore_cache:
           keys:
-            - v2-{{ .Environment.CACHE_KEY }}-gem-cache-{{ arch }}-{{ .Branch }}-{{ checksum "Gemfile.lock" }}
             - v2-{{ .Environment.CACHE_KEY }}-gem-cache-{{ arch }}-{{ .Branch }}
             - v2-{{ .Environment.CACHE_KEY }}-gem-cache
 
@@ -44,7 +43,7 @@ jobs:
               bundle check --path vendor/bundle || bundle install --path vendor/bundle --clean
 
       - save_cache:
-          key: v2-{{ .Environment.CACHE_KEY }}-gem-cache-{{ arch }}-{{ .Branch }}-{{ checksum "Gemfile.lock" }}
+          key: v2-{{ .Environment.CACHE_KEY }}-gem-cache-{{ arch }}-{{ .Branch }}
           paths:
             - vendor/bundle
 
