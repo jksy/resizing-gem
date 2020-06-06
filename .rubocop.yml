@@ -8,3 +8,28 @@
 # where the inspected file is and continue its way up to the root directory.
 #
 # See https://github.com/rubocop-hq/rubocop/blob/master/manual/configuration.md
+
+Metrics/MethodLength:
+  Exclude:
+    - "test/**/*.rb"
+
+Metrics/ClassLength:
+  Exclude:
+    - "test/**/*.rb"
+
+Metrics/AbcSize:
+  Exclude:
+    - "test/**/*.rb"
+
+Layout/LineLength:
+  Exclude:
+    - "test/**/*.rb"
+
+Metrics/MethodLength:
+  Max: 20
+  Exclude:
+    - "test/**/*.rb"
+
+# temporary
+Style/AsciiComments:
+  Enabled: false

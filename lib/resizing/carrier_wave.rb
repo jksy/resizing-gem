@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'resizing/carrier_wave/storage/file'
 require 'resizing/carrier_wave/storage/remote'
 

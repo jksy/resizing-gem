@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'digest/sha2'
 require 'securerandom'
 module Resizing
@@ -14,7 +16,7 @@ module Resizing
   #++
   class Configuration
     attr_reader :host, :project_id, :secret_token, :open_timeout, :response_timeout
-    DEFAULT_HOST = 'https://www.resizing.net'.freeze
+    DEFAULT_HOST = 'https://www.resizing.net'
     DEFAULT_OPEN_TIMEOUT = 2
     DEFAULT_RESPONSE_TIMEOUT = 10
 
@@ -24,11 +26,8 @@ module Resizing
       case attr = attrs.first
       when Hash
         raise_configiration_error if attr[:project_id].nil? || attr[:secret_token].nil?
-        @host = attr[:host].dup.freeze || DEFAULT_HOST
-        @project_id = attr[:project_id].dup.freeze
-        @secret_token = attr[:secret_token].dup.freeze
-        @open_timeout = attr[:open_timeout] || DEFAULT_OPEN_TIMEOUT
-        @response_timeout = attr[:response_timeout] || DEFAULT_RESPONSE_TIMEOUT
+
+        assgin_hash attr
         return
       end
 
@@ -54,7 +53,7 @@ module Resizing
       parts = []
       parts << image_id
       parts << version if version
-      parts << path if path.length != 0
+      parts << path unless path.empty?
       "#{host}/projects/#{project_id}/upload/images/#{parts.join('/')}"
     end
 
@@ -75,11 +74,11 @@ module Resizing
       "/projects/#{project_id}/upload/images/#{@image_id}"
     end
 
-    def ==(value)
-      return false unless self.class == value.class
+    def ==(other)
+      return false unless self.class == other.class
 
       %i[host project_id secret_token open_timeout response_timeout].all? do |name|
-        send(name) == value.send(name)
+        send(name) == other.send(name)
       end
     end
 
@@ -87,6 +86,14 @@ module Resizing
 
     def raise_configiration_error
       raise ConfigurationError, 'need hash and some keys like :host, :project_id, :secret_token'
+    end
+
+    def initialize_by_hash(attr)
+      @host = attr[:host].dup.freeze || DEFAULT_HOST
+      @project_id = attr[:project_id].dup.freeze
+      @secret_token = attr[:secret_token].dup.freeze
+      @open_timeout = attr[:open_timeout] || DEFAULT_OPEN_TIMEOUT
+      @response_timeout = attr[:response_timeout] || DEFAULT_RESPONSE_TIMEOUT
     end
   end
 end
