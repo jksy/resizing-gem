@@ -1,18 +1,22 @@
+# frozen_string_literal: true
+
 module Resizing
   module CarrierWave
     module Storage
       class File
         include ::CarrierWave::Utilities::Uri
 
-        def initialize(uploader, identifier=nil)
-          @uploader, @content_type, @identifier = uploader, nil, identifier
+        def initialize(uploader, identifier = nil)
+          @uploader = uploader
+          @content_type = nil
+          @identifier = identifier
         end
 
         def attributes
           file.attributes
         end
 
-        def authenticated_url(options = {})
+        def authenticated_url(_options = {})
           nil
         end
 
@@ -20,9 +24,7 @@ module Resizing
           @content_type || file.try(:content_type)
         end
 
-        def content_type=(new_content_type)
-          @content_type = new_content_type
-        end
+        attr_writer :content_type
 
         def delete
           public_id = model.send :read_attribute, serialization_column
@@ -32,11 +34,9 @@ module Resizing
             return
           end
 
-          if public_id == resp['public_id']
-            public_id = model.send :write_attribute, serialization_column, nil
-          end
+          _ = model.send :write_attribute, serialization_column, nil if public_id == resp['public_id']
 
-          raise NotImplementedError, "delete is not implemented"
+          raise NotImplementedError, 'delete is not implemented'
 
           # # avoid a get by just using local reference
           # directory.files.new(:key => path).destroy.tap do |result|
@@ -78,28 +78,26 @@ module Resizing
 
         def store(new_file)
           if new_file.is_a?(self.class)
-            binding.pry
             # new_file.copy_to(path)
-            raise NotImplementedError, "new file is required duplicating"
-          else
-            @content_type ||= new_file.content_type
-            @response = Resizing.put(identifier, new_file.read, {content_type: @content_type})
-            @public_id = @response['public_id']
-
-            # force update column
-            # model_class
-            #   .where(primary_key_name => model.send(primary_key_name))
-            #   .update_all(serialization_column=>@public_id)
-
-            # save new value to model class
-            model.send :write_attribute, serialization_column, @public_id
+            raise NotImplementedError, 'new file is required duplicating'
           end
+
+          @content_type ||= new_file.content_type
+          @response = Resizing.put(identifier, new_file.read, { content_type: @content_type })
+          @public_id = @response['public_id']
+
+          # force update column
+          # model_class
+          #   .where(primary_key_name => model.send(primary_key_name))
+          #   .update_all(serialization_column=>@public_id)
+
+          # save new value to model class
+          model.send :write_attribute, serialization_column, @public_id
+
           true
         end
 
-        def public_id
-          @public_id
-        end
+        attr_reader :public_id
 
         def identifier
           if public_id.present?
@@ -110,8 +108,10 @@ module Resizing
         end
 
         def filename(options = {})
-          return unless file_url = url(options)
-          CGI.unescape(file_url.split('?').first).gsub(/.*\/(.*?$)/, '\1')
+          file_url = url(options)
+          return unless file_url
+
+          CGI.unescape(file_url.split('?').first).gsub(%r{.*/(.*?$)}, '\1')
         end
 
         # def copy_to(new_path)
@@ -120,9 +120,7 @@ module Resizing
 
         private
 
-        def uploader
-          @uploader
-        end
+        attr_reader :uploader
 
         def model
           @model ||= uploader.model
@@ -139,7 +137,6 @@ module Resizing
         def serialization_column
           @serialization_column ||= model.send(:_mounter, uploader.mounted_as).send(:serialization_column)
         end
-
 
         ##
         # client of Resizing
@@ -174,34 +171,36 @@ module Resizing
           parameters.count == 2 && parameters[1].include?(:options)
         end
 
-
         # def store! sanitized_file
         #   puts sanitized_file.inspect
         #   client = Resizing::Client.new
         #   @store_response = client.post(sanitized_file.to_file, {content_type: sanitized_file.content_type})
         # end
 
-        def retrieve! identifier
+        def retrieve!(identifier)
           raise NotImplementedError, "retrieve! #{identifier}"
         end
 
         # def cache!(new_file)
-        #   raise NotImplementedError, "Need to implement #cache! if you want to use #{self.class.name} as a cache storage."
+        #   raise NotImplementedError,
+        #     "Need to implement #cache! if you want to use #{self.class.name} as a cache storage."
         # end
 
         # def retrieve_from_cache!(identifier)
-        #   raise NotImplementedError, "Need to implement #retrieve_from_cache! if you want to use #{self.class.name} as a cache storage."
+        #   raise NotImplementedError,
+        #     "Need to implement #retrieve_from_cache! if you want to use #{self.class.name} as a cache storage."
         # end
 
         # def delete_dir!(path)
-        #   raise NotImplementedError "Need to implement #delete_dir! if you want to use #{self.class.name} as a cache storage."
+        #   raise NotImplementedError,
+        #     "Need to implement #delete_dir! if you want to use #{self.class.name} as a cache storage."
         # end
 
         # def clean_cache!(seconds)
-        #   raise NotImplementedError "Need to implement #clean_cache! if you want to use #{self.class.name} as a cache storage."
+        #   raise NotImplementedError,
+        #     "Need to implement #clean_cache! if you want to use #{self.class.name} as a cache storage."
         # end
       end
     end
   end
 end
-

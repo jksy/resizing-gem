@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'resizing/carrier_wave/storage/file'
 require 'resizing/carrier_wave/storage/remote'
 
@@ -26,36 +28,25 @@ module Resizing
     def url(*args)
       return nil unless read_column.present?
 
-      transforms = [self.transform_string]
-      while version = args.pop
-        transforms << self.versions[version].transform_string
+      transforms = [transform_string]
+
+      while (version = args.pop)
+        transforms << versions[version].transform_string
       end
       "#{default_url}/#{transforms.join('/')}"
     end
 
     def read_column
-      self.model.read_attribute(self.mounted_as)
+      model.read_attribute(mounted_as)
     end
 
     def default_url
-      "#{Resizing.configure.host}#{self.model.read_attribute(self.mounted_as)}"
+      "#{Resizing.configure.host}#{model.read_attribute(mounted_as)}"
     end
 
     def transform_string
-      tranfrom_strings = []
-
-      transforms = self.processors.map do |processor|
-        case processor.first
-        when :resize_to_fill, :resize_to_limit, :resize_to_fit
-          name = processor.first.to_s.gsub /resize_to_/, ''
-          {c: name, w: processor.second.first, h: processor.second.second}
-        else
-          raise NotImplementedError, "#{processor.first} is not supported. #{processor.inspect}"
-        end.map do |key, value|
-          next nil if value == nil
-
-          "#{key}_#{value}"
-        end.compact.join(',')
+      transforms = processors.map do |processor|
+        transform_string_from processor
       end
 
       transforms.join('/')
@@ -65,17 +56,17 @@ module Resizing
       raise NotImplementedError, 'rename is not implemented'
     end
 
-    def resize_to_limit *args
+    def resize_to_limit(*args)
       @transform ||= []
       @transform.push(:resize_to_limit, *args)
     end
 
-    def resize_to_fill *args
+    def resize_to_fill(*args)
       @transform ||= []
       @transform.push(:resize_to_fill, *args)
     end
 
-    def resize_to_fit *args
+    def resize_to_fit(*args)
       @transform ||= []
       @transform.push(:resize_to_fit, *args)
     end
@@ -103,15 +94,33 @@ module Resizing
     # store_versions! is called after store!
     # Disable on Resizing, because transform the image when browser fetch the image URL
     # https://github.com/carrierwaveuploader/carrierwave/blob/28190e99299a6131c0424a5d10205f471e39f3cd/lib/carrierwave/uploader/versions.rb#L18
-    def store_versions! *args
+    def store_versions!(*args)
       # NOP
     end
 
     # store_versions! is called after delete
     # Disable on Resizing, because transform the image when browser fetch the image URL
     # https://github.com/carrierwaveuploader/carrierwave/blob/28190e99299a6131c0424a5d10205f471e39f3cd/lib/carrierwave/uploader/versions.rb#L18
-    def remove_versions! *args
+    def remove_versions!(*args)
       # NOP
     end
+
+    private
+
+    # rubocop:disable Metrics/AbcSize
+    def transform_string_from(processor)
+      case processor.first
+      when :resize_to_fill, :resize_to_limit, :resize_to_fit
+        name = processor.first.to_s.gsub(/resize_to_/, '')
+        { c: name, w: processor.second.first, h: processor.second.second }
+      else
+        raise NotImplementedError, "#{processor.first} is not supported. #{processor.inspect}"
+      end.map do |key, value|
+        next nil if value.nil?
+
+        "#{key}_#{value}"
+      end.compact.join(',')
+    end
+    # rubocop:enable Metrics/AbcSize
   end
 end

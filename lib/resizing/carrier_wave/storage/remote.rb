@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Resizing
   module CarrierWave
     module Storage
@@ -47,5 +49,3 @@ module Resizing
     end
   end
 end
-
-

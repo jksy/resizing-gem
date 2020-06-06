@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 require 'time'
 require 'timecop'
@@ -25,7 +27,7 @@ ActiveRecord::Base.establish_connection(
   database: 'resizing_gem_test',
   encoding: 'utf8',
   username: 'root',
-  password: 'secret',
+  password: 'secret'
 )
 
 ActiveRecord::Schema.define do
@@ -33,7 +35,7 @@ ActiveRecord::Schema.define do
   connection.execute 'drop table if exists test_models'
 
   create_table :test_models do |t|
-    t.string  :resizing_picture, null: true, default: nil
+    t.string :resizing_picture, null: true, default: nil
   end
 end
 

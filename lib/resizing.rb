@@ -1,6 +1,8 @@
-require "resizing/version"
-require "faraday"
-require "json"
+# frozen_string_literal: true
+
+require 'resizing/version'
+require 'faraday'
+require 'json'
 
 module Resizing
   autoload :Client, 'resizing/client'
@@ -12,17 +14,13 @@ module Resizing
   class PostError < Error; end
 
   def self.configure
-    unless defined? @configure
-      raise ConfigurationError, "Resizing.configure is not initialized"
-    end
+    raise ConfigurationError, 'Resizing.configure is not initialized' unless defined? @configure
 
     @configure.dup
   end
 
-  def self.configure= new_value
-    unless new_value.is_a? Configuration
-      new_value = Configuration.new(new_value)
-    end
+  def self.configure=(new_value)
+    new_value = Configuration.new(new_value) unless new_value.is_a? Configuration
     @configure = new_value
   end
 
@@ -30,16 +28,16 @@ module Resizing
     raise NotImplementedError
   end
 
-  def self.url_from_image_id(image_id, version_id = nil, transformations=[])
+  def self.url_from_image_id(image_id, version_id = nil, transformations = [])
     Resizing.configure.generate_image_url(image_id, version_id, transformations)
   end
 
-  def self.post file_or_binary, options
+  def self.post(file_or_binary, options)
     client = Resizing::Client.new
     client.post file_or_binary, options
   end
 
-  def self.put name, file_or_binary, options
+  def self.put(name, file_or_binary, options)
     client = Resizing::Client.new
     client.put name, file_or_binary, options
   end

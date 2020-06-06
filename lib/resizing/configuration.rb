@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'digest/sha2'
 require 'securerandom'
 module Resizing
@@ -18,19 +20,14 @@ module Resizing
     DEFAULT_OPEN_TIMEOUT = 2
     DEFAULT_RESPONSE_TIMEOUT = 10
 
-    TRANSFORM_OPTIONS = %i(w width h height f format c crop q quality)
+    TRANSFORM_OPTIONS = %i[w width h height f format c crop q quality].freeze
 
     def initialize(*attrs)
       case attr = attrs.first
       when Hash
-        if attr[:project_id] == nil || attr[:secret_token] == nil
-          raise_configiration_error
-        end
-        @host = attr[:host].dup.freeze || DEFAULT_HOST
-        @project_id = attr[:project_id].dup.freeze
-        @secret_token = attr[:secret_token].dup.freeze
-        @open_timeout = attr[:open_timeout] || DEFAULT_OPEN_TIMEOUT
-        @response_timeout = attr[:response_timeout] || DEFAULT_RESPONSE_TIMEOUT
+        raise_configiration_error if attr[:project_id].nil? || attr[:secret_token].nil?
+
+        initialize_by_hash attr
         return
       end
 
@@ -39,15 +36,15 @@ module Resizing
 
     def generate_auth_header
       current_timestamp = Time.now.to_i
-      data = [current_timestamp, self.secret_token].join('|')
+      data = [current_timestamp, secret_token].join('|')
       token = Digest::SHA2.hexdigest(data)
-      version = "v1"
-      [version,current_timestamp,token].join(',')
+      version = 'v1'
+      [version, current_timestamp, token].join(',')
     end
 
-    def generate_image_url(image_id, version_id = nil, transforms=[])
+    def generate_image_url(image_id, version_id = nil, transforms = [])
       path = transformation_path(transforms)
-      version = if version_id == nil
+      version = if version_id.nil?
                   nil
                 else
                   "v#{version_id}"
@@ -56,18 +53,16 @@ module Resizing
       parts = []
       parts << image_id
       parts << version if version
-      parts << path if path.length != 0
-      "#{self.host}/projects/#{self.project_id}/upload/images/#{parts.join('/')}"
+      parts << path unless path.empty?
+      "#{host}/projects/#{project_id}/upload/images/#{parts.join('/')}"
     end
 
     # this method should be divided other class
-    def transformation_path transformations
-      if transformations.is_a? Hash
-        transformations = [transformations]
-      end
+    def transformation_path(transformations)
+      transformations = [transformations] if transformations.is_a? Hash
 
       transformations.map do |transform|
-        transform.slice(*TRANSFORM_OPTIONS).map {|key, value| [key, value].join('_')}.join(',')
+        transform.slice(*TRANSFORM_OPTIONS).map { |key, value| [key, value].join('_') }.join(',')
       end.join('/')
     end
 
@@ -76,20 +71,29 @@ module Resizing
     def generate_identifier
       @image_id ||= ::SecureRandom.uuid
 
-      "/projects/#{self.project_id}/upload/images/#{@image_id}"
+      "/projects/#{project_id}/upload/images/#{@image_id}"
     end
 
-    def == value
-      return false unless self.class == value.class
+    def ==(other)
+      return false unless self.class == other.class
 
-      %i(host project_id secret_token open_timeout response_timeout).all? do |name|
-        self.send(name) == value.send(name)
+      %i[host project_id secret_token open_timeout response_timeout].all? do |name|
+        send(name) == other.send(name)
       end
     end
+
     private
 
     def raise_configiration_error
-      raise ConfigurationError, "need hash and some keys like :host, :project_id, :secret_token"
+      raise ConfigurationError, 'need hash and some keys like :host, :project_id, :secret_token'
+    end
+
+    def initialize_by_hash(attr)
+      @host = attr[:host].dup.freeze || DEFAULT_HOST
+      @project_id = attr[:project_id].dup.freeze
+      @secret_token = attr[:secret_token].dup.freeze
+      @open_timeout = attr[:open_timeout] || DEFAULT_OPEN_TIMEOUT
+      @response_timeout = attr[:response_timeout] || DEFAULT_RESPONSE_TIMEOUT
     end
   end
 end

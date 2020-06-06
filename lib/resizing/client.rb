@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Resizing
   #= Client class for Resizing
   #--
@@ -28,7 +30,7 @@ module Resizing
     HTTP_STATUS_CREATED = 201
 
     attr_reader :config
-    def initialize *attrs
+    def initialize(*attrs)
       @config = if attrs.first.is_a? Configuration
                   attrs.first
                 elsif attrs.first.nil?
@@ -109,7 +111,7 @@ module Resizing
     end
 
     def http_client
-      @http_client ||= Faraday.new(:url => config.host) do |builder|
+      @http_client ||= Faraday.new(url: config.host) do |builder|
         builder.options[:open_timeout] = config.open_timeout
         builder.options[:timeout] = config.response_timeout
         builder.request :multipart
@@ -125,7 +127,7 @@ module Resizing
       when String
         StringIO.new(data)
       else
-        raise ArgumentError, "file_or_binary is required IO class or String"
+        raise ArgumentError, 'file_or_binary is required IO class or String'
       end
     end
 
