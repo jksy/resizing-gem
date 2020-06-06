@@ -11,7 +11,9 @@ module Resizing
 
   class Error < StandardError; end
   class ConfigurationError < Error; end
-  class PostError < Error; end
+  class APIError < Error; end
+  class PostError < APIError; end
+  class DeleteError < APIError; end
 
   def self.configure
     raise ConfigurationError, 'Resizing.configure is not initialized' unless defined? @configure
@@ -42,7 +44,19 @@ module Resizing
     client.put name, file_or_binary, options
   end
 
+  # TODO: refactoring
+  #
+  # identifier:
+  # public_id:  /projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850..
+  # identifier: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  # project_id:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  # image_id:                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  # version:                                                                                                      ^^^^^^^^^
   def self.generate_identifier
     Resizing.configure.generate_identifier
+  end
+
+  def self.separate_public_id public_id
+    public_id.match('/projects/(?<project_id>[0-9a-f-]+)/upload/images/(?<image_id>[0-9a-f-]+)(/v(?<version>[^/]+))?')
   end
 end

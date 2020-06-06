@@ -28,20 +28,22 @@ module Resizing
 
         def delete
           public_id = model.send :read_attribute, serialization_column
-          resp = client.delete(public_id)
-          if resp.nil?
+          # TODO:
+          # refactoring
+          separted = Resizing.separate_public_id(public_id)
+          image_id = separted[:image_id]
+          resp = client.delete(image_id)
+          if resp.nil? # 404 not found
             model.send :write_attribute, serialization_column, nil
             return
           end
 
-          _ = model.send :write_attribute, serialization_column, nil if public_id == resp['public_id']
+          if public_id == resp['public_id']
+            model.send :write_attribute, serialization_column, nil
+            return
+          end
 
-          raise NotImplementedError, 'delete is not implemented'
-
-          # # avoid a get by just using local reference
-          # directory.files.new(:key => path).destroy.tap do |result|
-          #   @file = nil if result
-          # end
+          raise APIError, "raise someone error:#{resp.inspect}"
         end
 
         def extension

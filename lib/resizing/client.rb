@@ -86,7 +86,6 @@ module Resizing
       response = http_client.delete(url) do |request|
         request.headers['X-ResizingToken'] = config.generate_auth_header
       end
-      return if response.status == 404
 
       result = handle_response(response)
       result
@@ -136,11 +135,13 @@ module Resizing
     end
 
     def handle_response(response)
+      raise APIError, "no response is returned" if response.nil?
+
       case response.status
       when HTTP_STATUS_OK, HTTP_STATUS_CREATED
         JSON.parse(response.body)
       else
-        raise PostError, response.body
+        raise APIError, "invalid http status code #{resp.status}"
       end
     end
   end
