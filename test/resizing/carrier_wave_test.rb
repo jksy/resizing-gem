@@ -21,7 +21,13 @@ module Resizing
         SecureRandom.stub :uuid, '28c49144-c00d-4cb5-8619-98ce95977b9c' do
           model = TestModel.new
           file = File.open('test/data/images/sample1.jpg','r')
-          model.resizing_picture = file
+          uploaded_file = ActionDispatch::Http::UploadedFile.new(
+            filename: File.basename(file.path),
+            type: 'image/jpeg',
+            tempfile: file
+          )
+
+          model.resizing_picture = uploaded_file
           model.save!
           assert_equal(
             'http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850__tqNsnoGWWUibtIBZ5NgjV45M/c_limit,w_1000',
