@@ -10,6 +10,7 @@
 # See https://github.com/rubocop-hq/rubocop/blob/master/manual/configuration.md
 
 Metrics/MethodLength:
+  Max: 20
   Exclude:
     - "test/**/*.rb"
 
@@ -25,14 +26,49 @@ Layout/LineLength:
   Exclude:
     - "test/**/*.rb"
 
-Metrics/MethodLength:
-  Max: 20
-  Exclude:
-    - "test/**/*.rb"
-
 Style/Documentation:
+  Enabled: false
+
+Layout/EmptyLinesAroundAttributeAccessor:
+  Enabled: false
+
+Layout/SpaceAroundMethodCallOperator:
+  Enabled: false
+
+Lint/DeprecatedOpenSSLConstant:
+  Enabled: true
+
+Lint/MixedRegexpCaptureTypes:
+  Enabled: true
+
+Lint/RaiseException:
+  Enabled: true
+
+Lint/StructNewOverride:
+  Enabled: true
+
+Style/ExponentialNotation:
+  Enabled: true
+
+Style/HashEachMethods:
+  Enabled: false
+
+Style/HashTransformKeys:
+  Enabled: false
+
+Style/HashTransformValues:
+  Enabled: false
+
+Style/RedundantRegexpCharacterClass:
+  Enabled: false
+
+Style/RedundantRegexpEscape:
+  Enabled: false
+
+Style/SlicingWithRange:
   Enabled: false
 
 # temporary
 Style/AsciiComments:
   Enabled: false
+
