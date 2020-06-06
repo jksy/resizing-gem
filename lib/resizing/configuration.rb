@@ -27,7 +27,7 @@ module Resizing
       when Hash
         raise_configiration_error if attr[:project_id].nil? || attr[:secret_token].nil?
 
-        assgin_hash attr
+        initialize_by_hash attr
         return
       end
 
