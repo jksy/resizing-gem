@@ -47,5 +47,3 @@ module Resizing
     end
   end
 end
-
-

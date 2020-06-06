@@ -1,4 +1,4 @@
-require "test_helper"
+require 'test_helper'
 
 module Resizing
   class ConfigurationTest < Minitest::Test
@@ -8,7 +8,7 @@ module Resizing
         project_id: '098a2a0d-c387-4135-a071-1254d6d7e70a',
         secret_token: '4g1cshg2lq8j93ufhvqrpjswxmtjz12yhfvq6w79jpwi7cr7nnknoqgwzkwerbs6',
         open_timeout: 10,
-        response_timeout: 20,
+        response_timeout: 20
       }.freeze
     end
 
@@ -104,10 +104,10 @@ module Resizing
 
     def test_that_it_return_transformation_path
       data = [
-        {args: {w: 100}, path: 'w_100'},
-        {args: {h: 100}, path: 'h_100'},
-        {args: {f: 'webp'}, path: 'f_webp'},
-        {args: {c: 'fill'}, path: 'c_fill'},
+        { args: { w: 100 }, path: 'w_100' },
+        { args: { h: 100 }, path: 'h_100' },
+        { args: { f: 'webp' }, path: 'f_webp' },
+        { args: { c: 'fill' }, path: 'c_fill' }
       ]
       config = Resizing::Configuration.new @template
       data.each do |v|
@@ -120,7 +120,7 @@ module Resizing
 
     def test_that_it_generated_identifier_path
       config = Resizing::Configuration.new @template
-      assert_match %r(/projects/#{config.project_id}/upload/images/[\da-z-]), config.generate_identifier
+      assert_match %r{/projects/#{config.project_id}/upload/images/[\da-z-]}, config.generate_identifier
     end
   end
 end

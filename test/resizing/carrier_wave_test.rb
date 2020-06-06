@@ -1,4 +1,4 @@
-require "test_helper"
+require 'test_helper'
 
 module Resizing
   class CarrierWaveTest < Minitest::Test
@@ -8,19 +8,18 @@ module Resizing
         project_id: '098a2a0d-c387-4135-a071-1254d6d7e70a',
         secret_token: '4g1cshg2lq8j93ufhvqrpjswxmtjz12yhfvq6w79jpwi7cr7nnknoqgwzkwerbs6',
         open_timeout: 10,
-        response_timeout: 20,
+        response_timeout: 20
       }
       Resizing.configure = @configuration_template
     end
 
-    def teardown
-    end
+    def teardown; end
 
     def test_picture_url_return_correct_value_and_when_model_reloaded
       VCR.use_cassette 'carrier_wave_test/save' do
         SecureRandom.stub :uuid, '28c49144-c00d-4cb5-8619-98ce95977b9c' do
           model = TestModel.new
-          file = File.open('test/data/images/sample1.jpg','r')
+          file = File.open('test/data/images/sample1.jpg', 'r')
           uploaded_file = ActionDispatch::Http::UploadedFile.new(
             filename: File.basename(file.path),
             type: 'image/jpeg',

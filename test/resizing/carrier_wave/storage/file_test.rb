@@ -1,4 +1,4 @@
-require "test_helper"
+require 'test_helper'
 
 module Resizing
   module CarrierWave
@@ -23,7 +23,6 @@ module Resizing
           MiniTest::Mock.expect(:cache_path)
         end
       end
-
     end
   end
 end
