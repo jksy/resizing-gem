@@ -30,6 +30,9 @@ Metrics/MethodLength:
   Exclude:
     - "test/**/*.rb"
 
+Style/Documentation:
+  Enabled: false
+
 # temporary
 Style/AsciiComments:
   Enabled: false

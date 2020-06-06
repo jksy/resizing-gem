@@ -29,7 +29,8 @@ module Resizing
       return nil unless read_column.present?
 
       transforms = [transform_string]
-      while version = args.pop
+
+      while (version = args.pop)
         transforms << versions[version].transform_string
       end
       "#{default_url}/#{transforms.join('/')}"
@@ -44,20 +45,8 @@ module Resizing
     end
 
     def transform_string
-      tranfrom_strings = []
-
       transforms = processors.map do |processor|
-        case processor.first
-        when :resize_to_fill, :resize_to_limit, :resize_to_fit
-          name = processor.first.to_s.gsub(/resize_to_/, '')
-          { c: name, w: processor.second.first, h: processor.second.second }
-        else
-          raise NotImplementedError, "#{processor.first} is not supported. #{processor.inspect}"
-        end.map do |key, value|
-          next nil if value.nil?
-
-          "#{key}_#{value}"
-        end.compact.join(',')
+        transform_string_from processor
       end
 
       transforms.join('/')
@@ -115,5 +104,23 @@ module Resizing
     def remove_versions!(*args)
       # NOP
     end
+
+    private
+
+    # rubocop:disable Metrics/AbcSize
+    def transform_string_from(processor)
+      case processor.first
+      when :resize_to_fill, :resize_to_limit, :resize_to_fit
+        name = processor.first.to_s.gsub(/resize_to_/, '')
+        { c: name, w: processor.second.first, h: processor.second.second }
+      else
+        raise NotImplementedError, "#{processor.first} is not supported. #{processor.inspect}"
+      end.map do |key, value|
+        next nil if value.nil?
+
+        "#{key}_#{value}"
+      end.compact.join(',')
+    end
+    # rubocop:enable Metrics/AbcSize
   end
 end
