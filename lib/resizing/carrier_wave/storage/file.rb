@@ -34,7 +34,7 @@ module Resizing
             return
           end
 
-          public_id = model.send :write_attribute, serialization_column, nil if public_id == resp['public_id']
+          _ = model.send :write_attribute, serialization_column, nil if public_id == resp['public_id']
 
           raise NotImplementedError, 'delete is not implemented'
 
@@ -78,22 +78,22 @@ module Resizing
 
         def store(new_file)
           if new_file.is_a?(self.class)
-            binding.pry
             # new_file.copy_to(path)
             raise NotImplementedError, 'new file is required duplicating'
-          else
-            @content_type ||= new_file.content_type
-            @response = Resizing.put(identifier, new_file.read, { content_type: @content_type })
-            @public_id = @response['public_id']
-
-            # force update column
-            # model_class
-            #   .where(primary_key_name => model.send(primary_key_name))
-            #   .update_all(serialization_column=>@public_id)
-
-            # save new value to model class
-            model.send :write_attribute, serialization_column, @public_id
           end
+
+          @content_type ||= new_file.content_type
+          @response = Resizing.put(identifier, new_file.read, { content_type: @content_type })
+          @public_id = @response['public_id']
+
+          # force update column
+          # model_class
+          #   .where(primary_key_name => model.send(primary_key_name))
+          #   .update_all(serialization_column=>@public_id)
+
+          # save new value to model class
+          model.send :write_attribute, serialization_column, @public_id
+
           true
         end
 
@@ -108,7 +108,8 @@ module Resizing
         end
 
         def filename(options = {})
-          return unless file_url = url(options)
+          file_url = url(options)
+          return unless file_url
 
           CGI.unescape(file_url.split('?').first).gsub(%r{.*/(.*?$)}, '\1')
         end
