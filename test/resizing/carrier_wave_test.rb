@@ -26,7 +26,7 @@ module Resizing
         SecureRandom.stub :uuid, '28c49144-c00d-4cb5-8619-98ce95977b9c' do
           model.remove_resizing_picture!
 
-          assert_equal(model.resizing_picture_url, nil)
+          assert_nil model.resizing_picture_url
         end
       end
     end

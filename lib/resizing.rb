@@ -12,8 +12,6 @@ module Resizing
   class Error < StandardError; end
   class ConfigurationError < Error; end
   class APIError < Error; end
-  class PostError < APIError; end
-  class DeleteError < APIError; end
 
   def self.configure
     raise ConfigurationError, 'Resizing.configure is not initialized' unless defined? @configure
