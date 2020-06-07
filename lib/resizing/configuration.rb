@@ -15,7 +15,7 @@ module Resizing
   #   Resizing::Client.new(configuration)
   #++
   class Configuration
-    attr_reader :host, :project_id, :secret_token, :open_timeout, :response_timeout
+    attr_reader :host, :project_id, :secret_token, :open_timeout, :response_timeout, :enable_mock
     DEFAULT_HOST = 'https://www.resizing.net'
     DEFAULT_OPEN_TIMEOUT = 2
     DEFAULT_RESPONSE_TIMEOUT = 10
@@ -94,6 +94,7 @@ module Resizing
       @secret_token = attr[:secret_token].dup.freeze
       @open_timeout = attr[:open_timeout] || DEFAULT_OPEN_TIMEOUT
       @response_timeout = attr[:response_timeout] || DEFAULT_RESPONSE_TIMEOUT
+      @enable_mock = attr[:enable_mock] || false
     end
   end
 end

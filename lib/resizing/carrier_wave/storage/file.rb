@@ -143,7 +143,11 @@ module Resizing
         ##
         # client of Resizing
         def client
-          @client ||= Resizing::Client.new
+          @client ||= if Resizing.configure.enable_mock
+                        Resizing::MockClient.new
+                      else
+                        Resizing::Client.new
+                      end
         end
 
         ##
