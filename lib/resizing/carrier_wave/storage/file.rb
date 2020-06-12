@@ -33,7 +33,7 @@ module Resizing
           separted = Resizing.separate_public_id(public_id)
           image_id = separted[:image_id]
           resp = client.delete(image_id)
-          if resp.nil? # 404 not found
+          if resp['error'] == 'ActiveRecord::RecordNotFound' # 404 not found
             model.send :write_attribute, serialization_column, nil
             return
           end
