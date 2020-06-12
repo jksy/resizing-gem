@@ -141,7 +141,7 @@ module Resizing
       when HTTP_STATUS_OK, HTTP_STATUS_CREATED
         JSON.parse(response.body)
       else
-        raise APIError, "invalid http status code #{resp.status}"
+        raise APIError, "invalid http status code #{response.status}"
       end
     end
   end
