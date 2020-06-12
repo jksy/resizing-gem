@@ -28,6 +28,7 @@ module Resizing
     # to use standard constants
     HTTP_STATUS_OK = 200
     HTTP_STATUS_CREATED = 201
+    HTTP_STATUS_NOT_FOUND = 404
 
     attr_reader :config
     def initialize(*attrs)
@@ -58,7 +59,7 @@ module Resizing
         request.headers['X-ResizingToken'] = config.generate_auth_header
       end
 
-      result = handle_response(response)
+      result = handle_create_response(response)
       result
     end
 
@@ -76,7 +77,7 @@ module Resizing
         request.headers['X-ResizingToken'] = config.generate_auth_header
       end
 
-      result = handle_response(response)
+      result = handle_create_response(response)
       result
     end
 
@@ -87,7 +88,7 @@ module Resizing
         request.headers['X-ResizingToken'] = config.generate_auth_header
       end
 
-      result = handle_response(response)
+      result = handle_delete_response(response)
       result
     end
 
@@ -134,11 +135,22 @@ module Resizing
       raise ArgumentError, "need options[:content_type] for #{options.inspect}" unless options[:content_type]
     end
 
-    def handle_response(response)
+    def handle_create_response(response)
       raise APIError, "no response is returned" if response.nil?
 
       case response.status
       when HTTP_STATUS_OK, HTTP_STATUS_CREATED
+        JSON.parse(response.body)
+      else
+        raise APIError, "invalid http status code #{response.status}"
+      end
+    end
+
+    def handle_delete_response(response)
+      raise APIError, "no response is returned" if response.nil?
+
+      case response.status
+      when HTTP_STATUS_OK, HTTP_STATUS_CREATED, HTTP_STATUS_NOT_FOUND
         JSON.parse(response.body)
       else
         raise APIError, "invalid http status code #{response.status}"
