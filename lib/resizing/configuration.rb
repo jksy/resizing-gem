@@ -16,7 +16,7 @@ module Resizing
   #++
   class Configuration
     attr_reader :host, :project_id, :secret_token, :open_timeout, :response_timeout, :enable_mock
-    DEFAULT_HOST = 'https://www.resizing.net'
+    DEFAULT_HOST = 'https://img.resizing.net'
     DEFAULT_OPEN_TIMEOUT = 2
     DEFAULT_RESPONSE_TIMEOUT = 10
 
