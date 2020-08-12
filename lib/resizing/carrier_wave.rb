@@ -109,12 +109,21 @@ module Resizing
 
     # rubocop:disable Metrics/AbcSize
     def transform_string_from(processor)
-      case processor.first
+      action = processor.first
+      value = processor.second
+
+      case action
       when :resize_to_fill, :resize_to_limit, :resize_to_fit
-        name = processor.first.to_s.gsub(/resize_to_/, '')
-        { c: name, w: processor.second.first, h: processor.second.second }
+        name = action.to_s.gsub(/resize_to_/, '')
+        { c: name, w: value.first, h: value.second }
+      when :transformation
+        result = {}
+        result[:q] = value[:quality] if value[:quality]
+        result[:f] = value[:fetch_format] if value[:fetch_format]
+        result[:f] = value[:format] if value[:format]
+        result
       else
-        raise NotImplementedError, "#{processor.first} is not supported. #{processor.inspect}"
+        raise NotImplementedError, "#{action} is not supported. #{processor.inspect}"
       end.map do |key, value|
         next nil if value.nil?
 
