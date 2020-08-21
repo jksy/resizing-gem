@@ -17,7 +17,12 @@ module Resizing
     private
 
     def load_yaml filename
-      YAML.load_file(filename)['http_interactions'].first['response']['body']
+      path = "#{library_root}/#{filename}"
+      YAML.load_file(path)['http_interactions'].first['response']['body']
+    end
+
+    def library_root
+      File.join(File.dirname(__FILE__), '..', '..')
     end
   end
 end
