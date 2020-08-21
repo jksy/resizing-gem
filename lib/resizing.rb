@@ -6,6 +6,7 @@ require 'json'
 
 module Resizing
   autoload :Client, 'resizing/client'
+  autoload :MockClient, 'resizing/mock_client'
   autoload :Configuration, 'resizing/configuration'
   autoload :CarrierWave, 'resizing/carrier_wave'
 
@@ -33,13 +34,11 @@ module Resizing
   end
 
   def self.post(file_or_binary, options)
-    client = Resizing::Client.new
-    client.post file_or_binary, options
+    self.client.post file_or_binary, options
   end
 
   def self.put(name, file_or_binary, options)
-    client = Resizing::Client.new
-    client.put name, file_or_binary, options
+    self.client.put name, file_or_binary, options
   end
 
   # TODO: refactoring
@@ -56,5 +55,13 @@ module Resizing
 
   def self.separate_public_id public_id
     public_id.match('/projects/(?<project_id>[0-9a-f-]+)/upload/images/(?<image_id>[0-9a-f-]+)(/v(?<version>[^/]+))?')
+  end
+
+  def self.client
+    if self.configure.enable_mock
+      Resizing::MockClient.new
+    else
+      Resizing::Client.new
+    end
   end
 end
