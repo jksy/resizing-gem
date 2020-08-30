@@ -112,6 +112,10 @@ module Resizing
       action = processor.first
       value = processor.second
 
+      if self.respond_to? action
+        return self.send(action, value)
+      end
+
       case action
       when :resize_to_fill, :resize_to_limit, :resize_to_fit
         name = action.to_s.gsub(/resize_to_/, '')
