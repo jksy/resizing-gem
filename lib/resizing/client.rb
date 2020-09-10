@@ -11,7 +11,7 @@ module Resizing
   #   }
   #   client = Resizing::Client.new(options)
   #   file = File.open('sample.jpg', 'r')
-  #   response = client.post(file)
+  #   response = client.post(file, content_type: 'image/jpeg')
   #   {
   #     "id"=>"fde443bb-0b29-4be2-a04e-2da8f19716ac",
   #     "project_id"=>"098a2a0d-0000-0000-0000-000000000000",
