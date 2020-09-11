@@ -19,7 +19,7 @@ module Resizing
 
     def teardown; end
 
-    def test_xxxx
+    def test_remove_resizing_picture
       model = prepare_model
 
       VCR.use_cassette 'carrier_wave_test/remove_resizing_picture' do
@@ -27,6 +27,16 @@ module Resizing
           model.remove_resizing_picture!
 
           assert_nil model.resizing_picture_url
+        end
+      end
+    end
+
+    def test_do_not_raise_if_empty_column_is_removed
+      model = prepare_model
+
+      VCR.use_cassette 'carrier_wave_test/remove_resizing_picture' do
+        SecureRandom.stub :uuid, '28c49144-c00d-4cb5-8619-98ce95977b9c' do
+          model.resizing_picture.remove!
         end
       end
     end
