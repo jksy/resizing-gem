@@ -28,6 +28,8 @@ module Resizing
 
         def delete
           public_id = model.send :read_attribute, serialization_column
+          return if public_id.nil? # do nothing
+
           # TODO:
           # refactoring
           separted = Resizing.separate_public_id(public_id)
