@@ -86,7 +86,13 @@ module Resizing
             raise NotImplementedError, 'new file is required duplicating'
           end
 
-          @content_type ||= new_file.content_type
+          if new_file.respond_to? :content_type
+            @content_type ||= new_file.content_type
+          else
+            # guess content-type from extension
+            @content_type ||= MIME::Types.type_for(new_file.path).first.content_type
+          end
+
           @response = Resizing.put(identifier, new_file.read, { content_type: @content_type })
           @public_id = @response['public_id']
 
