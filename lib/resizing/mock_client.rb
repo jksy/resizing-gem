@@ -3,15 +3,18 @@
 module Resizing
   class MockClient
     def post(file_or_binary, options = {})
-      load_yaml('test/vcr/client/post.yml')
+      r = load_yaml('test/vcr/client/post.yml')
+      JSON.parse(r['string'])
     end
 
     def put(name, file_or_binary, options)
-      load_yaml('test/vcr/client/put.yml')
+      r = load_yaml('test/vcr/client/put.yml')
+      JSON.parse(r['string'])
     end
 
     def delete(name)
-      load_yaml('test/vcr/client/delete.yml')
+      r = load_yaml('test/vcr/client/delete.yml')
+      JSON.parse(r['string'])
     end
 
     private
