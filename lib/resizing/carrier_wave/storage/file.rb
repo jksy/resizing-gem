@@ -40,7 +40,7 @@ module Resizing
             return
           end
 
-          if public_id == resp['public_id']
+          if image_id == resp['id']
             model.send :write_attribute, serialization_column, nil
             return
           end
