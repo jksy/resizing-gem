@@ -9,12 +9,20 @@ module Resizing
 
     def put(name, file_or_binary, options)
       r = load_yaml('test/vcr/client/put.yml')
-      JSON.parse(r['string'])
+      result = JSON.parse(r['string'])
+      # replace name and public_id by name argument
+      result['id'] = name
+      result['public_id'].gsub!(/AWEaewfAreaweFAFASfwe/, name)
+      result
     end
 
     def delete(name)
       r = load_yaml('test/vcr/client/delete.yml')
-      JSON.parse(r['string'])
+      result = JSON.parse(r['string'])
+      # replace name and public_id by name argument
+      result['id'] = name
+      result['public_id'].gsub!(/28c49144-c00d-4cb5-8619-98ce95977b9c/, name)
+      result
     end
 
     private
