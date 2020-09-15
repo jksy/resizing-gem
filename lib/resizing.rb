@@ -54,7 +54,7 @@ module Resizing
   end
 
   def self.separate_public_id public_id
-    public_id.match('/projects/(?<project_id>[0-9a-f-]+)/upload/images/(?<image_id>[0-9a-f-]+)(/v(?<version>[^/]+))?')
+    public_id.match('/projects/(?<project_id>[0-9a-f-]+)/upload/images/(?<image_id>[^/]+)(/v(?<version>[^/]+))?')
   end
 
   def self.client
