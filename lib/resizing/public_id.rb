@@ -20,6 +20,10 @@ module Resizing
       parsed[:version] if parsed
     end
 
+    def identifier
+      "/projects/#{project_id}/upload/images/#{image_id}"
+    end
+
     def to_s
       @public_id.to_s
     end

@@ -28,6 +28,11 @@ module Resizing
       assert_equal @version, public_id.version
     end
 
+    def test_expect_equal_identifier
+      public_id = Resizing::PublicId.new @public_id_as_string
+      assert_equal @public_id_as_string.gsub(/\/v.*$/, ''), public_id.identifier
+    end
+
     def test_expect_equal_public_id
       public_id = Resizing::PublicId.new @public_id_as_string
       assert_equal @public_id_as_string, public_id.to_s
