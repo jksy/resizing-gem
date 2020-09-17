@@ -9,8 +9,10 @@ module Resizing
         def initialize(uploader, identifier = nil)
           @uploader = uploader
           @content_type = nil
-          @identifier = identifier
+          @public_id = Resizing::PublicId.new identifier
         end
+
+        attr_reader :public_id
 
         def attributes
           file.attributes
@@ -24,23 +26,17 @@ module Resizing
           @content_type || file.try(:content_type)
         end
 
-        attr_writer :content_type
-
         def delete
-          public_id = model.send :read_attribute, serialization_column
-          return if public_id.nil? # do nothing
+          @public_id = Resizing::PublicId.new(model.send :read_attribute, serialization_column)
+          return if @public_id.empty? # do nothing
 
-          # TODO:
-          # refactoring
-          separted = Resizing.separate_public_id(public_id)
-          image_id = separted[:image_id]
-          resp = client.delete(image_id)
+          resp = client.delete(@public_id.image_id)
           if resp['error'] == 'ActiveRecord::RecordNotFound' # 404 not found
             model.send :write_attribute, serialization_column, nil unless model.destroyed?
             return
           end
 
-          if image_id == resp['id']
+          if @public_id.image_id == resp['id']
             model.send :write_attribute, serialization_column, nil unless model.destroyed?
             return
           end
@@ -92,9 +88,16 @@ module Resizing
             # guess content-type from extension
             @content_type ||= MIME::Types.type_for(new_file.path).first.content_type
           end
+          @public_id = PublicId.new(model.send :read_attribute, serialization_column)
 
-          @response = Resizing.put(identifier, new_file.read, { content_type: @content_type })
-          @public_id = @response['public_id']
+          image_id = if @public_id.empty?
+                       SecureRandom.uuid
+                     else
+                       @public_id.image_id
+                     end
+
+          @response = Resizing.put(image_id, new_file.read, { content_type: @content_type })
+          @public_id = Resizing::PublicId.new(@response['public_id'])
 
           # force update column
           # model_class
@@ -102,19 +105,9 @@ module Resizing
           #   .update_all(serialization_column=>@public_id)
 
           # save new value to model class
-          model.send :write_attribute, serialization_column, @public_id
+          model.send :write_attribute, serialization_column, @public_id.to_s
 
           true
-        end
-
-        attr_reader :public_id
-
-        def identifier
-          if public_id.present?
-            public_id
-          else
-            @identifier = SecureRandom.uuid
-          end
         end
 
         def filename(options = {})

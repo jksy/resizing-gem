@@ -9,7 +9,7 @@ module Resizing
         def store!(file)
           f = Resizing::CarrierWave::Storage::File.new(uploader)
           f.store(file)
-          @filename = f.public_id
+          @filename = f.public_id.to_s
           f
         end
 

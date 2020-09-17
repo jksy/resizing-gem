@@ -9,6 +9,7 @@ module Resizing
   autoload :MockClient, 'resizing/mock_client'
   autoload :Configuration, 'resizing/configuration'
   autoload :CarrierWave, 'resizing/carrier_wave'
+  autoload :PublicId, 'resizing/public_id'
 
   class Error < StandardError; end
   class ConfigurationError < Error; end
@@ -39,6 +40,10 @@ module Resizing
 
   def self.put(name, file_or_binary, options)
     self.client.put name, file_or_binary, options
+  end
+
+  def self.metadata(name, options)
+    self.client.metadata name, options
   end
 
   # TODO: refactoring

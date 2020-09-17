@@ -41,7 +41,7 @@ module Resizing
                 end
     end
 
-    def get(name)
+    def get(image_id)
       raise NotImplementedError
     end
 
@@ -63,10 +63,10 @@ module Resizing
       result
     end
 
-    def put(name, file_or_binary, options)
+    def put(image_id, file_or_binary, options)
       ensure_content_type(options)
 
-      url = build_put_url(name)
+      url = build_put_url(image_id)
 
       body = to_io(file_or_binary)
       params = {
@@ -81,8 +81,8 @@ module Resizing
       result
     end
 
-    def delete(name)
-      url = build_delete_url(name)
+    def delete(image_id)
+      url = build_delete_url(image_id)
 
       response = http_client.delete(url) do |request|
         request.headers['X-ResizingToken'] = config.generate_auth_header
@@ -92,22 +92,37 @@ module Resizing
       result
     end
 
+    def metadata(image_id, options = {})
+      url = build_metadata_url(image_id)
+
+      response = http_client.get(url) do |request|
+        request.headers['X-ResizingToken'] = config.generate_auth_header
+      end
+
+      result = handle_metadata_response(response)
+      result
+    end
+
     private
 
-    def build_get_url(name)
-      "#{config.host}/projects/#{config.project_id}/upload/images/#{name}"
+    def build_get_url(image_id)
+      "#{config.host}/projects/#{config.project_id}/upload/images/#{image_id}"
     end
 
     def build_post_url
       "#{config.host}/projects/#{config.project_id}/upload/images/"
     end
 
-    def build_put_url(name)
-      "#{config.host}/projects/#{config.project_id}/upload/images/#{name}"
+    def build_put_url(image_id)
+      "#{config.host}/projects/#{config.project_id}/upload/images/#{image_id}"
     end
 
-    def build_delete_url(name)
-      "#{config.host}/projects/#{config.project_id}/upload/images/#{name}"
+    def build_delete_url(image_id)
+      "#{config.host}/projects/#{config.project_id}/upload/images/#{image_id}"
+    end
+
+    def build_metadata_url(image_id)
+      "#{config.host}/projects/#{config.project_id}/upload/images/#{image_id}/metadata"
     end
 
     def http_client
@@ -150,7 +165,18 @@ module Resizing
       raise APIError, "no response is returned" if response.nil?
 
       case response.status
-      when HTTP_STATUS_OK, HTTP_STATUS_CREATED, HTTP_STATUS_NOT_FOUND
+      when HTTP_STATUS_OK, HTTP_STATUS_NOT_FOUND
+        JSON.parse(response.body)
+      else
+        raise APIError, "invalid http status code #{response.status}"
+      end
+    end
+
+    def handle_metadata_response(response)
+      raise APIError, "no response is returned" if response.nil?
+
+      case response.status
+      when HTTP_STATUS_OK, HTTP_STATUS_NOT_FOUND
         JSON.parse(response.body)
       else
         raise APIError, "invalid http status code #{response.status}"
