@@ -1,0 +1,49 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/bfdaf2b3-7ec5-41f4-9caa-d53247dd9666/metadata
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - Faraday v1.0.1
+      X-ResizingToken:
+      - v1,1600356576,4ba7fd9315775f99e73b109edcc72d79fd629d2335e3609ddd83d178936f6ba7
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      x-frame-options:
+      - SAMEORIGIN
+      x-xss-protection:
+      - 1; mode=block
+      x-content-type-options:
+      - nosniff
+      x-download-options:
+      - noopen
+      x-permitted-cross-domain-policies:
+      - none
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      content-type:
+      - application/json; charset=utf-8
+      etag:
+      - W/"893e75186d2d771d47456ad4bb2394ae"
+      cache-control:
+      - max-age=0, private, must-revalidate
+      x-request-id:
+      - 18d0bbe0-110b-49fb-b055-75b93532735a
+      x-runtime:
+      - '0.649316'
+      connection:
+      - close
+      transfer-encoding:
+      - chunked
+    body:
+      encoding: UTF-8
+      string: '{"id":"bfdaf2b3-7ec5-41f4-9caa-d53247dd9666","project_id":"098a2a0d-c387-4135-a071-1254d6d7e70a","content_type":"image/jpeg","latest_version_id":"AyWaxx96gLaAzB9Bq.VbX1_pxfXJ0Jcq","latest_etag":"\"190143614e6c342637584f46f18f8c58\"","created_at":"2020-05-29T03:22:55.241Z","updated_at":"2020-05-29T03:22:55.241Z","public_id":"/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/bfdaf2b3-7ec5-41f4-9caa-d53247dd9666/v6Ew3HmDAYfb3NMRdLxR45i_gXMbLlGyi", "height": 200, "width": 200}'
+  recorded_at: Fri, 29 May 2020 03:22:55 GMT
+recorded_with: VCR 6.0.0

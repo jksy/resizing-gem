@@ -38,7 +38,7 @@ module Resizing
       Resizing.configure = @configuration_template
 
       client = Resizing::Client.new
-      VCR.use_cassette 'client/post' do
+      VCR.use_cassette 'client/post', record: :once  do
         f = File.open('test/data/images/sample1.jpg', 'r')
         r = client.post(f, content_type: 'image/jpeg')
         assert_equal(r['id'], 'bfdaf2b3-7ec5-41f4-9caa-d53247dd9666')
@@ -56,7 +56,7 @@ module Resizing
       Resizing.configure = @configuration_template
 
       client = Resizing::Client.new
-      VCR.use_cassette 'client/put' do
+      VCR.use_cassette 'client/put', record: :once do
         f = File.open('test/data/images/sample1.jpg', 'r')
         name = 'AWEaewfAreaweFAFASfwe'
         r = client.put(name, f, content_type: 'image/jpeg')
@@ -77,24 +77,26 @@ module Resizing
     def test_get_the_metadata
       # TODO
 
-      # Resizing.configure = @configuration_template
+      Resizing.configure = @configuration_template
 
-      # client = Resizing::Client.new
-      # VCR.use_cassette 'client/metadata' do
-      #   name = 'AWEaewfAreaweFAFASfwe'
-      #   r = client.metadata(name)
-      #   assert_equal(r['id'], name)
-      #   assert_equal(r['project_id'], Resizing.configure.project_id)
-      #   assert_equal(r['content_type'], 'image/jpeg')
-      #   assert(!r['latest_version_id'].nil?)
-      #   assert(!r['latest_etag'].nil?)
-      #   assert(!r['created_at'].nil?)
-      #   assert(!r['updated_at'].nil?)
-      #   assert_equal(
-      #     r['public_id'],
-      #     "/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/#{name}/v6Ew3HmDAYfb3NMRdLxR45i_gXMbLlGyi"
-      #   )
-      # end
+      client = Resizing::Client.new
+      VCR.use_cassette 'client/metadata', record: :once do
+        name = 'bfdaf2b3-7ec5-41f4-9caa-d53247dd9666'
+        r = client.metadata(name)
+        assert_equal(r['id'], name)
+        assert_equal(r['project_id'], Resizing.configure.project_id)
+        assert_equal(r['content_type'], 'image/jpeg')
+        assert(!r['latest_version_id'].nil?)
+        assert(!r['latest_etag'].nil?)
+        assert(!r['created_at'].nil?)
+        assert(!r['updated_at'].nil?)
+        assert(!r['height'].nil?)
+        assert(!r['width'].nil?)
+        assert_equal(
+          r['public_id'],
+          "/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/#{name}/v6Ew3HmDAYfb3NMRdLxR45i_gXMbLlGyi"
+        )
+      end
     end
   end
 end
