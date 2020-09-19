@@ -42,6 +42,10 @@ module Resizing
     self.client.put name, file_or_binary, options
   end
 
+  def self.delete(name)
+    self.client.delete name
+  end
+
   def self.metadata(name, options)
     self.client.metadata name, options
   end

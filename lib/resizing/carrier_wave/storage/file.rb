@@ -110,11 +110,9 @@ module Resizing
           true
         end
 
-        def filename(options = {})
-          file_url = url(options)
-          return unless file_url
-
-          CGI.unescape(file_url.split('?').first).gsub(%r{.*/(.*?$)}, '\1')
+        def name(options = {})
+          @public_id = PublicId.new(model.send :read_attribute, serialization_column)
+          CGI.unescape(@public_id.filename)
         end
 
         # def copy_to(new_path)
