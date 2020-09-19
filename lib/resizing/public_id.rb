@@ -2,6 +2,7 @@ module Resizing
   class PublicId
     def initialize public_id
       @public_id = public_id
+      parsed
     end
 
     def empty?
@@ -20,6 +21,11 @@ module Resizing
       parsed[:version] if parsed
     end
 
+    # temporary
+    def filename
+      image_id
+    end
+
     def identifier
       "/projects/#{project_id}/upload/images/#{image_id}"
     end
@@ -32,7 +38,11 @@ module Resizing
 
     def parsed
       return nil if @public_id.nil?
-      @parsed ||= Resizing.separate_public_id(@public_id)
+      unless defined? @parsed
+        @parsed = Resizing.separate_public_id(@public_id)
+        raise "type error #{@public_id}" if @parsed == nil
+      end
+      @parsed
     end
 
     private

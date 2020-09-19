@@ -13,6 +13,13 @@ module Resizing
           f
         end
 
+        def remove!(file)
+          f = Resizing::CarrierWave::Storage::File.new(uploader)
+          f.delete(file)
+          @filename = f.public_id.to_s
+          f
+        end
+
         def retrieve!(identifier)
           Resizing::CarrierWave::Storage::File.new(uploader, identifier)
         end
