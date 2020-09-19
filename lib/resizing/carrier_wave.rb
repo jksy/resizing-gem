@@ -37,11 +37,11 @@ module Resizing
     end
 
     def read_column
-      model.read_attribute(mounted_as)
+      model.read_attribute(serialization_column)
     end
 
     def default_url
-      "#{Resizing.configure.host}#{model.read_attribute(mounted_as)}"
+      "#{Resizing.configure.host}#{model.read_attribute(serialization_column)}"
     end
 
     def transform_string
@@ -86,6 +86,10 @@ module Resizing
     def store!
       # DO NOTHING
       super
+    end
+
+    def serialization_column
+      model.send(:_mounter, mounted_as).send(:serialization_column)
     end
 
     module ClassMethods
