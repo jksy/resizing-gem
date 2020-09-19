@@ -10,9 +10,10 @@ module Resizing
     def put(name, file_or_binary, options)
       r = load_yaml('test/vcr/client/put.yml')
       result = JSON.parse(r['string'])
-      # replace name and public_id by name argument
+      # replace name, public_id and version by name argument
       result['id'] = name
       result['public_id'].gsub!(/AWEaewfAreaweFAFASfwe/, name)
+      result['public_id'].gsub!(/v6Ew3HmDAYfb3NMRdLxR45i_gXMbLlGyi/, "v#{Time.now.to_f}")
       result
     end
 
