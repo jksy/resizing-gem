@@ -79,7 +79,7 @@ module Resizing
       # save to resizing directly
       # @cache_id = file.public_id
 
-      @filename = file.public_id
+      @filename = file.public_id.to_s
       @file = file
     end
 
