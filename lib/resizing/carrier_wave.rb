@@ -83,6 +83,10 @@ module Resizing
       @file = file
     end
 
+    def filename
+      read_column
+    end
+
     def store!
       # DO NOTHING
       super
