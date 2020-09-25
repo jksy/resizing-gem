@@ -91,7 +91,7 @@ module Resizing
           @public_id = PublicId.new(model.send :read_attribute, serialization_column)
 
           image_id = if @public_id.empty?
-                       SecureRandom.uuid
+                       Resizing.configure.generate_image_id
                      else
                        @public_id.image_id
                      end

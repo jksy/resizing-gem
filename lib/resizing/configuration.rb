@@ -69,9 +69,11 @@ module Resizing
     # たぶんここにおくものではない
     # もしくはキャッシュしない
     def generate_identifier
-      @image_id ||= ::SecureRandom.uuid
+      "/projects/#{project_id}/upload/images/#{generate_image_id}"
+    end
 
-      "/projects/#{project_id}/upload/images/#{@image_id}"
+    def generate_image_id
+      ::SecureRandom.uuid
     end
 
     def ==(other)

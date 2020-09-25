@@ -25,6 +25,12 @@ module Resizing
       base.extend ClassMethods
     end
 
+    def initialize(*args)
+      @requested_format = nil
+      @default_format = nil
+      super
+    end
+
     def url(*args)
       return nil unless read_column.present?
 
@@ -96,9 +102,6 @@ module Resizing
       model.send(:_mounter, mounted_as).send(:serialization_column)
     end
 
-    module ClassMethods
-    end
-
     # store_versions! is called after store!
     # Disable on Resizing, because transform the image when browser fetch the image URL
     # https://github.com/carrierwaveuploader/carrierwave/blob/28190e99299a6131c0424a5d10205f471e39f3cd/lib/carrierwave/uploader/versions.rb#L18
@@ -125,6 +128,9 @@ module Resizing
 
     def format
       requested_format || default_format
+    end
+
+    module ClassMethods
     end
 
     private
