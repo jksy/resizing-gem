@@ -32,10 +32,13 @@ ActiveRecord::Base.establish_connection(
 
 ActiveRecord::Schema.define do
   self.verbose = false
-  connection.execute 'drop table if exists test_models'
 
-  create_table :test_models do |t|
-    t.string :resizing_picture, null: true, default: nil
+  %i(test_models test_jpg_models).each do |model_name|
+    connection.execute "drop table if exists #{model_name}"
+
+    create_table model_name do |t|
+      t.string :resizing_picture, null: true, default: nil
+    end
   end
 end
 
@@ -45,8 +48,25 @@ class ResizingUploader < CarrierWave::Uploader::Base
   process resize_to_limit: [1000]
 end
 
+class ResizingJPGUploader < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  process resize_to_limit: [1000]
+
+  # override Resizing::CarrierWave#default_format
+  def default_format
+    'jpg'
+  end
+end
+
 class TestModel < ::ActiveRecord::Base
   extend CarrierWave::Mount
 
   mount_uploader :resizing_picture, ResizingUploader
+end
+
+class TestJPGModel < ::ActiveRecord::Base
+  extend CarrierWave::Mount
+
+  mount_uploader :resizing_picture, ResizingJPGUploader
 end
