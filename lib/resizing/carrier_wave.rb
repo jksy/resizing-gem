@@ -34,11 +34,12 @@ module Resizing
     def url(*args)
       return nil unless read_column.present?
 
-      transforms = [transform_string]
+      transforms = args.map do |version|
+        version = version.intern
+        raise "No version is found: #{version}, #{versions.keys} are exists." unless versions.has_key? version
+        versions[version].transform_string
+      end.compact
 
-      while (version = args.pop)
-        transforms << versions[version].transform_string
-      end
       "#{default_url}/#{transforms.join('/')}"
     end
 

@@ -45,6 +45,10 @@ end
 class ResizingUploader < CarrierWave::Uploader::Base
   include Resizing::CarrierWave
 
+  version :small do
+    process resize_to_fill: [40, 40]
+  end
+
   process resize_to_limit: [1000]
 end
 

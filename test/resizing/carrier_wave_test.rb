@@ -45,10 +45,16 @@ module Resizing
     def test_picture_url_return_correct_value_and_when_model_reloaded
       model = prepare_model TestModel
       model.save!
-      assert_equal(expect_url, model.resizing_picture_url)
+      assert_equal("#{expect_url}/", model.resizing_picture_url)
 
       model.reload
-      assert_equal(expect_url, model.resizing_picture_url)
+      assert_equal("#{expect_url}/", model.resizing_picture_url)
+    end
+
+    def test_picture_url_return_with_transform_strings
+      model = prepare_model TestModel
+      model.save!
+      assert_equal("#{expect_url}/c_fill,w_40,h_40", model.resizing_picture_url(:small))
     end
 
     def test_format_method_is_callable
@@ -66,7 +72,7 @@ module Resizing
 
     def expect_url
       'http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/'+
-        'upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850__tqNsnoGWWUibtIBZ5NgjV45M/c_limit,w_1000'
+        'upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850__tqNsnoGWWUibtIBZ5NgjV45M'
     end
 
     def prepare_model model
