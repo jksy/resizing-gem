@@ -34,12 +34,12 @@ module Resizing
           image_id = separted[:image_id]
           resp = client.delete(image_id)
           if resp['error'] == 'ActiveRecord::RecordNotFound' # 404 not found
-            model.send :write_attribute, serialization_column, nil
+            model.send :write_attribute, serialization_column, nil unless model.destroyed?
             return
           end
 
           if public_id == resp['public_id']
-            model.send :write_attribute, serialization_column, nil
+            model.send :write_attribute, serialization_column, nil unless model.destroyed?
             return
           end
 
