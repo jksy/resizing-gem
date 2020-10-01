@@ -49,6 +49,7 @@ module Resizing
         assert(!r['created_at'].nil?)
         assert(!r['updated_at'].nil?)
         assert_equal(r['public_id'], '/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/bfdaf2b3-7ec5-41f4-9caa-d53247dd9666/vAyWaxx96gLaAzB9Bq.VbX1_pxfXJ0Jcq')
+        assert_equal(r['filename'], 'sample1.jpg')
       end
     end
 
