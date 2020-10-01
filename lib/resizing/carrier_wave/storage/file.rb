@@ -96,7 +96,12 @@ module Resizing
                        @public_id.image_id
                      end
 
-          @response = Resizing.put(image_id, new_file.read, { content_type: @content_type, filename: new_file.original_filename })
+          original_filename = new_file.try(:original_filename) || new_file.try(:filename) || new_file.try(:path)
+          if original_filename.present?
+            original_filename = ::File.basename(original_filename)
+          end
+
+          @response = Resizing.put(image_id, new_file.read, { content_type: @content_type, filename: original_filename })
           @public_id = Resizing::PublicId.new(@response['public_id'])
 
           # force update column
