@@ -50,9 +50,11 @@ module Resizing
 
       url = build_post_url
 
+      filename = gather_filename file_or_binary, options
+
       body = to_io(file_or_binary)
       params = {
-        image: Faraday::UploadIO.new(body, options[:content_type])
+        image: Faraday::UploadIO.new(body, options[:content_type], filename)
       }
 
       response = http_client.post(url, params) do |request|
@@ -68,9 +70,11 @@ module Resizing
 
       url = build_put_url(image_id)
 
+      filename = gather_filename file_or_binary, options
+
       body = to_io(file_or_binary)
       params = {
-        image: Faraday::UploadIO.new(body, options[:content_type])
+        image: Faraday::UploadIO.new(body, options[:content_type], filename)
       }
 
       response = http_client.put(url, params) do |request|
@@ -111,6 +115,11 @@ module Resizing
 
     def build_post_url
       "#{config.host}/projects/#{config.project_id}/upload/images/"
+    end
+
+    def gather_filename file_or_binary, options
+      filename = options[:filename]
+      filename ||= file_or_binary.respond_to?(:path) ? File.basename(file_or_binary.path) : nil
     end
 
     def build_put_url(image_id)

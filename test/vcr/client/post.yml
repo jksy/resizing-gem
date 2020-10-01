@@ -49,6 +49,6 @@ http_interactions:
       - chunked
     body:
       encoding: UTF-8
-      string: '{"id":"bfdaf2b3-7ec5-41f4-9caa-d53247dd9666","project_id":"098a2a0d-c387-4135-a071-1254d6d7e70a","content_type":"image/jpeg","latest_version_id":"AyWaxx96gLaAzB9Bq.VbX1_pxfXJ0Jcq","latest_etag":"\"190143614e6c342637584f46f18f8c58\"","created_at":"2020-05-29T03:22:55.241Z","updated_at":"2020-05-29T03:22:55.241Z","public_id":"/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/bfdaf2b3-7ec5-41f4-9caa-d53247dd9666/vAyWaxx96gLaAzB9Bq.VbX1_pxfXJ0Jcq"}'
+      string: '{"id":"bfdaf2b3-7ec5-41f4-9caa-d53247dd9666","project_id":"098a2a0d-c387-4135-a071-1254d6d7e70a","content_type":"image/jpeg","latest_version_id":"AyWaxx96gLaAzB9Bq.VbX1_pxfXJ0Jcq","latest_etag":"\"190143614e6c342637584f46f18f8c58\"","created_at":"2020-05-29T03:22:55.241Z","updated_at":"2020-05-29T03:22:55.241Z","public_id":"/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/bfdaf2b3-7ec5-41f4-9caa-d53247dd9666/vAyWaxx96gLaAzB9Bq.VbX1_pxfXJ0Jcq","filename":"sample1.jpg"}'
   recorded_at: Fri, 29 May 2020 03:22:55 GMT
 recorded_with: VCR 6.0.0
