@@ -70,7 +70,7 @@ module Resizing
       assert_equal('jpg', model.resizing_picture.format)
     end
 
-    def test_url_is_return_default_url
+    def test_url_is_return_default_url_as_nil
       model = TestModel.new
       model.save!
       assert_nil model.resizing_picture_url
@@ -80,6 +80,12 @@ module Resizing
       model = TestModelWithDefaultURL.new
       model.save!
       assert_equal('http://example.com/test.jpg', model.resizing_picture_url)
+    end
+
+    def test_is_successful
+      model = prepare_model_with_tempfile TestModel
+      model.save!
+      # assert_equal('http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850__tqNsnoGWWUibtIBZ5NgjV45M/', model.resizing_picture_url)
     end
 
     def expect_url
@@ -99,6 +105,17 @@ module Resizing
           )
 
           model.resizing_picture = uploaded_file
+          return model
+        end
+      end
+    end
+
+    def prepare_model_with_tempfile model
+      VCR.use_cassette 'carrier_wave_test/save', record: :once do
+        SecureRandom.stub :uuid, '28c49144-c00d-4cb5-8619-98ce95977b9c' do
+          model = model.new
+          file = File.open('test/data/images/sample1.jpg', 'r')
+          model.resizing_picture = file
           return model
         end
       end
