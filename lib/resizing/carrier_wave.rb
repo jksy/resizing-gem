@@ -32,7 +32,7 @@ module Resizing
     end
 
     def url(*args)
-      return nil unless read_column.present?
+      return default_url unless read_column.present?
 
       transforms = args.map do |version|
         version = version.intern
@@ -40,15 +40,20 @@ module Resizing
         versions[version].transform_string
       end.compact
 
-      "#{default_url}/#{transforms.join('/')}"
+      "#{build_url}/#{transforms.join('/')}"
     end
 
     def read_column
       model.read_attribute(serialization_column)
     end
 
-    def default_url
+    def build_url
       "#{Resizing.configure.host}#{model.read_attribute(serialization_column)}"
+    end
+
+    # need override this. if you want to return some url when target_column is nil
+    def default_url
+      nil
     end
 
     def transform_string
