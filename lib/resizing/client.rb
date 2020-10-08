@@ -50,12 +50,8 @@ module Resizing
 
       url = build_post_url
 
-      filename = gather_filename file_or_binary, options
-
-      body = to_io(file_or_binary)
-      params = {
-        image: Faraday::UploadIO.new(body, options[:content_type], filename)
-      }
+      params = { image: build_upload_io!(file_or_binary, options), content_type: options.delete(:content_type) }
+      params.merge!(options: options.to_h)
 
       response = http_client.post(url, params) do |request|
         request.headers['X-ResizingToken'] = config.generate_auth_header
@@ -65,17 +61,13 @@ module Resizing
       result
     end
 
-    def put(image_id, file_or_binary, options)
+    def put(image_id, file_or_binary, options = {})
       ensure_content_type(options)
 
       url = build_put_url(image_id)
 
-      filename = gather_filename file_or_binary, options
-
-      body = to_io(file_or_binary)
-      params = {
-        image: Faraday::UploadIO.new(body, options[:content_type], filename)
-      }
+      params = { image: build_upload_io!(file_or_binary, options) }
+      params.merge!(options: options.to_h)
 
       response = http_client.put(url, params) do |request|
         request.headers['X-ResizingToken'] = config.generate_auth_header
@@ -109,6 +101,12 @@ module Resizing
 
     private
 
+    def build_upload_io! file_or_binary, options
+      filename = gather_filename!(file_or_binary, options)
+      body = to_io(file_or_binary)
+      Faraday::UploadIO.new(body, options[:content_type], filename)
+    end
+
     def build_get_url(image_id)
       "#{config.host}/projects/#{config.project_id}/upload/images/#{image_id}"
     end
@@ -117,8 +115,8 @@ module Resizing
       "#{config.host}/projects/#{config.project_id}/upload/images/"
     end
 
-    def gather_filename file_or_binary, options
-      filename = options[:filename]
+    def gather_filename! file_or_binary, options
+      filename = options.delete(:filename)
       filename ||= file_or_binary.respond_to?(:path) ? File.basename(file_or_binary.path) : nil
     end
 

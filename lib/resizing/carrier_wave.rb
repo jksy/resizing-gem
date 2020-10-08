@@ -25,12 +25,6 @@ module Resizing
       base.extend ClassMethods
     end
 
-    def initialize(*args)
-      @requested_format = nil
-      @default_format = nil
-      super
-    end
-
     def url(*args)
       return default_url unless read_column.present?
 
@@ -122,18 +116,9 @@ module Resizing
       # NOP
     end
 
-    def requested_format
-      # TODO
-      # The request with uploading format parameter is not working on the Resizing until 2020/09/25
-      @requested_format
-    end
-
-    def default_format
-      @default_format
-    end
-
+    # format will return filetype as like 'jpg', 'png', 'webp'...
     def format
-      requested_format || default_format
+      nil
     end
 
     module ClassMethods

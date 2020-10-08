@@ -58,10 +58,11 @@ class ResizingJPGUploader < CarrierWave::Uploader::Base
   process resize_to_limit: [1000]
 
   # override Resizing::CarrierWave#default_format
-  def default_format
+  def format
     'jpg'
   end
 
+  # return default url if url is nil
   def default_url
     'http://example.com/test.jpg'
   end
