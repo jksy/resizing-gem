@@ -8,6 +8,7 @@ module Resizing
 
         def initialize(uploader, identifier = nil)
           @uploader = uploader
+          @file = nil
           @content_type = nil
           @public_id = Resizing::PublicId.new identifier
         end
@@ -76,6 +77,11 @@ module Resizing
           !!file
         end
 
+        def current_path
+          @current_path = model.send :read_attribute, serialization_column
+        end
+        alias path current_path
+
         def store(new_file)
           if new_file.is_a?(self.class)
             # new_file.copy_to(path)
@@ -88,20 +94,13 @@ module Resizing
             # guess content-type from extension
             @content_type ||= MIME::Types.type_for(new_file.path).first.content_type
           end
-          @public_id = PublicId.new(model.send :read_attribute, serialization_column)
-
-          image_id = if @public_id.empty?
-                       Resizing.configure.generate_image_id
-                     else
-                       @public_id.image_id
-                     end
 
           original_filename = new_file.try(:original_filename) || new_file.try(:filename) || new_file.try(:path)
           if original_filename.present?
             original_filename = ::File.basename(original_filename)
           end
 
-          @response = Resizing.put(image_id, new_file.read, { content_type: @content_type, filename: original_filename })
+          @response = Resizing.post(new_file.read, { content_type: @content_type, filename: original_filename })
           @public_id = Resizing::PublicId.new(@response['public_id'])
 
           # force update column
