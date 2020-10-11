@@ -42,7 +42,7 @@ module Resizing
     end
 
     def library_root
-      File.join(File.dirname(__FILE__), '..', '..')
+      @library_root ||= File.expand_path('../../../', __FILE__)
     end
   end
 end
