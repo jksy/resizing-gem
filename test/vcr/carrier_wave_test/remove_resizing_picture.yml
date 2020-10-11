@@ -2,15 +2,15 @@
 http_interactions:
 - request:
     method: delete
-    uri: http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c
+    uri: http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d
     body:
       encoding: US-ASCII
       string: ''
     headers:
       User-Agent:
-      - Faraday v0.17.3
+      - Faraday v1.0.1
       X-ResizingToken:
-      - v1,1591454987,26251b81d10dc468c76b9906a44a637f84b54ccbf2f98878bd23710a4181f71d
+      - v1,1602392307,45bb5ad3fb61cb6ccbdc7b714d8d4248f26e5f6c25411a56d52bba8ce5c9f59f
   response:
     status:
       code: 200
@@ -31,19 +31,17 @@ http_interactions:
       content-type:
       - application/json; charset=utf-8
       etag:
-      - W/"89d1778a76ea7f57a632f0d6ca3ed7fb"
+      - W/"5580ed982eece80c6e2869ae4db34c11"
       cache-control:
       - max-age=0, private, must-revalidate
       x-request-id:
-      - 8f351674-39a5-4ab1-9800-af6f7ae60ccc
+      - e058f420-5694-4006-9a40-bbc1239e9573
       x-runtime:
-      - '0.680150'
-      connection:
-      - close
+      - '0.118501'
       transfer-encoding:
       - chunked
     body:
       encoding: UTF-8
-      string: '{"id":"28c49144-c00d-4cb5-8619-98ce95977b9c","project_id":"098a2a0d-c387-4135-a071-1254d6d7e70a","content_type":"image/jpeg","latest_version_id":"1Id850__tqNsnoGWWUibtIBZ5NgjV45M","latest_etag":"\"190143614e6c342637584f46f18f8c58\"","created_at":"2020-05-29T18:05:40.507Z","updated_at":"2020-06-06T14:49:48.099Z","public_id":"/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850__tqNsnoGWWUibtIBZ5NgjV45M"}'
-  recorded_at: Sat, 06 Jun 2020 14:49:48 GMT
+      string: '{"id":"14ea7aac-a194-4330-931f-6b562aec413d","project_id":"e06e710d-f026-4dcf-b2c0-eab0de8bb83f","content_type":"image/jpeg","latest_version_id":"_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e","latest_etag":"\"5766f95a7f28e6a53dd6fd179bf03a32\"","size":848590,"created_at":"2020-10-11T04:56:48.340Z","updated_at":"2020-10-11T04:58:28.056Z","filename":"sample1.jpg","width":4032,"height":3016,"format":"jpeg","version":"_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e","public_id":"/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e"}'
+  recorded_at: Sun, 11 Oct 2020 04:58:28 GMT
 recorded_with: VCR 6.0.0

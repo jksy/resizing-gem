@@ -10,8 +10,8 @@ module Resizing
 
       @configuration_template = {
         host: 'http://192.168.56.101:5000',
-        project_id: '098a2a0d-c387-4135-a071-1254d6d7e70a',
-        secret_token: '4g1cshg2lq8j93ufhvqrpjswxmtjz12yhfvq6w79jpwi7cr7nnknoqgwzkwerbs6',
+        project_id: 'e06e710d-f026-4dcf-b2c0-eab0de8bb83f',
+        secret_token: 'ewbym2r1pk49x1d2lxdbiiavnqp25j2kh00hsg3koy0ppm620x5mhlmgl3rq5ci8',
         open_timeout: 10,
         response_timeout: 20
       }
@@ -89,12 +89,12 @@ module Resizing
     end
 
     def expect_url
-      'http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/'+
-        'upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850__tqNsnoGWWUibtIBZ5NgjV45M'
+      'http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/'+
+        'upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e'
     end
 
     def prepare_model model
-      VCR.use_cassette 'carrier_wave_test/save' do
+      VCR.use_cassette 'carrier_wave_test/save', record: :once do
         SecureRandom.stub :uuid, '28c49144-c00d-4cb5-8619-98ce95977b9c' do
           model = model.new
           file = File.open('test/data/images/sample1.jpg', 'r')
