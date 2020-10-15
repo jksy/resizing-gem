@@ -145,13 +145,13 @@ module Resizing
     end
 
     def to_io(data)
+      return data.to_io if data.respond_to? :to_io
+
       case data
-      when IO
-        data
       when String
         StringIO.new(data)
       else
-        raise ArgumentError, 'file_or_binary is required IO class or String'
+        raise ArgumentError, "file_or_binary is required IO class or String:#{data.class}"
       end
     end
 

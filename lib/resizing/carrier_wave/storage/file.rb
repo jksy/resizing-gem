@@ -100,7 +100,17 @@ module Resizing
             original_filename = ::File.basename(original_filename)
           end
 
-          @response = Resizing.post(new_file.read, { content_type: @content_type, filename: original_filename })
+          content = if new_file.respond_to?(:to_io)
+                      new_file.to_io.tap(&:rewind)
+                    elsif new_file.respond_to?(:read) && new_file.respond_to?(:rewind)
+                      new_file.read.tap do
+                        new_file.rewind
+                      end
+                    else
+                      new_file
+                    end
+
+          @response = Resizing.post(content, { content_type: @content_type, filename: original_filename })
           @public_id = Resizing::PublicId.new(@response['public_id'])
 
           # force update column
@@ -179,12 +189,6 @@ module Resizing
           parameters = local_file.method(:url).parameters
           parameters.count == 2 && parameters[1].include?(:options)
         end
-
-        # def store! sanitized_file
-        #   puts sanitized_file.inspect
-        #   client = Resizing::Client.new
-        #   @store_response = client.post(sanitized_file.to_file, {content_type: sanitized_file.content_type})
-        # end
 
         def retrieve!(identifier)
           raise NotImplementedError, "retrieve! #{identifier}"
