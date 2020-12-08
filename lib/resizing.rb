@@ -13,7 +13,9 @@ module Resizing
 
   class Error < StandardError; end
   class ConfigurationError < Error; end
-  class APIError < Error; end
+  class APIError < Error;
+    attr_accessor :decoded_body
+  end
 
   def self.configure
     raise ConfigurationError, 'Resizing.configure is not initialized' unless defined? @configure

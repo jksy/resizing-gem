@@ -63,6 +63,8 @@ module Resizing
 
       result = handle_create_response(response)
       result
+    rescue Faraday::TimeoutError => e
+      handle_timeout_error e
     end
 
     def put(image_id, file_or_binary, options)
@@ -83,6 +85,8 @@ module Resizing
 
       result = handle_create_response(response)
       result
+    rescue Faraday::TimeoutError => e
+      handle_timeout_error e
     end
 
     def delete(image_id)
@@ -94,6 +98,8 @@ module Resizing
 
       result = handle_delete_response(response)
       result
+    rescue Faraday::TimeoutError => e
+      handle_timeout_error e
     end
 
     def metadata(image_id, options = {})
@@ -105,6 +111,8 @@ module Resizing
 
       result = handle_metadata_response(response)
       result
+    rescue Faraday::TimeoutError => e
+      handle_timeout_error e
     end
 
     private
@@ -166,7 +174,10 @@ module Resizing
       when HTTP_STATUS_OK, HTTP_STATUS_CREATED
         JSON.parse(response.body)
       else
-        raise APIError, "invalid http status code #{response.status}"
+        result = JSON.parse(response.body) rescue {}
+        err = APIError.new("invalid http status code #{response.status}")
+        err.decoded_body = result
+        raise err
       end
     end
 
@@ -177,7 +188,10 @@ module Resizing
       when HTTP_STATUS_OK, HTTP_STATUS_NOT_FOUND
         JSON.parse(response.body)
       else
-        raise APIError, "invalid http status code #{response.status}"
+        result = JSON.parse(response.body) rescue {}
+        err = APIError.new("invalid http status code #{response.status}")
+        err.decoded_body = result
+        raise err
       end
     end
 
@@ -188,8 +202,16 @@ module Resizing
       when HTTP_STATUS_OK, HTTP_STATUS_NOT_FOUND
         JSON.parse(response.body)
       else
-        raise APIError, "invalid http status code #{response.status}"
+        result = JSON.parse(response.body) rescue {}
+        err = APIError.new("invalid http status code #{response.status}")
+        err.decoded_body = result
+        raise err
       end
+    end
+
+    def handle_timeout_error error
+      # error: Faraday::TimeoutError
+      raise APIError.new("TimeoutError: #{error.inspect}")
     end
   end
 end
