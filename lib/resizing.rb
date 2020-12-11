@@ -14,7 +14,14 @@ module Resizing
   class Error < StandardError; end
   class ConfigurationError < Error; end
   class APIError < Error;
-    attr_accessor :decoded_body
+    def decoded_body
+      @decoded_body ||= {}
+    end
+
+    def decoded_body=(value)
+      raise ArgumentError, 'The decoded_body is expected to be passed a Hash.' unless value.is_a? Hash
+      @decoded_body = value
+    end
   end
 
   def self.configure

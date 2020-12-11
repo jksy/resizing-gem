@@ -1,0 +1,52 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/
+    body:
+      encoding: UTF-8
+      string: "-------------RubyMultipartPost-877f1391fb4284d764ae71084ad0d7f4\r\nContent-Disposition:
+        form-data; name=\"image\"; filename=\"empty_file.jpg\"\r\nContent-Length:
+        0\r\nContent-Type: image/jpeg\r\nContent-Transfer-Encoding: binary\r\n\r\n\r\n-------------RubyMultipartPost-877f1391fb4284d764ae71084ad0d7f4--\r\n"
+    headers:
+      User-Agent:
+      - Faraday v1.0.1
+      X-ResizingToken:
+      - v1,1607654898,be14774d9217431dc1dc6dd761b396c3b7458a8fcf7354fbd97198ee33907d56
+      Content-Type:
+      - multipart/form-data; boundary=-----------RubyMultipartPost-877f1391fb4284d764ae71084ad0d7f4
+      Content-Length:
+      - '289'
+  response:
+    status:
+      code: 415
+      message: Unsupported Media Type
+    headers:
+      x-frame-options:
+      - SAMEORIGIN
+      x-xss-protection:
+      - 1; mode=block
+      x-content-type-options:
+      - nosniff
+      x-download-options:
+      - noopen
+      x-permitted-cross-domain-policies:
+      - none
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      content-type:
+      - application/json; charset=utf-8
+      cache-control:
+      - no-cache
+      x-request-id:
+      - c3cd6487-4df0-4a41-ad8e-db67b7a9d2dd
+      x-runtime:
+      - '0.206168'
+      transfer-encoding:
+      - chunked
+    body:
+      encoding: UTF-8
+      string: '{"error":"Magick::ImageMagickError","message":"invalid image format
+        found"}'
+  recorded_at: Fri, 11 Dec 2020 02:48:18 GMT
+recorded_with: VCR 6.0.0
