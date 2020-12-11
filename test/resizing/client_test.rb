@@ -75,6 +75,36 @@ module Resizing
       end
     end
 
+    def test_raise_error
+      Resizing.configure = @configuration_template
+
+      client = Resizing::Client.new
+      VCR.use_cassette 'client/error', record: :once do
+        f = File.open('test/data/images/empty_file.jpg', 'r')
+        assert_raises Resizing::APIError do
+          client.post(f, content_type: 'image/jpeg')
+        end
+      end
+    end
+
+    def test_handleable_response_body_from_resizing
+      Resizing.configure = @configuration_template
+
+      client = Resizing::Client.new
+      VCR.use_cassette 'client/error', record: :once do
+        f = File.open('test/data/images/empty_file.jpg', 'r')
+
+        response = nil
+
+        begin
+          client.post(f, content_type: 'image/jpeg')
+        rescue Resizing::APIError => e
+          response = e.decoded_body
+        end
+        assert_equal response, {"error"=>"Magick::ImageMagickError", "message"=>"invalid image format found"}
+      end
+    end
+
     def test_get_the_metadata
       # TODO
 
