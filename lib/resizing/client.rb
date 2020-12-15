@@ -68,6 +68,8 @@ module Resizing
     end
 
     def put(image_id, file_or_binary, options)
+      # TODO:
+      # check type of image_id
       ensure_content_type(options)
 
       url = build_put_url(image_id)
@@ -90,6 +92,8 @@ module Resizing
     end
 
     def delete(image_id)
+      # TODO:
+      # check type of image_id
       url = build_delete_url(image_id)
 
       response = http_client.delete(url) do |request|
