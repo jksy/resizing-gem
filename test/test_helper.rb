@@ -18,6 +18,11 @@ VCR.configure do |c|
   c.cassette_library_dir = 'test/vcr'
   c.hook_into :faraday
   c.allow_http_connections_when_no_cassette = false
+
+  # raise Faraday::TimeoutError, when project_id is timeout_project_id
+  c.before_http_request(lambda {|r| URI(r.uri).path.match? %r(/projects/timeout_project_id) } ) do
+    raise Faraday::TimeoutError
+  end
 end
 
 ActiveRecord::Base.establish_connection(

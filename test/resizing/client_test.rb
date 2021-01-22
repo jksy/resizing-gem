@@ -5,7 +5,6 @@ require 'test_helper'
 module Resizing
   class ClientTest < Minitest::Test
     def setup
-      # NOP
       @configuration_template = {
         host: 'http://192.168.56.101:5000',
         project_id: 'e06e710d-f026-4dcf-b2c0-eab0de8bb83f',
@@ -53,6 +52,16 @@ module Resizing
       end
     end
 
+    def test_is_timeout_with_post_method
+      Resizing.configure = @configuration_template.merge(project_id: 'timeout_project_id')
+
+      client = Resizing::Client.new
+      f = File.open('test/data/images/sample1.jpg', 'r')
+      assert_raises Resizing::APIError do
+        client.post(f, content_type: 'image/jpeg')
+      end
+    end
+
     def test_is_putable_file
       Resizing.configure = @configuration_template
 
@@ -72,6 +81,18 @@ module Resizing
           r['public_id'],
           "/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/#{name}/vfztekhN_WoeXo8ZkCZ4i5jcQvmPpZewR"
         )
+      end
+    end
+
+    def test_is_timeout_with_put_method
+      Resizing.configure = @configuration_template.merge(project_id: 'timeout_project_id')
+
+      client = Resizing::Client.new
+      name = 'AWEaewfAreaweFAFASfwe'
+      f = File.open('test/data/images/sample1.jpg', 'r')
+
+      assert_raises Resizing::APIError do
+        r = client.put(name, f, content_type: 'image/jpeg')
       end
     end
 

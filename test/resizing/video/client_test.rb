@@ -61,6 +61,15 @@ module Resizing
         end
       end
 
+      def test_is_timeout_with_prepare_method
+        Resizing.configure = @configuration_template.merge(project_id: 'timeout_project_id')
+
+        client = Resizing::Video::Client.new
+        assert_raises Resizing::APIError do
+          client.prepare
+        end
+      end
+
       def test_is_callable_upload_complete_with_response
         Resizing.configure = @configuration_template
 
