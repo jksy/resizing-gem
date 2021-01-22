@@ -5,6 +5,7 @@ require 'faraday'
 require 'json'
 
 module Resizing
+  autoload :Constants, 'resizing/constants'
   autoload :Client, 'resizing/client'
   autoload :MockClient, 'resizing/mock_client'
   autoload :Configuration, 'resizing/configuration'

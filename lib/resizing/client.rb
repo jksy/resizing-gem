@@ -24,11 +24,7 @@ module Resizing
   #
   #++
   class Client
-    # TODO
-    # to use standard constants
-    HTTP_STATUS_OK = 200
-    HTTP_STATUS_CREATED = 201
-    HTTP_STATUS_NOT_FOUND = 404
+    include Resizing::Constants
 
     attr_reader :config
     def initialize(*attrs)
