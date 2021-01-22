@@ -48,14 +48,14 @@ module Resizing
         image: Faraday::UploadIO.new(body, options[:content_type], filename)
       }
 
-      response = http_client.post(url, params) do |request|
-        request.headers['X-ResizingToken'] = config.generate_auth_header
+      response = handle_faraday_error do
+        http_client.post(url, params) do |request|
+          request.headers['X-ResizingToken'] = config.generate_auth_header
+        end
       end
 
       result = handle_create_response(response)
       result
-    rescue Faraday::TimeoutError => e
-      handle_timeout_error e
     end
 
     def put(image_id, file_or_binary, options)
@@ -70,40 +70,40 @@ module Resizing
         image: Faraday::UploadIO.new(body, options[:content_type], filename)
       }
 
-      response = http_client.put(url, params) do |request|
-        request.headers['X-ResizingToken'] = config.generate_auth_header
+      response = handle_faraday_error do
+        http_client.put(url, params) do |request|
+          request.headers['X-ResizingToken'] = config.generate_auth_header
+        end
       end
 
       result = handle_create_response(response)
       result
-    rescue Faraday::TimeoutError => e
-      handle_timeout_error e
     end
 
     def delete(image_id)
       url = build_delete_url(image_id)
 
-      response = http_client.delete(url) do |request|
-        request.headers['X-ResizingToken'] = config.generate_auth_header
+      response = handle_faraday_error do
+        http_client.delete(url) do |request|
+          request.headers['X-ResizingToken'] = config.generate_auth_header
+        end
       end
 
       result = handle_delete_response(response)
       result
-    rescue Faraday::TimeoutError => e
-      handle_timeout_error e
     end
 
     def metadata(image_id, options = {})
       url = build_metadata_url(image_id)
 
-      response = http_client.get(url) do |request|
-        request.headers['X-ResizingToken'] = config.generate_auth_header
+      response = handle_faraday_error do
+        http_client.get(url) do |request|
+          request.headers['X-ResizingToken'] = config.generate_auth_header
+        end
       end
 
       result = handle_metadata_response(response)
       result
-    rescue Faraday::TimeoutError => e
-      handle_timeout_error e
     end
 
     private
@@ -189,11 +189,6 @@ module Resizing
         err.decoded_body = result
         raise err
       end
-    end
-
-    def handle_timeout_error error
-      # error: Faraday::TimeoutError
-      raise APIError.new("TimeoutError: #{error.inspect}")
     end
   end
 end

@@ -14,19 +14,21 @@ module Resizing
       def prepare
         url = build_prepare_url
 
-        response = http_client.post(url) do |request|
-          request.headers['X-ResizingToken'] = config.generate_auth_header
+        response = handle_faraday_error do
+          http_client.post(url) do |request|
+            request.headers['X-ResizingToken'] = config.generate_auth_header
+          end
         end
         handle_prepare_response response
-      rescue Faraday::TimeoutError => e
-        handle_timeout_error e
       end
 
       def upload_completed response_or_url
         url = url_from response_or_url, 'upload_completed_url'
 
-        response = http_client.put(url) do |request|
-          request.headers['X-ResizingToken'] = config.generate_auth_header
+        response = handle_faraday_error do
+          http_client.put(url) do |request|
+            request.headers['X-ResizingToken'] = config.generate_auth_header
+          end
         end
         handle_upload_completed_response response
       end
@@ -34,12 +36,12 @@ module Resizing
       def metadata response_or_url
         url = url_from response_or_url, 'self_url'
 
-        response = http_client.get(url) do |request|
-          request.headers['X-ResizingToken'] = config.generate_auth_header
+        response = handle_faraday_error do
+          http_client.get(url) do |request|
+            request.headers['X-ResizingToken'] = config.generate_auth_header
+          end
         end
         handle_metadata_response response
-      rescue Faraday::TimeoutError => e
-        handle_timeout_error e
       end
 
       private
@@ -57,6 +59,7 @@ module Resizing
           raise ArgumentError, "upload_completed is require Hash or String"
         end
       end
+
 
       def handle_prepare_response response
         raise APIError, "no response is returned" if response.nil?
@@ -98,10 +101,6 @@ module Resizing
           err.decoded_body = result
           raise err
         end
-      end
-
-      def handle_timeout_error error
-        raise APIError.new("TimeoutError: #{error.inspect}")
       end
     end
   end
