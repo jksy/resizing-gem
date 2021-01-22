@@ -117,12 +117,12 @@ module Resizing
         assert_equal(r['id'], name)
         assert_equal(r['project_id'], Resizing.configure.project_id)
         assert_equal(r['content_type'], 'image/jpeg')
-        assert(!r['latest_version_id'].nil?)
-        assert(!r['latest_etag'].nil?)
-        assert(!r['created_at'].nil?)
-        assert(!r['updated_at'].nil?)
-        assert(!r['height'].nil?)
-        assert(!r['width'].nil?)
+        assert(r['latest_version_id'] != nil)
+        assert(r['latest_etag'] != nil)
+        assert(r['created_at'] != nil)
+        assert(r['updated_at'] != nil)
+        assert(r['height'] != nil)
+        assert(r['width'] != nil)
         assert_equal(
           r['public_id'],
           "/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/87263920-2081-498e-a107-9625f4fde01b/vHg9VFvdI6HRzLFbV495VdwVmHIspLRCo"

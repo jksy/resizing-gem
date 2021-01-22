@@ -25,6 +25,7 @@ module Resizing
   #++
   class Client
     include Resizing::Constants
+    include Resizing::HttpClientable
 
     attr_reader :config
     def initialize(*attrs)
@@ -138,15 +139,6 @@ module Resizing
       "#{config.host}/projects/#{config.project_id}/upload/images/#{image_id}/metadata"
     end
 
-    def http_client
-      @http_client ||= Faraday.new(url: config.host) do |builder|
-        builder.options[:open_timeout] = config.open_timeout
-        builder.options[:timeout] = config.response_timeout
-        builder.request :multipart
-        builder.request :url_encoded
-        builder.adapter Faraday.default_adapter
-      end
-    end
 
     def to_io(data)
       return data.to_io if data.respond_to? :to_io
