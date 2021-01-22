@@ -25,17 +25,11 @@ module Resizing
   #++
   class Client
     include Resizing::Constants
+    include Resizing::Configurable
     include Resizing::HttpClientable
 
-    attr_reader :config
     def initialize(*attrs)
-      @config = if attrs.first.is_a? Configuration
-                  attrs.first
-                elsif attrs.first.nil?
-                  Resizing.configure
-                else
-                  Configuration.new(*attrs)
-                end
+      initialize_config(*attrs)
     end
 
     def get(image_id)

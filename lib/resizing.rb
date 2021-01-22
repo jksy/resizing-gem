@@ -6,6 +6,7 @@ require 'json'
 
 module Resizing
   autoload :Constants, 'resizing/constants'
+  autoload :Configurable, 'resizing/configurable'
   autoload :HttpClientable, 'resizing/http_clientable'
   autoload :Client, 'resizing/client'
   autoload :MockClient, 'resizing/mock_client'
