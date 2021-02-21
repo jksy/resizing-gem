@@ -68,10 +68,7 @@ module Resizing
         when HTTP_STATUS_OK, HTTP_STATUS_CREATED
           JSON.parse(response.body)
         else
-          result = JSON.parse(response.body) rescue {}
-          err = APIError.new("invalid http status code #{response.status}")
-          err.decoded_body = result
-          raise err
+          handle_error_response response
         end
       end
 
@@ -82,10 +79,7 @@ module Resizing
         when HTTP_STATUS_OK
           JSON.parse(response.body)
         else
-          result = JSON.parse(response.body) rescue {}
-          err = APIError.new("invalid http status code #{response.status}")
-          err.decoded_body = result
-          raise err
+          handle_error_response response
         end
       end
 
@@ -96,11 +90,15 @@ module Resizing
         when HTTP_STATUS_OK
           JSON.parse(response.body)
         else
-          result = JSON.parse(response.body) rescue {}
-          err = APIError.new("invalid http status code #{response.status}")
-          err.decoded_body = result
-          raise err
+          handle_error_response response
         end
+      end
+
+      def handle_error_response response
+        result = JSON.parse(response.body) rescue {}
+        err = APIError.new("invalid http status code #{response.status}")
+        err.decoded_body = result
+        raise err
       end
     end
   end
