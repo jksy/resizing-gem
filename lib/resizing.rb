@@ -5,11 +5,15 @@ require 'faraday'
 require 'json'
 
 module Resizing
+  autoload :Constants, 'resizing/constants'
+  autoload :Configurable, 'resizing/configurable'
+  autoload :HttpClientable, 'resizing/http_clientable'
   autoload :Client, 'resizing/client'
   autoload :MockClient, 'resizing/mock_client'
   autoload :Configuration, 'resizing/configuration'
   autoload :CarrierWave, 'resizing/carrier_wave'
   autoload :PublicId, 'resizing/public_id'
+  autoload :Video, 'resizing/video'
 
   class Error < StandardError; end
   class ConfigurationError < Error; end
