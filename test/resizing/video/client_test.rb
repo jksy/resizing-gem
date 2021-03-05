@@ -37,6 +37,14 @@ module Resizing
         assert_equal(client.config, config)
       end
 
+      def test_is_callable_build_prepare_url
+        Resizing.configure = @configuration_template
+
+        client = Resizing::Video::Client.new
+        url = client.build_prepare_url
+        assert_equal(url, 'http://192.168.56.101:5000/projects/f11dfad4-2247-4220-b3b2-efeb82864a97/upload/videos/prepare')
+      end
+
       def test_is_callable_prepare
         Resizing.configure = @configuration_template
 
