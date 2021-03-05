@@ -5,7 +5,8 @@ module Resizing
   #--
   # usage.
   #   options = {
-  #     host: 'https://www.resizing.net',
+  #     image_host: 'https://img.resizing.net',
+  #     video_host: 'https://video.resizing.net',
   #     project_id: '098a2a0d-0000-0000-0000-000000000000',
   #     secret_token: '4g1cshg......rbs6'
   #   }
@@ -109,11 +110,11 @@ module Resizing
     private
 
     def build_get_url(image_id)
-      "#{config.host}/projects/#{config.project_id}/upload/images/#{image_id}"
+      "#{config.image_host}/projects/#{config.project_id}/upload/images/#{image_id}"
     end
 
     def build_post_url
-      "#{config.host}/projects/#{config.project_id}/upload/images/"
+      "#{config.image_host}/projects/#{config.project_id}/upload/images/"
     end
 
     def gather_filename file_or_binary, options
@@ -122,15 +123,15 @@ module Resizing
     end
 
     def build_put_url(image_id)
-      "#{config.host}/projects/#{config.project_id}/upload/images/#{image_id}"
+      "#{config.image_host}/projects/#{config.project_id}/upload/images/#{image_id}"
     end
 
     def build_delete_url(image_id)
-      "#{config.host}/projects/#{config.project_id}/upload/images/#{image_id}"
+      "#{config.image_host}/projects/#{config.project_id}/upload/images/#{image_id}"
     end
 
     def build_metadata_url(image_id)
-      "#{config.host}/projects/#{config.project_id}/upload/images/#{image_id}/metadata"
+      "#{config.image_host}/projects/#{config.project_id}/upload/images/#{image_id}/metadata"
     end
 
 

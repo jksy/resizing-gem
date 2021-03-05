@@ -56,7 +56,7 @@ module Resizing
       end
 
       def build_prepare_url
-        "#{config.host}/projects/#{config.project_id}/upload/videos/prepare"
+        "#{config.video_host}/projects/#{config.project_id}/upload/videos/prepare"
       end
 
       private
