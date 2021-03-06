@@ -19,7 +19,7 @@ module Resizing
       # NOP
     end
 
-    def test_that_it_has_default_host
+    def test_that_it_has_default_image_host
       template = @template.dup
       template.delete(:image_host)
       config = Resizing::Configuration.new template
@@ -27,14 +27,14 @@ module Resizing
       assert_equal(config.image_host, Resizing::Configuration::DEFAULT_IMAGE_HOST)
     end
 
-    def test_that_it_has_default_host
+    def test_that_it_has_default_video_host
       template = @template.dup
       template.delete(:video_host)
       config = Resizing::Configuration.new template
       assert_equal(config.video_host, Resizing::Configuration::DEFAULT_VIDEO_HOST)
     end
 
-    def test_that_it_has_same_host_value
+    def test_that_it_need_raise_exception_if_host_presented
       template = @template.dup
       template[:host] = 'need raise execption if host is presented'
       assert_raises ConfigurationError do
