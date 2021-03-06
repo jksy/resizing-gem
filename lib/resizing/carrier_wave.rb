@@ -48,7 +48,7 @@ module Resizing
     end
 
     def build_url
-      "#{Resizing.configure.host}#{model.read_attribute(serialization_column)}"
+      "#{Resizing.configure.image_host}#{model.read_attribute(serialization_column)}"
     end
 
     # need override this. if you want to return some url when target_column is nil

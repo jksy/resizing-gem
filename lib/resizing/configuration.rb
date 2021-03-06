@@ -15,8 +15,10 @@ module Resizing
   #   Resizing::Client.new(configuration)
   #++
   class Configuration
-    attr_reader :host, :project_id, :secret_token, :open_timeout, :response_timeout, :enable_mock
+    attr_reader :image_host, :video_host, :project_id, :secret_token, :open_timeout, :response_timeout, :enable_mock
     DEFAULT_HOST = 'https://img.resizing.net'
+    DEFAULT_IMAGE_HOST = 'https://img.resizing.net'
+    DEFAULT_VIDEO_HOST = 'https://video.resizing.net'
     DEFAULT_OPEN_TIMEOUT = 2
     DEFAULT_RESPONSE_TIMEOUT = 10
 
@@ -25,13 +27,23 @@ module Resizing
     def initialize(*attrs)
       case attr = attrs.first
       when Hash
-        raise_configiration_error if attr[:project_id].nil? || attr[:secret_token].nil?
+        if attr[:project_id].nil? || attr[:secret_token].nil?
+          raise_configiration_error
+        end
+        if attr[:host].present?
+          raise_configiration_error
+        end
 
         initialize_by_hash attr
         return
       end
 
       raise_configiration_error
+    end
+
+    def host
+      Kernel.warn "[DEPRECATED] The Configuration#host is deprecated. Use Configuration#image_host."
+      self.image_host
     end
 
     def generate_auth_header
@@ -54,7 +66,7 @@ module Resizing
       parts << image_id
       parts << version if version
       parts << path unless path.empty?
-      "#{host}/projects/#{project_id}/upload/images/#{parts.join('/')}"
+      "#{image_host}/projects/#{project_id}/upload/images/#{parts.join('/')}"
     end
 
     # this method should be divided other class
@@ -79,7 +91,7 @@ module Resizing
     def ==(other)
       return false unless self.class == other.class
 
-      %i[host project_id secret_token open_timeout response_timeout].all? do |name|
+      %i[image_host video_host project_id secret_token open_timeout response_timeout].all? do |name|
         send(name) == other.send(name)
       end
     end
@@ -87,11 +99,13 @@ module Resizing
     private
 
     def raise_configiration_error
-      raise ConfigurationError, 'need hash and some keys like :host, :project_id, :secret_token'
+      raise ConfigurationError, 'need hash and some keys like :image_host, video_host, :project_id, :secret_token'
     end
 
     def initialize_by_hash(attr)
-      @host = attr[:host].dup.freeze || DEFAULT_HOST
+      # @host = attr[:host].dup.freeze || DEFAULT_HOST
+      @image_host = attr[:image_host].dup.freeze || DEFAULT_IMAGE_HOST
+      @video_host = attr[:video_host].dup.freeze || DEFAULT_VIDEO_HOST
       @project_id = attr[:project_id].dup.freeze
       @secret_token = attr[:secret_token].dup.freeze
       @open_timeout = attr[:open_timeout] || DEFAULT_OPEN_TIMEOUT

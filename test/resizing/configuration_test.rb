@@ -6,7 +6,8 @@ module Resizing
   class ConfigurationTest < Minitest::Test
     def setup
       @template = {
-        host: 'http://192.168.56.101:5000',
+        image_host: 'http://192.168.56.101:5000',
+        video_host: 'http://192.168.56.101:5000',
         project_id: '098a2a0d-c387-4135-a071-1254d6d7e70a',
         secret_token: '4g1cshg2lq8j93ufhvqrpjswxmtjz12yhfvq6w79jpwi7cr7nnknoqgwzkwerbs6',
         open_timeout: 10,
@@ -20,15 +21,37 @@ module Resizing
 
     def test_that_it_has_default_host
       template = @template.dup
-      template.delete(:host)
+      template.delete(:image_host)
       config = Resizing::Configuration.new template
-      assert_equal(config.host, Resizing::Configuration::DEFAULT_HOST)
+      assert_equal(config.host, Resizing::Configuration::DEFAULT_IMAGE_HOST)
+      assert_equal(config.image_host, Resizing::Configuration::DEFAULT_IMAGE_HOST)
+    end
+
+    def test_that_it_has_default_host
+      template = @template.dup
+      template.delete(:video_host)
+      config = Resizing::Configuration.new template
+      assert_equal(config.video_host, Resizing::Configuration::DEFAULT_VIDEO_HOST)
     end
 
     def test_that_it_has_same_host_value
       template = @template.dup
+      template[:host] = 'need raise execption if host is presented'
+      assert_raises ConfigurationError do
+        config = Resizing::Configuration.new template
+      end
+    end
+
+    def test_that_it_has_same_image_host_value
+      template = @template.dup
       config = Resizing::Configuration.new template
-      assert_equal(config.host, template[:host])
+      assert_equal(config.image_host, template[:image_host])
+    end
+
+    def test_that_it_has_same_video_host_value
+      template = @template.dup
+      config = Resizing::Configuration.new template
+      assert_equal(config.video_host, template[:video_host])
     end
 
     def test_that_it_has_no_project_id

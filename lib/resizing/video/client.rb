@@ -33,6 +33,17 @@ module Resizing
         handle_upload_completed_response response
       end
 
+      def delete response_or_url
+        url = url_from response_or_url, 'destroy_url'
+
+        response = handle_faraday_error do
+          http_client.put(url) do |request|
+            request.headers['X-ResizingToken'] = config.generate_auth_header
+          end
+        end
+        handle_upload_completed_response response
+      end
+
       def metadata response_or_url
         url = url_from response_or_url, 'self_url'
 
@@ -44,11 +55,11 @@ module Resizing
         handle_metadata_response response
       end
 
-      private
-
       def build_prepare_url
-        "#{config.host}/projects/#{config.project_id}/upload/videos/prepare"
+        "#{config.video_host}/projects/#{config.project_id}/upload/videos/prepare"
       end
+
+      private
 
       def url_from response_or_url, name
         if response_or_url.kind_of? String
