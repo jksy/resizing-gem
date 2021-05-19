@@ -1,5 +1,10 @@
 # Changelog
 
+**Merged pull requests:**
+
+- v0.8.2 [\#53](https://github.com/jksy/resizing-gem/pull/53) ([jksy](https://github.com/jksy))
+- raise APIError with message on response.body [\#52](https://github.com/jksy/resizing-gem/pull/52) ([jksy](https://github.com/jksy))
+
 ## [v0.8.1](https://github.com/jksy/resizing-gem/tree/v0.8.1) (2021-03-06)
 
 [Full Changelog](https://github.com/jksy/resizing-gem/compare/v0.8.0...v0.8.1)
@@ -28,7 +33,8 @@
 
 **Merged pull requests:**
 
-- change version string when put request with mockclient [\#32](https://github.com/jksy/resizing-gem/pull/32) ([jksy](https://github.com/jksy))
+- v0.7.0 [\#43](https://github.com/jksy/resizing-gem/pull/43) ([jksy](https://github.com/jksy))
+- APIError\#decoded\_body return hash always [\#42](https://github.com/jksy/resizing-gem/pull/42) ([jksy](https://github.com/jksy))
 
 ## [v0.6.0](https://github.com/jksy/resizing-gem/tree/v0.6.0) (2020-12-08)
 
@@ -64,7 +70,6 @@
 
 **Merged pull requests:**
 
-- v0.7.0 [\#43](https://github.com/jksy/resizing-gem/pull/43) ([jksy](https://github.com/jksy))
 - fix raise error if tempfile is assinged [\#38](https://github.com/jksy/resizing-gem/pull/38) ([jksy](https://github.com/jksy))
 
 ## [v0.4.1](https://github.com/jksy/resizing-gem/tree/v0.4.1) (2020-10-01)
@@ -91,12 +96,11 @@
 
 **Merged pull requests:**
 
-- APIError\#decoded\_body return hash always [\#42](https://github.com/jksy/resizing-gem/pull/42) ([jksy](https://github.com/jksy))
+- change version string when put request with mockclient [\#32](https://github.com/jksy/resizing-gem/pull/32) ([jksy](https://github.com/jksy))
 - add delete method [\#31](https://github.com/jksy/resizing-gem/pull/31) ([jksy](https://github.com/jksy))
 - Feature/add identifier to public [\#30](https://github.com/jksy/resizing-gem/pull/30) ([jksy](https://github.com/jksy))
 - add identifier [\#29](https://github.com/jksy/resizing-gem/pull/29) ([jksy](https://github.com/jksy))
 - Feature/refactor public [\#28](https://github.com/jksy/resizing-gem/pull/28) ([jksy](https://github.com/jksy))
-- divide to PublicId class [\#27](https://github.com/jksy/resizing-gem/pull/27) ([jksy](https://github.com/jksy))
 - fix some bug & errors [\#26](https://github.com/jksy/resizing-gem/pull/26) ([jksy](https://github.com/jksy))
 - fix mockclient [\#25](https://github.com/jksy/resizing-gem/pull/25) ([jksy](https://github.com/jksy))
 - fix raise no method presented, no cotent type is presented [\#24](https://github.com/jksy/resizing-gem/pull/24) ([jksy](https://github.com/jksy))
@@ -104,6 +108,11 @@
 ## [v0.3.2](https://github.com/jksy/resizing-gem/tree/v0.3.2) (2020-09-11)
 
 [Full Changelog](https://github.com/jksy/resizing-gem/compare/v0.3.1...v0.3.2)
+
+**Merged pull requests:**
+
+- divide to PublicId class [\#27](https://github.com/jksy/resizing-gem/pull/27) ([jksy](https://github.com/jksy))
+- fix raise error when call remove! with nil column [\#23](https://github.com/jksy/resizing-gem/pull/23) ([jksy](https://github.com/jksy))
 
 ## [v0.3.1](https://github.com/jksy/resizing-gem/tree/v0.3.1) (2020-09-11)
 
@@ -123,7 +132,6 @@
 
 **Merged pull requests:**
 
-- fix raise error when call remove! with nil column [\#23](https://github.com/jksy/resizing-gem/pull/23) ([jksy](https://github.com/jksy))
 - version 0.2.0 [\#21](https://github.com/jksy/resizing-gem/pull/21) ([jksy](https://github.com/jksy))
 - support f\_auto, q\_auto parameter [\#20](https://github.com/jksy/resizing-gem/pull/20) ([jksy](https://github.com/jksy))
 
