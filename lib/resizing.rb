@@ -67,6 +67,7 @@ module Resizing
   end
 
   # TODO: refactoring
+  # rubocop:disable Layout/LineLength
   #
   # identifier:
   # public_id:  /projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850..
@@ -74,6 +75,8 @@ module Resizing
   # project_id:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   # image_id:                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   # version:                                                                                                      ^^^^^^^^^
+  #
+  # rubocop:enable Layout/LineLength
   def self.generate_identifier
     Resizing.configure.generate_identifier
   end
