@@ -16,14 +16,17 @@ module Resizing
   autoload :Video, 'resizing/video'
 
   class Error < StandardError; end
+
   class ConfigurationError < Error; end
-  class APIError < Error;
+
+  class APIError < Error
     def decoded_body
       @decoded_body ||= {}
     end
 
     def decoded_body=(value)
       raise ArgumentError, 'The decoded_body is expected to be passed a Hash.' unless value.is_a? Hash
+
       @decoded_body = value
     end
   end
@@ -75,7 +78,7 @@ module Resizing
     Resizing.configure.generate_identifier
   end
 
-  def self.separate_public_id public_id
+  def self.separate_public_id(public_id)
     public_id.match('/projects/(?<project_id>[0-9a-f-]+)/upload/images/(?<image_id>[^/]+)(/v(?<version>[^/]+))?')
   end
 

@@ -35,6 +35,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'minitest-ci'
   spec.add_development_dependency 'rails', '~> 5.2.3'
   spec.add_development_dependency 'rubocop'
+  spec.add_development_dependency 'rubocop-rails'
+  spec.add_development_dependency 'rubocop-rake'
   spec.add_development_dependency 'timecop'
   spec.add_development_dependency 'vcr'
 end

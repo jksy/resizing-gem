@@ -1,74 +1,94 @@
-# The behavior of RuboCop can be controlled via the .rubocop.yml
-# configuration file. It makes it possible to enable/disable
-# certain cops (checks) and to alter their behavior if they accept
-# any parameters. The file can be placed either in your home
-# directory or in some project directory.
-#
-# RuboCop will start looking for the configuration file in the directory
-# where the inspected file is and continue its way up to the root directory.
-#
-# See https://github.com/rubocop-hq/rubocop/blob/master/manual/configuration.md
+AllCops:
+  Include:
+    - 'app/**/*.rb'
+    - 'config/**.rb'
+    - 'lib/**.rb'
+    - 'test/**.rb'
+  Exclude:
+    - 'bin/**/*'
+    - 'db/**/*'
+    - 'lib/tasks/auto_annotate_models.rake'
+    - 'tmp/**/*'
+    - 'config/routes.rb'
+    - 'config/puma.rb'
 
 Metrics/MethodLength:
-  Max: 20
-  Exclude:
-    - "test/**/*.rb"
+  Max: 60
 
-Metrics/ClassLength:
-  Exclude:
-    - "test/**/*.rb"
+Style/ClassAndModuleChildren:
+  Enabled: false
 
-Metrics/AbcSize:
-  Exclude:
-    - "test/**/*.rb"
+Style/YodaCondition:
+  Enabled: false
 
 Layout/LineLength:
   Exclude:
-    - "test/**/*.rb"
+    - 'test/**/*_test.rb'
+
+Metrics/ClassLength:
+  Exclude:
+    - 'test/**/*_test.rb'
+
+Metrics/AbcSize:
+  Exclude:
+    - 'test/**/*_test.rb'
+
+Lint/UselessAssignment:
+  Exclude:
+    - 'test/**/*_test.rb'
+
+Metrics/BlockLength:
+  Exclude:
+    - 'test/**/*_test.rb'
+
+Metrics/BlockLength:
+  Exclude:
+    - 'lib/tasks/auto_annotate_models.rake'
+
+Layout/HashAlignment:
+  Exclude:
+    - 'lib/tasks/auto_annotate_models.rake'
+
+Style/FrozenStringLiteralComment:
+  Exclude:
+    - 'lib/tasks/auto_annotate_models.rake'
+
+Style/PercentLiteralDelimiters:
+  Enabled: false
+
+Style/Proc:
+  Enabled: false
+
+Style/TrailingCommaInHashLiteral:
+  Enabled: false
+
+Style/EmptyMethod:
+  Enabled: false
+
+Layout/SpaceInsideBlockBraces:
+  Enabled: false
+
+Layout/SpaceInsideHashLiteralBraces:
+  Enabled: false
+
+Style/AsciiComments:
+  Enabled: false
 
 Style/Documentation:
   Enabled: false
 
-Layout/EmptyLinesAroundAttributeAccessor:
+Style/DotPosition:
+  EnforcedStyle: trailing
+
+Style/EmptyElse:
+  EnforcedStyle: empty
+
+Style/RedundantSelf:
   Enabled: false
 
-Layout/SpaceAroundMethodCallOperator:
+Style/ExplicitBlockArgument:
   Enabled: false
 
-Lint/DeprecatedOpenSSLConstant:
-  Enabled: true
-
-Lint/MixedRegexpCaptureTypes:
-  Enabled: true
-
-Lint/RaiseException:
-  Enabled: true
-
-Lint/StructNewOverride:
-  Enabled: true
-
-Style/ExponentialNotation:
-  Enabled: true
-
-Style/HashEachMethods:
-  Enabled: false
-
-Style/HashTransformKeys:
-  Enabled: false
-
-Style/HashTransformValues:
-  Enabled: false
-
-Style/RedundantRegexpCharacterClass:
-  Enabled: false
-
-Style/RedundantRegexpEscape:
-  Enabled: false
-
-Style/SlicingWithRange:
-  Enabled: false
-
-# temporary
-Style/AsciiComments:
+Style/EmptyElse:
   Enabled: false
 
