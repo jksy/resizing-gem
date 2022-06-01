@@ -103,8 +103,12 @@ module Resizing
     end
 
     def initialize_by_hash(attr)
-      # @host = attr[:host].dup.freeze || DEFAULT_HOST
       @image_host = attr[:image_host].dup.freeze || DEFAULT_IMAGE_HOST
+      if attr[:host].present?
+        Kernel.warn "[DEPRECATED] The host on configration is deprecated. Use image_host, video_host" if attr[:host].present?
+        @image_host ||= attr[:host].dup.freeze || DEFAULT_HOST # for backward compatible
+      end
+
       @video_host = attr[:video_host].dup.freeze || DEFAULT_VIDEO_HOST
       @project_id = attr[:project_id].dup.freeze
       @secret_token = attr[:secret_token].dup.freeze
