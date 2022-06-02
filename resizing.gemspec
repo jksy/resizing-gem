@@ -28,12 +28,12 @@ Gem::Specification.new do |spec|
   spec.bindir        = 'exe'
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
-  spec.add_runtime_dependency 'faraday', '>= 1.0.1', '< 1.4.0'
-  spec.add_development_dependency 'carrierwave'
+  spec.add_runtime_dependency 'faraday', '~> 1.0'
+  spec.add_development_dependency 'rails', '~> 6.0'
+  spec.add_development_dependency 'carrierwave', '~> 1.3.2'
   spec.add_development_dependency 'fog-aws'
   spec.add_development_dependency 'minitest'
   spec.add_development_dependency 'minitest-ci'
-  spec.add_development_dependency 'rails', '~> 5.2.3'
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'timecop'
   spec.add_development_dependency 'vcr'
