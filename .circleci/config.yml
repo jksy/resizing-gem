@@ -40,7 +40,9 @@ jobs:
             sudo gem install bundler
             sudo gem uninstall -x rake
             echo "install: --no-document" >> ~/.gemrc
-              bundle check --path vendor/bundle || bundle install --path vendor/bundle --clean
+            bundle config set --local path vendor/bundle
+            bundle config set --local clean true
+            bundle check || bundle install
 
       - save_cache:
           key: v2-{{ .Environment.CACHE_KEY }}-gem-cache-{{ arch }}-{{ .Branch }}
