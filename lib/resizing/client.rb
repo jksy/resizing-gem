@@ -103,7 +103,7 @@ module Resizing
         end
       end
 
-      result = handle_metadata_response(response)
+      result = handle_metadata_response(response, options)
       result
     end
 
@@ -151,7 +151,7 @@ module Resizing
     end
 
     def handle_create_response(response)
-      raise APIError, "no response is returned" if response.nil?
+      raise APIError, "No response is returned" if response.nil?
 
       case response.status
       when HTTP_STATUS_OK, HTTP_STATUS_CREATED
@@ -162,7 +162,7 @@ module Resizing
     end
 
     def handle_delete_response(response)
-      raise APIError, "no response is returned" if response.nil?
+      raise APIError, "No response is returned" if response.nil?
 
       case response.status
       when HTTP_STATUS_OK, HTTP_STATUS_NOT_FOUND
@@ -172,12 +172,17 @@ module Resizing
       end
     end
 
-    def handle_metadata_response(response)
-      raise APIError, "no response is returned" if response.nil?
+    def handle_metadata_response(response, options = {})
+      when_not_found = options[:when_not_found] || nil
+
+      raise APIError, "No response is returned" if response.nil?
 
       case response.status
       when HTTP_STATUS_OK, HTTP_STATUS_NOT_FOUND
         JSON.parse(response.body)
+      when HTTP_STATUS_NOT_FOUND
+        raise decode_error_from(response) if when_not_found == :raise
+        nil
       else
         raise decode_error_from(response)
       end

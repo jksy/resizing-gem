@@ -9,20 +9,18 @@ module Resizing
         def store!(file)
           f = Resizing::CarrierWave::Storage::File.new(uploader)
           f.store(file)
-          @filename = f.public_id.to_s
           f
         end
 
         def remove!(file)
           f = Resizing::CarrierWave::Storage::File.new(uploader)
           f.delete(file)
-          @filename = f.public_id.to_s
           f
         end
 
-        def retrieve!(identifier)
-          Resizing::CarrierWave::Storage::File.new(uploader, identifier)
-        end
+        # def retrieve!(identifier)
+        #   super
+        # end
 
         def cache!(new_file)
           f = Resizing::CarrierWave::Storage::File.new(uploader)

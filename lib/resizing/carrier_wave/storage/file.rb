@@ -6,14 +6,15 @@ module Resizing
       class File
         include ::CarrierWave::Utilities::Uri
 
+        attr_reader :public_id
+
         def initialize(uploader, identifier = nil)
           @uploader = uploader
-          @file = nil
           @content_type = nil
-          @public_id = Resizing::PublicId.new identifier
+          @public_id = Resizing::PublicId.new(identifier)
+          @file = nil
+          @metadata = nil
         end
-
-        attr_reader :public_id
 
         def attributes
           file.attributes
@@ -112,6 +113,7 @@ module Resizing
 
           @response = Resizing.post(content, { content_type: @content_type, filename: original_filename })
           @public_id = Resizing::PublicId.new(@response['public_id'])
+          @content_type = @response['content_type']
 
           # force update column
           # model_class
@@ -133,6 +135,9 @@ module Resizing
         #   CarrierWave::Storage::Fog::File.new(@uploader, @base, new_path)
         # end
 
+        def retrieve(identifier)
+          @public_id = Resizing::PublicId.new(identifier)
+        end
         private
 
         attr_reader :uploader
@@ -190,14 +195,6 @@ module Resizing
           parameters.count == 2 && parameters[1].include?(:options)
         end
 
-        def retrieve!(identifier)
-          raise NotImplementedError, "retrieve! #{identifier}"
-        end
-
-        # def cache!(new_file)
-        #   raise NotImplementedError,
-        #     "Need to implement #cache! if you want to use #{self.class.name} as a cache storage."
-        # end
 
         # def retrieve_from_cache!(identifier)
         #   raise NotImplementedError,

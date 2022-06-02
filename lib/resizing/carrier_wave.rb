@@ -31,6 +31,15 @@ module Resizing
       super
     end
 
+    def file
+      return if identifier.nil?
+      return @file unless defined? @file
+
+      @file ||= Resizing::CarrierWave::Storage::File.new(self)
+      @file.retrieve(identifier)
+      @file
+    end
+
     def url(*args)
       return default_url unless read_column.present?
 

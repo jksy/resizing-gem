@@ -28,7 +28,7 @@ end
 ActiveRecord::Base.establish_connection(
   adapter: 'mysql2',
   host: '127.0.0.1',
-  port: 3306,
+  port: 23306,
   database: 'resizing_gem_test',
   encoding: 'utf8',
   username: 'root',
