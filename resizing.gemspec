@@ -39,4 +39,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'timecop'
   spec.add_development_dependency 'vcr'
   spec.add_development_dependency 'mysql2'
+  spec.add_development_dependency 'simplecov'
+  spec.add_development_dependency 'simplecov-cobertura'
 end

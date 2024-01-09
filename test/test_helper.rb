@@ -1,4 +1,22 @@
 # frozen_string_literal: true
+require 'simplecov'
+require 'simplecov-cobertura'
+
+SimpleCov.start do
+  add_filter "/test/"
+
+  if ENV['CI']
+    formatter SimpleCov::Formatter::CoberturaFormatter
+  else
+    formatter SimpleCov::Formatter::MultiFormatter.new([
+                                                         SimpleCov::Formatter::SimpleFormatter,
+                                                         SimpleCov::Formatter::HTMLFormatter
+                                                       ])
+  end
+
+  enable_coverage :branch
+  primary_coverage :branch
+end
 
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 require 'time'
