@@ -39,14 +39,11 @@ module Resizing
 
     def post(file_or_binary, options = {})
       ensure_content_type(options)
-
-      url = build_post_url
-
       filename = gather_filename file_or_binary, options
 
-      body = to_io(file_or_binary)
+      url = build_post_url
       params = {
-        image: Faraday::UploadIO.new(body, options[:content_type], filename)
+        image: Faraday::Multipart::FilePart.new(file_or_binary, options[:content_type], filename)
       }
 
       response = handle_faraday_error do
@@ -61,14 +58,11 @@ module Resizing
 
     def put(image_id, file_or_binary, options)
       ensure_content_type(options)
-
-      url = build_put_url(image_id)
-
       filename = gather_filename file_or_binary, options
 
-      body = to_io(file_or_binary)
+      url = build_put_url(image_id)
       params = {
-        image: Faraday::UploadIO.new(body, options[:content_type], filename)
+        image: Faraday::Multipart::FilePart.new(file_or_binary, options[:content_type], filename)
       }
 
       response = handle_faraday_error do
@@ -132,18 +126,6 @@ module Resizing
 
     def build_metadata_url(image_id)
       "#{config.image_host}/projects/#{config.project_id}/upload/images/#{image_id}/metadata"
-    end
-
-
-    def to_io(data)
-      return data.to_io if data.respond_to? :to_io
-
-      case data
-      when String
-        StringIO.new(data)
-      else
-        raise ArgumentError, "file_or_binary is required IO class or String:#{data.class}"
-      end
     end
 
     def ensure_content_type(options)
