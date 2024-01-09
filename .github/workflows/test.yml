@@ -1,0 +1,52 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        # ruby: ['2.7.6', '3.1', '3.2','3.3']
+        ruby: ['3.1']
+
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mirromutth/mysql-action@v1.1
+        with:
+          host port: 3306
+          container port: 3306
+          character set server: 'utf8mb4'
+          collation server: 'utf8mb4_general_ci'
+          mysql version: '5.7'
+          mysql database: 'resizing_gem_test'
+          mysql root password: secret
+
+      - name: "Install ruby dependencies"
+        run: |
+          sudo apt update
+          sudo apt install -y libyaml-dev curl libmysqlclient-dev
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: false
+
+      - name: bundle install
+        run: |
+          bundle install
+
+      - name: Run test
+        run: |
+          bundle exec rake test
