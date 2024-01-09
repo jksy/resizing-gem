@@ -2,6 +2,7 @@
 
 require 'resizing/version'
 require 'faraday'
+require 'faraday/multipart'
 require 'json'
 
 module Resizing
