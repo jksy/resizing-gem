@@ -37,13 +37,12 @@ module Resizing
       raise NotImplementedError
     end
 
-    def post(file_or_binary, options = {})
+    def post(filename_or_io, options = {})
       ensure_content_type(options)
-      filename = gather_filename file_or_binary, options
+      filename = gather_filename filename_or_io, options
 
-      url = build_post_url
       params = {
-        image: Faraday::Multipart::FilePart.new(file_or_binary, options[:content_type], filename)
+        image: Faraday::Multipart::FilePart.new(filename_or_io, options[:content_type], filename)
       }
 
       response = handle_faraday_error do
@@ -56,13 +55,13 @@ module Resizing
       result
     end
 
-    def put(image_id, file_or_binary, options)
+    def put(image_id, filename_or_io, options)
       ensure_content_type(options)
-      filename = gather_filename file_or_binary, options
+      filename = gather_filename filename_or_io, options
 
       url = build_put_url(image_id)
       params = {
-        image: Faraday::Multipart::FilePart.new(file_or_binary, options[:content_type], filename)
+        image: Faraday::Multipart::FilePart.new(filename_or_io, options[:content_type], filename)
       }
 
       response = handle_faraday_error do
@@ -111,9 +110,9 @@ module Resizing
       "#{config.image_host}/projects/#{config.project_id}/upload/images/"
     end
 
-    def gather_filename file_or_binary, options
+    def gather_filename(filename_or_io, options)
       filename = options[:filename]
-      filename ||= file_or_binary.respond_to?(:path) ? File.basename(file_or_binary.path) : nil
+      filename ||= filename_or_io.respond_to?(:path) ? File.basename(filename_or_io.path) : nil
     end
 
     def build_put_url(image_id)
