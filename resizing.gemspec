@@ -31,7 +31,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'faraday', '~> 2.3'
   spec.add_runtime_dependency 'faraday-multipart'
   spec.add_development_dependency 'rails', '~> 6.0'
-  spec.add_development_dependency 'carrierwave', '~> 1.3.2'
+  spec.add_development_dependency 'carrierwave', '~> 2.2.5'
   spec.add_development_dependency 'fog-aws'
   spec.add_development_dependency 'minitest'
   spec.add_development_dependency 'minitest-ci'
