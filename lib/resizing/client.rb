@@ -39,8 +39,10 @@ module Resizing
 
     def post(filename_or_io, options = {})
       ensure_content_type(options)
+      ensure_filename_or_io(filename_or_io)
       filename = gather_filename filename_or_io, options
 
+      url = build_post_url
       params = {
         image: Faraday::Multipart::FilePart.new(filename_or_io, options[:content_type], filename)
       }
@@ -57,6 +59,7 @@ module Resizing
 
     def put(image_id, filename_or_io, options)
       ensure_content_type(options)
+      ensure_filename_or_io(filename_or_io)
       filename = gather_filename filename_or_io, options
 
       url = build_put_url(image_id)
@@ -129,6 +132,18 @@ module Resizing
 
     def ensure_content_type(options)
       raise ArgumentError, "need options[:content_type] for #{options.inspect}" unless options[:content_type]
+    end
+
+    def ensure_filename_or_io(filename_or_io)
+      return if filename_or_io.is_a?(File)
+
+      if filename_or_io.is_a?(String)
+        if File.exist?(filename_or_io)
+          return
+        end
+      end
+
+      raise ArgumentError, "filename_or_io must be a File object or a path to a file (#{filename_or_io.class})"
     end
 
     def handle_create_response(response)
