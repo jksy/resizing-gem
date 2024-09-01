@@ -34,7 +34,36 @@ module Resizing
       assert_equal(client.config, config)
     end
 
-    def test_is_postable_file
+    def test_is_postable_with_filename
+      Resizing.configure = @configuration_template
+
+      client = Resizing::Client.new
+      VCR.use_cassette 'client/post', record: :once  do
+        r = client.post('test/data/images/sample1.jpg', content_type: 'image/jpeg')
+        assert_equal(r['id'], '87263920-2081-498e-a107-9625f4fde01b')
+        assert_equal(r['project_id'], Resizing.configure.project_id)
+        assert_equal(r['content_type'], 'image/jpeg')
+        assert(!r['latest_version_id'].nil?)
+        assert(!r['latest_etag'].nil?)
+        assert(!r['created_at'].nil?)
+        assert(!r['updated_at'].nil?)
+        assert_equal(r['public_id'], '/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/87263920-2081-498e-a107-9625f4fde01b/vHg9VFvdI6HRzLFbV495VdwVmHIspLRCo')
+        assert_equal(r['filename'], 'sample1.jpg')
+      end
+    end
+
+    def test_is_unpostable_with_filename
+      Resizing.configure = @configuration_template
+
+      client = Resizing::Client.new
+      VCR.use_cassette 'client/post', record: :once  do
+        assert_raises ArgumentError do
+          client.post('file_is_not_exists', content_type: 'image/jpeg')
+        end
+      end
+    end
+
+    def test_is_postable_with_file
       Resizing.configure = @configuration_template
 
       client = Resizing::Client.new

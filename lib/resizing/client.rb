@@ -37,13 +37,14 @@ module Resizing
       raise NotImplementedError
     end
 
-    def post(file_or_binary, options = {})
+    def post(filename_or_io, options = {})
       ensure_content_type(options)
-      filename = gather_filename file_or_binary, options
+      ensure_filename_or_io(filename_or_io)
+      filename = gather_filename filename_or_io, options
 
       url = build_post_url
       params = {
-        image: Faraday::Multipart::FilePart.new(file_or_binary, options[:content_type], filename)
+        image: Faraday::Multipart::FilePart.new(filename_or_io, options[:content_type], filename)
       }
 
       response = handle_faraday_error do
@@ -56,13 +57,14 @@ module Resizing
       result
     end
 
-    def put(image_id, file_or_binary, options)
+    def put(image_id, filename_or_io, options)
       ensure_content_type(options)
-      filename = gather_filename file_or_binary, options
+      ensure_filename_or_io(filename_or_io)
+      filename = gather_filename filename_or_io, options
 
       url = build_put_url(image_id)
       params = {
-        image: Faraday::Multipart::FilePart.new(file_or_binary, options[:content_type], filename)
+        image: Faraday::Multipart::FilePart.new(filename_or_io, options[:content_type], filename)
       }
 
       response = handle_faraday_error do
@@ -111,9 +113,9 @@ module Resizing
       "#{config.image_host}/projects/#{config.project_id}/upload/images/"
     end
 
-    def gather_filename file_or_binary, options
+    def gather_filename(filename_or_io, options)
       filename = options[:filename]
-      filename ||= file_or_binary.respond_to?(:path) ? File.basename(file_or_binary.path) : nil
+      filename ||= filename_or_io.respond_to?(:path) ? File.basename(filename_or_io.path) : nil
     end
 
     def build_put_url(image_id)
@@ -130,6 +132,18 @@ module Resizing
 
     def ensure_content_type(options)
       raise ArgumentError, "need options[:content_type] for #{options.inspect}" unless options[:content_type]
+    end
+
+    def ensure_filename_or_io(filename_or_io)
+      return if filename_or_io.is_a?(File)
+
+      if filename_or_io.is_a?(String)
+        if File.exist?(filename_or_io)
+          return
+        end
+      end
+
+      raise ArgumentError, "filename_or_io must be a File object or a path to a file (#{filename_or_io.class})"
     end
 
     def handle_create_response(response)
