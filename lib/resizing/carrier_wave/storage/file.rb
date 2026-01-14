@@ -29,9 +29,17 @@ module Resizing
         end
 
         def delete
-          @public_id = Resizing::PublicId.new(model.send :read_attribute, serialization_column)
+          # Try to get the value before changes (for remove! scenario)
+          column_value = if model.respond_to?(:attribute_was)
+                           model.attribute_was(serialization_column) || model.send(:read_attribute,
+                                                                                   serialization_column)
+                         else
+                           model.send(:read_attribute, serialization_column)
+                         end
+          @public_id = Resizing::PublicId.new(column_value)
           return if @public_id.empty? # do nothing
 
+          # 以下、既存のコード（変更なし）
           resp = client.delete(@public_id.image_id)
           if resp['error'] == 'ActiveRecord::RecordNotFound' # 404 not found
             model.send :write_attribute, serialization_column, nil unless model.destroyed?
@@ -89,17 +97,15 @@ module Resizing
             raise NotImplementedError, 'new file is required duplicating'
           end
 
-          if new_file.respond_to? :content_type
-            @content_type ||= new_file.content_type
-          else
-            # guess content-type from extension
-            @content_type ||= MIME::Types.type_for(new_file.path).first.content_type
-          end
+          @content_type ||= if new_file.respond_to? :content_type
+                              new_file.content_type
+                            else
+                              # guess content-type from extension
+                              MIME::Types.type_for(new_file.path).first.content_type
+                            end
 
           original_filename = new_file.try(:original_filename) || new_file.try(:filename) || new_file.try(:path)
-          if original_filename.present?
-            original_filename = ::File.basename(original_filename)
-          end
+          original_filename = ::File.basename(original_filename) if original_filename.present?
 
           content = if new_file.respond_to?(:to_io)
                       new_file.to_io.tap(&:rewind)
@@ -127,7 +133,7 @@ module Resizing
         end
 
         def name(options = {})
-          @public_id = PublicId.new(model.send :read_attribute, serialization_column)
+          @public_id = PublicId.new(model.send(:read_attribute, serialization_column))
           CGI.unescape(@public_id.filename)
         end
 
@@ -138,6 +144,7 @@ module Resizing
         def retrieve(identifier)
           @public_id = Resizing::PublicId.new(identifier)
         end
+
         private
 
         attr_reader :uploader
@@ -194,7 +201,6 @@ module Resizing
           parameters = local_file.method(:url).parameters
           parameters.count == 2 && parameters[1].include?(:options)
         end
-
 
         # def retrieve_from_cache!(identifier)
         #   raise NotImplementedError,
