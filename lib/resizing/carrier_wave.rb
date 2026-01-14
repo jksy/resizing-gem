@@ -32,11 +32,21 @@ module Resizing
     end
 
     def file
-      return if identifier.nil?
+      file_identifier = identifier
+
+      # For remove! scenario, try to get the value before changes
+      if file_identifier.nil? && model.respond_to?(:attribute_was)
+        file_identifier = model.attribute_was(serialization_column)
+      end
+
+      # Fallback to current value
+      file_identifier ||= read_column
+
+      return if file_identifier.nil?
       return @file unless defined? @file
 
       @file ||= Resizing::CarrierWave::Storage::File.new(self)
-      @file.retrieve(identifier)
+      @file.retrieve(file_identifier)
       @file
     end
 
@@ -46,6 +56,7 @@ module Resizing
       transforms = args.map do |version|
         version = version.intern
         raise "No version is found: #{version}, #{versions.keys} are exists." unless versions.has_key? version
+
         versions[version].transform_string
       end.compact
 

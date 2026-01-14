@@ -22,6 +22,7 @@ $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 require 'time'
 require 'timecop'
 require 'vcr'
+require 'logger'
 
 require 'rails'
 require 'active_record'
