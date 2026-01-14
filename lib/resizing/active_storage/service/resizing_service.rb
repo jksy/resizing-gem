@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'active_storage/service'
+
 module Resizing
   module ActiveStorage
     module Service

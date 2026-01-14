@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description   = 'Client and utilities for Resizing '
   spec.homepage      = 'https://github.com/jksy/resizing-gem'
   spec.license       = 'MIT'
-  spec.required_ruby_version = Gem::Requirement.new('>= 2.3.0')
+  spec.required_ruby_version = Gem::Requirement.new('>= 3.0.0')
 
   spec.metadata['allowed_push_host'] = 'https://rubygems.org'
 
@@ -33,7 +33,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rails', '> 6.0'
   spec.add_development_dependency 'carrierwave', '~> 2.2.5'
   spec.add_development_dependency 'fog-aws'
-  spec.add_development_dependency 'minitest'
+  spec.add_development_dependency 'minitest', '~> 5.16'
   spec.add_development_dependency 'minitest-ci'
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'timecop'

@@ -15,6 +15,7 @@ module Resizing
   autoload :CarrierWave, 'resizing/carrier_wave'
   autoload :PublicId, 'resizing/public_id'
   autoload :Video, 'resizing/video'
+  autoload :ActiveStorage, 'resizing/active_storage'
 
   class Error < StandardError; end
   class ConfigurationError < Error; end
