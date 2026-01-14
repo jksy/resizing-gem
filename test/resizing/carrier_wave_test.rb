@@ -25,11 +25,9 @@ module Resizing
       model = prepare_model TestModel
 
       VCR.use_cassette 'carrier_wave_test/remove_resizing_picture' do
-        SecureRandom.stub :uuid, '28c49144-c00d-4cb5-8619-98ce95977b9c' do
-          model.remove_resizing_picture!
+        model.remove_resizing_picture!
 
-          assert_nil model.resizing_picture_url
-        end
+        assert_nil model.resizing_picture_url
       end
     end
 
@@ -37,9 +35,7 @@ module Resizing
       model = prepare_model TestModel
 
       VCR.use_cassette 'carrier_wave_test/remove_resizing_picture' do
-        SecureRandom.stub :uuid, '28c49144-c00d-4cb5-8619-98ce95977b9c' do
-          model.resizing_picture.remove!
-        end
+        model.resizing_picture.remove!
       end
     end
 
@@ -96,29 +92,25 @@ module Resizing
 
     def prepare_model model
       VCR.use_cassette 'carrier_wave_test/save', record: :once do
-        SecureRandom.stub :uuid, '28c49144-c00d-4cb5-8619-98ce95977b9c' do
-          model = model.new
-          file = File.open('test/data/images/sample1.jpg', 'r')
-          uploaded_file = ActionDispatch::Http::UploadedFile.new(
-            filename: File.basename(file.path),
-            type: 'image/jpeg',
-            tempfile: file
-          )
+        model = model.new
+        file = File.open('test/data/images/sample1.jpg', 'r')
+        uploaded_file = ActionDispatch::Http::UploadedFile.new(
+          filename: File.basename(file.path),
+          type: 'image/jpeg',
+          tempfile: file
+        )
 
-          model.resizing_picture = uploaded_file
-          return model
-        end
+        model.resizing_picture = uploaded_file
+        return model
       end
     end
 
     def prepare_model_with_tempfile model
       VCR.use_cassette 'carrier_wave_test/save', record: :once do
-        SecureRandom.stub :uuid, '28c49144-c00d-4cb5-8619-98ce95977b9c' do
-          model = model.new
-          file = File.open('test/data/images/sample1.jpg', 'r')
-          model.resizing_picture = file
-          return model
-        end
+        model = model.new
+        file = File.open('test/data/images/sample1.jpg', 'r')
+        model.resizing_picture = file
+        return model
       end
     end
   end
