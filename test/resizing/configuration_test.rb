@@ -147,5 +147,122 @@ module Resizing
       config = Resizing::Configuration.new @template
       assert_match %r{/projects/#{config.project_id}/upload/images/[\da-z-]}, config.generate_identifier
     end
+
+    def test_generate_image_id_returns_uuid
+      config = Resizing::Configuration.new @template
+      image_id = config.generate_image_id
+
+      assert_instance_of String, image_id
+      # UUID format: 8-4-4-4-12
+      assert_match /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/, image_id
+    end
+
+    def test_generate_image_id_returns_different_uuids
+      config = Resizing::Configuration.new @template
+      id1 = config.generate_image_id
+      id2 = config.generate_image_id
+
+      refute_equal id1, id2
+    end
+
+    def test_equality_returns_true_for_same_configurations
+      config1 = Resizing::Configuration.new @template
+      config2 = Resizing::Configuration.new @template
+
+      assert_equal config1, config2
+    end
+
+    def test_equality_returns_false_for_different_image_host
+      config1 = Resizing::Configuration.new @template
+      template2 = @template.dup
+      template2[:image_host] = 'http://different.host'
+      config2 = Resizing::Configuration.new template2
+
+      refute_equal config1, config2
+    end
+
+    def test_equality_returns_false_for_different_project_id
+      config1 = Resizing::Configuration.new @template
+      template2 = @template.dup
+      template2[:project_id] = 'different-project-id'
+      config2 = Resizing::Configuration.new template2
+
+      refute_equal config1, config2
+    end
+
+    def test_equality_returns_false_for_different_class
+      config = Resizing::Configuration.new @template
+
+      refute_equal config, 'not a configuration'
+      refute_equal config, @template
+    end
+
+    def test_transformation_path_with_multiple_transforms
+      config = Resizing::Configuration.new @template
+      transforms = [
+        { w: 100, h: 200 },
+        { f: 'webp', q: 80 }
+      ]
+
+      path = config.transformation_path(transforms)
+
+      assert_equal 'w_100,h_200/f_webp,q_80', path
+    end
+
+    def test_transformation_path_with_single_hash
+      config = Resizing::Configuration.new @template
+      transform = { w: 300, h: 300, c: 'fill' }
+
+      path = config.transformation_path(transform)
+
+      assert_equal 'w_300,h_300,c_fill', path
+    end
+
+    def test_transformation_path_ignores_unknown_options
+      config = Resizing::Configuration.new @template
+      transform = { w: 100, unknown_option: 'ignored', h: 200 }
+
+      path = config.transformation_path(transform)
+
+      assert_equal 'w_100,h_200', path
+      refute_includes path, 'unknown_option'
+    end
+
+    def test_transformation_path_with_empty_array
+      config = Resizing::Configuration.new @template
+      path = config.transformation_path([])
+
+      assert_equal '', path
+    end
+
+    def test_generate_identifier_includes_project_id
+      config = Resizing::Configuration.new @template
+      identifier = config.generate_identifier
+
+      assert_includes identifier, config.project_id
+    end
+
+    def test_generate_identifier_has_correct_format
+      config = Resizing::Configuration.new @template
+      identifier = config.generate_identifier
+
+      assert_match %r{\A/projects/[\da-z-]+/upload/images/[\da-z-]+\z}, identifier
+    end
+
+    def test_enable_mock_defaults_to_false
+      template = @template.dup
+      template.delete(:enable_mock)
+      config = Resizing::Configuration.new template
+
+      assert_equal false, config.enable_mock
+    end
+
+    def test_enable_mock_can_be_set_to_true
+      template = @template.dup
+      template[:enable_mock] = true
+      config = Resizing::Configuration.new template
+
+      assert_equal true, config.enable_mock
+    end
   end
 end
