@@ -32,6 +32,7 @@ require 'resizing'
 require 'pry-byebug'
 
 require 'minitest/autorun'
+require 'minitest/mock'
 
 VCR.configure do |c|
   c.cassette_library_dir = 'test/vcr'
