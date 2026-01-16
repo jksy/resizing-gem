@@ -103,6 +103,31 @@ module Resizing
       # assert_equal('http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850__tqNsnoGWWUibtIBZ5NgjV45M/', model.resizing_picture_url)
     end
 
+    def test_file_returns_same_instance_on_multiple_calls
+      model = prepare_model TestModel
+      model.save!
+
+      file1 = model.resizing_picture.file
+      file2 = model.resizing_picture.file
+
+      assert_same file1, file2
+    end
+
+    def test_file_returns_nil_for_blank_identifier
+      model = TestModel.new
+      assert_nil model.resizing_picture.file
+    end
+
+    def test_file_uses_read_column_when_identifier_nil
+      model = prepare_model TestModel
+      model.save!
+      model.reload
+
+      file = model.resizing_picture.file
+      refute_nil file
+      assert_instance_of Resizing::CarrierWave::Storage::File, file
+    end
+
     def expect_url
       'http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/' +
         'upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e'
