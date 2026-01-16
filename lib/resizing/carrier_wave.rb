@@ -32,18 +32,9 @@ module Resizing
     end
 
     def file
-      file_identifier = identifier
+      file_identifier = identifier || read_column
 
-      # For remove! scenario, try to get the value before changes
-      if file_identifier.nil? && model.respond_to?(:attribute_was)
-        file_identifier = model.attribute_was(serialization_column)
-      end
-
-      # Fallback to current value
-      file_identifier ||= read_column
-
-      return if file_identifier.nil?
-      return @file unless defined? @file
+      return nil if file_identifier.blank?
 
       @file ||= Resizing::CarrierWave::Storage::File.new(self)
       @file.retrieve(file_identifier)

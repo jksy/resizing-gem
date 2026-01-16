@@ -29,14 +29,19 @@ module Resizing
         end
 
         def delete
-          # Try to get the value before changes (for remove! scenario)
-          column_value = if model.respond_to?(:attribute_was)
-                           model.attribute_was(serialization_column) || model.send(:read_attribute,
+          # Use the identifier from constructor if available, otherwise try to get from model
+          if @public_id.present?
+            # Already set from constructor or retrieve
+          elsif model.respond_to?(:attribute_was)
+            # Try to get the value before changes (for remove! scenario)
+            column_value = model.attribute_was(serialization_column) || model.send(:read_attribute,
                                                                                    serialization_column)
-                         else
-                           model.send(:read_attribute, serialization_column)
-                         end
-          @public_id = Resizing::PublicId.new(column_value)
+            @public_id = Resizing::PublicId.new(column_value)
+          else
+            column_value = model.send(:read_attribute, serialization_column)
+            @public_id = Resizing::PublicId.new(column_value)
+          end
+
           return if @public_id.empty? # do nothing
 
           # 以下、既存のコード（変更なし）

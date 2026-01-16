@@ -39,6 +39,24 @@ module Resizing
       end
     end
 
+    def test_blank_returns_true_after_remove
+      model = prepare_model TestModel
+
+      VCR.use_cassette 'carrier_wave_test/remove_resizing_picture' do
+        refute model.resizing_picture.blank?, 'resizing_picture should not be blank before remove'
+
+        model.remove_resizing_picture!
+
+        assert model.resizing_picture.blank?, 'resizing_picture should be blank after remove'
+        assert_nil model.resizing_picture_url
+      end
+    end
+
+    def test_blank_returns_true_for_new_record
+      model = TestModel.new
+      assert model.resizing_picture.blank?, 'resizing_picture should be blank for new record'
+    end
+
     def test_picture_url_return_correct_value_and_when_model_reloaded
       model = prepare_model TestModel
       model.save!
@@ -86,11 +104,11 @@ module Resizing
     end
 
     def expect_url
-      'http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/'+
+      'http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/' +
         'upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e'
     end
 
-    def prepare_model model
+    def prepare_model(model)
       VCR.use_cassette 'carrier_wave_test/save', record: :once do
         model = model.new
         file = File.open('test/data/images/sample1.jpg', 'r')
@@ -105,7 +123,7 @@ module Resizing
       end
     end
 
-    def prepare_model_with_tempfile model
+    def prepare_model_with_tempfile(model)
       VCR.use_cassette 'carrier_wave_test/save', record: :once do
         model = model.new
         file = File.open('test/data/images/sample1.jpg', 'r')
