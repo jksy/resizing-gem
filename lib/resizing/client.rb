@@ -137,13 +137,16 @@ module Resizing
     def ensure_filename_or_io(filename_or_io)
       return if filename_or_io.is_a?(File)
 
+      # Accept IO-like objects (StringIO, Tempfile, etc.)
+      return if filename_or_io.respond_to?(:read) && filename_or_io.respond_to?(:rewind)
+
       if filename_or_io.is_a?(String)
         if File.exist?(filename_or_io)
           return
         end
       end
 
-      raise ArgumentError, "filename_or_io must be a File object or a path to a file (#{filename_or_io.class})"
+      raise ArgumentError, "filename_or_io must be a File object, an IO-like object, or a path to a file (#{filename_or_io.class})"
     end
 
     def handle_create_response(response)

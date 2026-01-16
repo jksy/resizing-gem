@@ -115,9 +115,9 @@ module Resizing
           content = if new_file.respond_to?(:to_io)
                       new_file.to_io.tap(&:rewind)
                     elsif new_file.respond_to?(:read) && new_file.respond_to?(:rewind)
-                      new_file.read.tap do
-                        new_file.rewind
-                      end
+                      # Pass the IO object itself, not the read result
+                      new_file.rewind
+                      new_file
                     else
                       new_file
                     end
