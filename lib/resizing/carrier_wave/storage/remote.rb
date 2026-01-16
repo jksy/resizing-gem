@@ -18,9 +18,13 @@ module Resizing
           f
         end
 
-        # def retrieve!(identifier)
-        #   super
-        # end
+        def retrieve!(identifier)
+          return nil if identifier.blank?
+
+          f = Resizing::CarrierWave::Storage::File.new(uploader, identifier)
+          f.retrieve(identifier)
+          f
+        end
 
         def cache!(new_file)
           f = Resizing::CarrierWave::Storage::File.new(uploader)
