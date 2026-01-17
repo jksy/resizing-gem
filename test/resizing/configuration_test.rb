@@ -23,7 +23,6 @@ module Resizing
       template = @template.dup
       template.delete(:image_host)
       config = Resizing::Configuration.new template
-      assert_equal(config.host, Resizing::Configuration::DEFAULT_IMAGE_HOST)
       assert_equal(config.image_host, Resizing::Configuration::DEFAULT_IMAGE_HOST)
     end
 

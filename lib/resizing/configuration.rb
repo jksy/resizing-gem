@@ -37,11 +37,6 @@ module Resizing
       raise_configiration_error
     end
 
-    def host
-      Kernel.warn '[DEPRECATED] The Configuration#host is deprecated. Use Configuration#image_host.'
-      image_host
-    end
-
     def generate_auth_header
       current_timestamp = Time.now.to_i
       data = [current_timestamp, secret_token].join('|')
@@ -98,16 +93,11 @@ module Resizing
       raise ConfigurationError, 'need hash and some keys like :image_host, video_host, :project_id, :secret_token'
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    # rubocop:disable Metrics/AbcSize
     def initialize_by_hash(attr)
-      @image_host = attr[:image_host].dup.freeze || DEFAULT_IMAGE_HOST
-      if attr[:host].present?
-        if attr[:host].present?
-          Kernel.warn '[DEPRECATED] The host on configration is deprecated. Use image_host, video_host'
-        end
-        @image_host ||= attr[:host].dup.freeze || DEFAULT_HOST # for backward compatible
-      end
+      raise 'The host on configuration is deprecated. Use image_host, video_host' if attr[:host].present?
 
+      @image_host = attr[:image_host].dup.freeze || DEFAULT_IMAGE_HOST
       @video_host = attr[:video_host].dup.freeze || DEFAULT_VIDEO_HOST
       @project_id = attr[:project_id].dup.freeze
       @secret_token = attr[:secret_token].dup.freeze
@@ -115,6 +105,6 @@ module Resizing
       @response_timeout = attr[:response_timeout] || DEFAULT_RESPONSE_TIMEOUT
       @enable_mock = attr[:enable_mock] || false
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    # rubocop:enable Metrics/AbcSize
   end
 end
