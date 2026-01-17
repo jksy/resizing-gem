@@ -28,6 +28,7 @@ require 'rails'
 require 'active_record'
 require 'fog-aws'
 require 'carrierwave'
+require 'carrierwave/orm/activerecord'
 require 'resizing'
 require 'pry-byebug'
 
@@ -103,19 +104,13 @@ class ResizingUploaderWithDefaultURL < CarrierWave::Uploader::Base
 end
 
 class TestModel < ::ActiveRecord::Base
-  extend CarrierWave::Mount
-
   mount_uploader :resizing_picture, ResizingUploader
 end
 
 class TestJPGModel < ::ActiveRecord::Base
-  extend CarrierWave::Mount
-
   mount_uploader :resizing_picture, ResizingJPGUploader
 end
 
 class TestModelWithDefaultURL < ::ActiveRecord::Base
-  extend CarrierWave::Mount
-
   mount_uploader :resizing_picture, ResizingUploaderWithDefaultURL
 end
