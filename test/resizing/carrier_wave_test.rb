@@ -57,6 +57,24 @@ module Resizing
       assert model.resizing_picture.blank?, 'resizing_picture should be blank for new record'
     end
 
+    def test_remove_resizing_picture_with_flag_and_save
+      model = prepare_model TestModel
+      model.save!
+
+      refute model.resizing_picture.blank?, 'resizing_picture should not be blank before remove'
+
+      model.remove_resizing_picture = true
+
+      # フラグを設定した時点ではHTTP通信は発生しない
+      # save時に削除が実行される
+      VCR.use_cassette 'carrier_wave_test/remove_resizing_picture' do
+        model.save!
+      end
+
+      assert model.resizing_picture.blank?, 'resizing_picture should be blank after save'
+      assert_nil model.resizing_picture_url
+    end
+
     def test_picture_url_return_correct_value_and_when_model_reloaded
       model = prepare_model TestModel
       model.save!
