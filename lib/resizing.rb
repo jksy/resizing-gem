@@ -70,11 +70,11 @@ module Resizing
   # TODO: refactoring
   #
   # identifier:
-  # public_id:  /projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850..
-  # identifier: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  # project_id:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  # image_id:                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  # version:                                                                                                      ^^^^^^^^^
+  # public_id:  /projects/<project_id>/upload/images/<image_id>/v<version>
+  # identifier: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  # project_id:           ^^^^^^^^^^^^^
+  # image_id:                                        ^^^^^^^^^^
+  # version:                                                      ^^^^^^^^
   def self.generate_identifier
     Resizing.configure.generate_identifier
   end

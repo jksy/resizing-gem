@@ -11,7 +11,9 @@ module Resizing
       # rubocop:disable Metrics/ParameterLists
       class ResizingService < ::ActiveStorage::Service
         # def initialize(bucket:, upload: {}, public: false, **options)
+        # rubocop:disable Lint/MissingSuper
         def initialize; end
+        # rubocop:enable Lint/MissingSuper
 
         def upload(_key, _io, checksum: nil, filename: nil, content_type: nil, disposition: nil, **)
           raise NotImplementedError, 'upload is not implemented'

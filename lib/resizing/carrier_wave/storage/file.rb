@@ -3,6 +3,7 @@
 module Resizing
   module CarrierWave
     module Storage
+      # rubocop:disable Metrics/ClassLength
       class File
         include ::CarrierWave::Utilities::Uri
 
@@ -28,6 +29,7 @@ module Resizing
           @content_type || file.try(:content_type)
         end
 
+        # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
         def delete
           # Use the identifier from constructor if available, otherwise try to get from model
           if @public_id.present?
@@ -58,6 +60,7 @@ module Resizing
 
           raise APIError, "raise someone error:#{resp.inspect}"
         end
+        # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
         def extension
           raise NotImplementedError, 'this method is do not used. maybe'
@@ -96,6 +99,8 @@ module Resizing
         end
         alias path current_path
 
+        # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
+        # rubocop:disable Metrics/MethodLength, Metrics/PerceivedComplexity
         def store(new_file)
           if new_file.is_a?(self.class)
             # new_file.copy_to(path)
@@ -136,6 +141,8 @@ module Resizing
 
           true
         end
+        # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity
+        # rubocop:enable Metrics/MethodLength, Metrics/PerceivedComplexity
 
         def name(_options = {})
           @public_id = PublicId.new(model.send(:read_attribute, serialization_column))
@@ -222,6 +229,7 @@ module Resizing
         #     "Need to implement #clean_cache! if you want to use #{self.class.name} as a cache storage."
         # end
       end
+      # rubocop:enable Metrics/ClassLength
     end
   end
 end

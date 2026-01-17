@@ -24,6 +24,7 @@ module Resizing
   #   }
   #
   #++
+  # rubocop:disable Metrics/ClassLength
   class Client
     include Resizing::Constants
     include Resizing::Configurable
@@ -110,8 +111,7 @@ module Resizing
     end
 
     def gather_filename(filename_or_io, options)
-      filename = options[:filename]
-      filename ||= filename_or_io.respond_to?(:path) ? File.basename(filename_or_io.path) : nil
+      options[:filename] || (filename_or_io.respond_to?(:path) ? File.basename(filename_or_io.path) : nil)
     end
 
     def build_put_url(image_id)
@@ -170,12 +170,12 @@ module Resizing
       raise APIError, 'No response is returned' if response.nil?
 
       case response.status
-      when HTTP_STATUS_OK, HTTP_STATUS_NOT_FOUND
+      when HTTP_STATUS_OK
         JSON.parse(response.body)
       when HTTP_STATUS_NOT_FOUND
         raise decode_error_from(response) if when_not_found == :raise
 
-        nil
+        JSON.parse(response.body)
       else
         raise decode_error_from(response)
       end
@@ -192,4 +192,5 @@ module Resizing
       err
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

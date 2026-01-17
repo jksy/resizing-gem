@@ -98,6 +98,7 @@ module Resizing
       raise ConfigurationError, 'need hash and some keys like :image_host, video_host, :project_id, :secret_token'
     end
 
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def initialize_by_hash(attr)
       @image_host = attr[:image_host].dup.freeze || DEFAULT_IMAGE_HOST
       if attr[:host].present?
@@ -114,5 +115,6 @@ module Resizing
       @response_timeout = attr[:response_timeout] || DEFAULT_RESPONSE_TIMEOUT
       @enable_mock = attr[:enable_mock] || false
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
   end
 end

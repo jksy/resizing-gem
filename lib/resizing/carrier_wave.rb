@@ -4,6 +4,7 @@ require 'resizing/carrier_wave/storage/file'
 require 'resizing/carrier_wave/storage/remote'
 
 module Resizing
+  # rubocop:disable Metrics/ModuleLength
   module CarrierWave
     class Railtie < ::Rails::Railtie
       # Railtie skelton codes
@@ -147,7 +148,7 @@ module Resizing
 
     private
 
-    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
     def transform_string_from(processor)
       action = processor.first
       value = processor.second
@@ -170,6 +171,7 @@ module Resizing
         "#{key}_#{value}"
       end.compact.join(',')
     end
-    # rubocop:enable Metrics/AbcSize
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity
   end
+  # rubocop:enable Metrics/ModuleLength
 end
