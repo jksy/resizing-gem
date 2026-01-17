@@ -116,9 +116,12 @@ module Resizing
     end
 
     def test_is_successful
-      model = prepare_model_with_tempfile TestModel
-      model.save!
-      # assert_equal('http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850__tqNsnoGWWUibtIBZ5NgjV45M/', model.resizing_picture_url)
+      model = TestModel.new
+      VCR.use_cassette 'carrier_wave_test/save', record: :once do
+        file = File.open('test/data/images/sample1.jpg', 'r')
+        model.resizing_picture = file
+      end
+      assert_equal('http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e/', model.resizing_picture_url)
     end
 
     def test_file_returns_same_instance_on_multiple_calls
