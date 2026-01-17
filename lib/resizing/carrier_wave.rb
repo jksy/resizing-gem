@@ -4,6 +4,7 @@ require 'resizing/carrier_wave/storage/file'
 require 'resizing/carrier_wave/storage/remote'
 
 module Resizing
+  # rubocop:disable Metrics/ModuleLength
   module CarrierWave
     class Railtie < ::Rails::Railtie
       # Railtie skelton codes
@@ -46,7 +47,7 @@ module Resizing
 
       transforms = args.map do |version|
         version = version.intern
-        raise "No version is found: #{version}, #{versions.keys} are exists." unless versions.has_key? version
+        raise "No version is found: #{version}, #{versions.keys} are exists." unless versions.key? version
 
         versions[version].transform_string
       end.compact
@@ -110,11 +111,6 @@ module Resizing
       read_column
     end
 
-    def store!
-      # DO NOTHING
-      super
-    end
-
     def serialization_column
       model.send(:_mounter, mounted_as).send(:serialization_column)
     end
@@ -152,7 +148,7 @@ module Resizing
 
     private
 
-    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
     def transform_string_from(processor)
       action = processor.first
       value = processor.second
@@ -175,6 +171,7 @@ module Resizing
         "#{key}_#{value}"
       end.compact.join(',')
     end
-    # rubocop:enable Metrics/AbcSize
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity
   end
+  # rubocop:enable Metrics/ModuleLength
 end

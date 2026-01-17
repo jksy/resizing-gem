@@ -2,7 +2,7 @@
 
 module Resizing
   module Configurable
-    def self.included mod
+    def self.included(mod)
       mod.send(:attr_reader, :config)
     end
 

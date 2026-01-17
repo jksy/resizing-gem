@@ -24,6 +24,7 @@ module Resizing
   #   }
   #
   #++
+  # rubocop:disable Metrics/ClassLength
   class Client
     include Resizing::Constants
     include Resizing::Configurable
@@ -53,8 +54,7 @@ module Resizing
         end
       end
 
-      result = handle_create_response(response)
-      result
+      handle_create_response(response)
     end
 
     def put(image_id, filename_or_io, options)
@@ -73,8 +73,7 @@ module Resizing
         end
       end
 
-      result = handle_create_response(response)
-      result
+      handle_create_response(response)
     end
 
     def delete(image_id)
@@ -86,8 +85,7 @@ module Resizing
         end
       end
 
-      result = handle_delete_response(response)
-      result
+      handle_delete_response(response)
     end
 
     def metadata(image_id, options = {})
@@ -99,8 +97,7 @@ module Resizing
         end
       end
 
-      result = handle_metadata_response(response, options)
-      result
+      handle_metadata_response(response, options)
     end
 
     private
@@ -114,8 +111,7 @@ module Resizing
     end
 
     def gather_filename(filename_or_io, options)
-      filename = options[:filename]
-      filename ||= filename_or_io.respond_to?(:path) ? File.basename(filename_or_io.path) : nil
+      options[:filename] || (filename_or_io.respond_to?(:path) ? File.basename(filename_or_io.path) : nil)
     end
 
     def build_put_url(image_id)
@@ -140,17 +136,14 @@ module Resizing
       # Accept IO-like objects (StringIO, Tempfile, etc.)
       return if filename_or_io.respond_to?(:read) && filename_or_io.respond_to?(:rewind)
 
-      if filename_or_io.is_a?(String)
-        if File.exist?(filename_or_io)
-          return
-        end
-      end
+      return if filename_or_io.is_a?(String) && File.exist?(filename_or_io)
 
-      raise ArgumentError, "filename_or_io must be a File object, an IO-like object, or a path to a file (#{filename_or_io.class})"
+      raise ArgumentError,
+            "filename_or_io must be a File object, an IO-like object, or a path to a file (#{filename_or_io.class})"
     end
 
     def handle_create_response(response)
-      raise APIError, "No response is returned" if response.nil?
+      raise APIError, 'No response is returned' if response.nil?
 
       case response.status
       when HTTP_STATUS_OK, HTTP_STATUS_CREATED
@@ -161,7 +154,7 @@ module Resizing
     end
 
     def handle_delete_response(response)
-      raise APIError, "No response is returned" if response.nil?
+      raise APIError, 'No response is returned' if response.nil?
 
       case response.status
       when HTTP_STATUS_OK, HTTP_STATUS_NOT_FOUND
@@ -174,24 +167,30 @@ module Resizing
     def handle_metadata_response(response, options = {})
       when_not_found = options[:when_not_found] || nil
 
-      raise APIError, "No response is returned" if response.nil?
+      raise APIError, 'No response is returned' if response.nil?
 
       case response.status
-      when HTTP_STATUS_OK, HTTP_STATUS_NOT_FOUND
+      when HTTP_STATUS_OK
         JSON.parse(response.body)
       when HTTP_STATUS_NOT_FOUND
         raise decode_error_from(response) if when_not_found == :raise
-        nil
+
+        JSON.parse(response.body)
       else
         raise decode_error_from(response)
       end
     end
 
-    def decode_error_from response
-      result = JSON.parse(response.body) rescue {}
+    def decode_error_from(response)
+      result = begin
+        JSON.parse(response.body)
+      rescue StandardError
+        {}
+      end
       err = APIError.new(result['message'] || "invalid http status code #{response.status}")
       err.decoded_body = result
       err
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 module Resizing
   class PublicId
-    def initialize public_id
+    def initialize(public_id)
       @public_id = public_id
       parsed
     end
@@ -38,13 +40,12 @@ module Resizing
 
     def parsed
       return nil if @public_id.nil?
+
       unless defined? @parsed
         @parsed = Resizing.separate_public_id(@public_id)
-        raise "type error #{@public_id}" if @parsed == nil
+        raise "type error #{@public_id}" if @parsed.nil?
       end
       @parsed
     end
-
-    private
   end
 end

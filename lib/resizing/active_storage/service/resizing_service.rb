@@ -8,10 +8,12 @@ module Resizing
       # ref.
       # https://github.com/rails/rails/blob/master/activestorage/lib/active_storage/service/s3_service.rb
       #
-      # rubocop:disable Lint/UnusedMethodArgument,Metrics/ParameterLists
+      # rubocop:disable Metrics/ParameterLists
       class ResizingService < ::ActiveStorage::Service
         # def initialize(bucket:, upload: {}, public: false, **options)
+        # rubocop:disable Lint/MissingSuper
         def initialize; end
+        # rubocop:enable Lint/MissingSuper
 
         def upload(_key, _io, checksum: nil, filename: nil, content_type: nil, disposition: nil, **)
           raise NotImplementedError, 'upload is not implemented'
@@ -53,7 +55,7 @@ module Resizing
           raise NotImplementedError, 'public_url is not implemented'
         end
       end
-      # rubocop:enable Lint/UnusedMethodArgument,Metrics/ParameterLists
+      # rubocop:enable Metrics/ParameterLists
     end
   end
 end

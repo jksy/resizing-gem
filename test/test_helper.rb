@@ -1,9 +1,10 @@
 # frozen_string_literal: true
+
 require 'simplecov'
 require 'simplecov-cobertura'
 
 SimpleCov.start do
-  add_filter "/test/"
+  add_filter '/test/'
 
   if ENV['CI']
     formatter SimpleCov::Formatter::CoberturaFormatter
@@ -41,7 +42,7 @@ VCR.configure do |c|
   c.allow_http_connections_when_no_cassette = false
 
   # raise Faraday::TimeoutError, when project_id is timeout_project_id
-  c.before_http_request(lambda {|r| URI(r.uri).path.match? %r(/projects/timeout_project_id) } ) do
+  c.before_http_request(->(r) { URI(r.uri).path.match? %r{/projects/timeout_project_id} }) do
     raise Faraday::TimeoutError
   end
 end
@@ -59,7 +60,7 @@ ActiveRecord::Base.establish_connection(
 ActiveRecord::Schema.define do
   self.verbose = false
 
-  %i(test_models test_jpg_models test_model_with_default_urls).each do |model_name|
+  %i[test_models test_jpg_models test_model_with_default_urls].each do |model_name|
     connection.execute "drop table if exists #{model_name}"
 
     create_table model_name do |t|

@@ -2,12 +2,12 @@
 
 module Resizing
   class MockClient
-    def post(file_or_binary, options = {})
+    def post(_file_or_binary, _options = {})
       r = load_yaml('test/vcr/client/post.yml')
       JSON.parse(r['string'])
     end
 
-    def put(name, file_or_binary, options)
+    def put(name, _file_or_binary, _options)
       r = load_yaml('test/vcr/client/put.yml')
       result = JSON.parse(r['string'])
       # replace name, public_id and version by name argument
@@ -26,7 +26,7 @@ module Resizing
       result
     end
 
-    def metadata(name)
+    def metadata(name, _options = {})
       r = load_yaml('test/vcr/client/metadata.yml')
       result = JSON.parse(r['string'])
       # replace name and public_id by name argument
@@ -34,15 +34,16 @@ module Resizing
       result['public_id'].gsub!(/bfdaf2b3-7ec5-41f4-9caa-d53247dd9666/, name)
       result
     end
+
     private
 
-    def load_yaml filename
+    def load_yaml(filename)
       path = "#{library_root}/#{filename}"
       YAML.load_file(path)['http_interactions'].first['response']['body']
     end
 
     def library_root
-      @library_root ||= File.expand_path('../../../', __FILE__)
+      @library_root ||= File.expand_path('../..', __dir__)
     end
   end
 end
