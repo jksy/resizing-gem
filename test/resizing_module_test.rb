@@ -121,4 +121,86 @@ class ResizingModuleTest < Minitest::Test
     assert_includes url, 'image456/v789/'
     assert_includes url, 'w_100'
   end
+
+  def test_generate_identifier_returns_identifier_string
+    Resizing.configure = {
+      image_host: 'https://img.example.com',
+      project_id: 'project123',
+      secret_token: 'token123'
+    }
+
+    identifier = Resizing.generate_identifier
+
+    assert_instance_of String, identifier
+    assert_includes identifier, 'project123'
+    assert_match %r{/projects/project123/upload/images/}, identifier
+  end
+
+  def test_client_returns_mock_client_when_enable_mock_is_true
+    Resizing.configure = {
+      image_host: 'https://img.example.com',
+      project_id: 'project123',
+      secret_token: 'token123',
+      enable_mock: true
+    }
+
+    client = Resizing.client
+
+    assert_instance_of Resizing::MockClient, client
+  end
+
+  def test_client_returns_real_client_when_enable_mock_is_false
+    Resizing.configure = {
+      image_host: 'https://img.example.com',
+      project_id: 'project123',
+      secret_token: 'token123',
+      enable_mock: false
+    }
+
+    client = Resizing.client
+
+    assert_instance_of Resizing::Client, client
+  end
+
+  def test_put_delegates_to_client
+    Resizing.configure = {
+      image_host: 'https://img.example.com',
+      project_id: 'project123',
+      secret_token: 'token123',
+      enable_mock: true
+    }
+
+    result = Resizing.put('image_id', 'dummy', content_type: 'image/jpeg')
+
+    assert_instance_of Hash, result
+    assert_equal 'image_id', result['id']
+  end
+
+  def test_delete_delegates_to_client
+    Resizing.configure = {
+      image_host: 'https://img.example.com',
+      project_id: 'project123',
+      secret_token: 'token123',
+      enable_mock: true
+    }
+
+    result = Resizing.delete('image_id')
+
+    assert_instance_of Hash, result
+    assert_equal 'image_id', result['id']
+  end
+
+  def test_metadata_delegates_to_client
+    Resizing.configure = {
+      image_host: 'https://img.example.com',
+      project_id: 'project123',
+      secret_token: 'token123',
+      enable_mock: true
+    }
+
+    result = Resizing.metadata('image_id', {})
+
+    assert_instance_of Hash, result
+    assert_equal 'image_id', result['id']
+  end
 end

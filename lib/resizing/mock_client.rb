@@ -26,7 +26,7 @@ module Resizing
       result
     end
 
-    def metadata(name)
+    def metadata(name, _options = {})
       r = load_yaml('test/vcr/client/metadata.yml')
       result = JSON.parse(r['string'])
       # replace name and public_id by name argument

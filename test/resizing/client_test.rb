@@ -200,5 +200,41 @@ module Resizing
         )
       end
     end
+
+    def test_get_raises_not_implemented_error
+      Resizing.configure = @configuration_template
+      client = Resizing::Client.new
+
+      assert_raises NotImplementedError do
+        client.get('some_image_id')
+      end
+    end
+
+    def test_post_raises_error_without_content_type
+      Resizing.configure = @configuration_template
+      client = Resizing::Client.new
+
+      assert_raises ArgumentError do
+        client.post('test/data/images/sample1.jpg', {})
+      end
+    end
+
+    def test_post_raises_error_with_invalid_io
+      Resizing.configure = @configuration_template
+      client = Resizing::Client.new
+
+      assert_raises ArgumentError do
+        client.post(12_345, content_type: 'image/jpeg')
+      end
+    end
+
+    def test_put_raises_error_without_content_type
+      Resizing.configure = @configuration_template
+      client = Resizing::Client.new
+
+      assert_raises ArgumentError do
+        client.put('image_id', 'test/data/images/sample1.jpg', {})
+      end
+    end
   end
 end
