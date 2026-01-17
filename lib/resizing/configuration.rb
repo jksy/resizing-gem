@@ -27,12 +27,8 @@ module Resizing
     def initialize(*attrs)
       case attr = attrs.first
       when Hash
-        if attr[:project_id].nil? || attr[:secret_token].nil?
-          raise_configiration_error
-        end
-        if attr[:host].present?
-          raise_configiration_error
-        end
+        raise_configiration_error if attr[:project_id].nil? || attr[:secret_token].nil?
+        raise_configiration_error if attr[:host].present?
 
         initialize_by_hash attr
         return
@@ -42,8 +38,8 @@ module Resizing
     end
 
     def host
-      Kernel.warn "[DEPRECATED] The Configuration#host is deprecated. Use Configuration#image_host."
-      self.image_host
+      Kernel.warn '[DEPRECATED] The Configuration#host is deprecated. Use Configuration#image_host.'
+      image_host
     end
 
     def generate_auth_header
@@ -105,7 +101,9 @@ module Resizing
     def initialize_by_hash(attr)
       @image_host = attr[:image_host].dup.freeze || DEFAULT_IMAGE_HOST
       if attr[:host].present?
-        Kernel.warn "[DEPRECATED] The host on configration is deprecated. Use image_host, video_host" if attr[:host].present?
+        if attr[:host].present?
+          Kernel.warn '[DEPRECATED] The host on configration is deprecated. Use image_host, video_host'
+        end
         @image_host ||= attr[:host].dup.freeze || DEFAULT_HOST # for backward compatible
       end
 

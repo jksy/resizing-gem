@@ -9,8 +9,8 @@ gemspec
 rails_version = ENV['RAILS_VERSION'] || '7.0'
 gem 'rails', "~> #{rails_version}"
 
-gem 'rake', '~> 13.0'
+gem 'byebug'
 gem 'github_changelog_generator'
 gem 'mysql2'
-gem 'byebug'
 gem 'pry-byebug'
+gem 'rake', '~> 13.0'

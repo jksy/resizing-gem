@@ -58,7 +58,7 @@ module Resizing
     def test_handle_faraday_error_catches_timeout_error
       assert_raises Resizing::APIError do
         @client.handle_faraday_error do
-          raise Faraday::TimeoutError.new('timeout')
+          raise Faraday::TimeoutError, 'timeout'
         end
       end
     end

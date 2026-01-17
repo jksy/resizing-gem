@@ -38,7 +38,7 @@ module Resizing
       template = @template.dup
       template[:host] = 'need raise execption if host is presented'
       assert_raises ConfigurationError do
-        config = Resizing::Configuration.new template
+        _config = Resizing::Configuration.new template
       end
     end
 
@@ -154,7 +154,7 @@ module Resizing
 
       assert_instance_of String, image_id
       # UUID format: 8-4-4-4-12
-      assert_match /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/, image_id
+      assert_match(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/, image_id)
     end
 
     def test_generate_image_id_returns_different_uuids

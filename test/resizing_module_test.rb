@@ -5,16 +5,16 @@ require 'test_helper'
 class ResizingModuleTest < Minitest::Test
   def setup
     # Reset configure before each test to ensure clean state
-    if Resizing.instance_variable_defined?(:@configure)
-      Resizing.remove_instance_variable(:@configure)
-    end
+    return unless Resizing.instance_variable_defined?(:@configure)
+
+    Resizing.remove_instance_variable(:@configure)
   end
 
   def teardown
     # Reset configure after each test
-    if Resizing.instance_variable_defined?(:@configure)
-      Resizing.remove_instance_variable(:@configure)
-    end
+    return unless Resizing.instance_variable_defined?(:@configure)
+
+    Resizing.remove_instance_variable(:@configure)
   end
 
   def test_configure_raises_error_when_not_initialized

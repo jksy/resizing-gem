@@ -137,7 +137,7 @@ module Resizing
           true
         end
 
-        def name(options = {})
+        def name(_options = {})
           @public_id = PublicId.new(model.send(:read_attribute, serialization_column))
           CGI.unescape(@public_id.filename)
         end
