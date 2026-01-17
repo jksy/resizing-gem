@@ -1,8 +1,14 @@
 # Resizing
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/resizing`. To experiment with that code, run `bin/console` for an interactive prompt.
+[![Gem Version](https://img.shields.io/gem/v/resizing.svg)](https://rubygems.org/gems/resizing)
+[![test](https://github.com/jksy/resizing-gem/actions/workflows/test.yml/badge.svg)](https://github.com/jksy/resizing-gem/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/jksy/resizing-gem/graph/badge.svg)](https://codecov.io/gh/jksy/resizing-gem)
 
-TODO: Delete this and the text above, and describe your gem
+Client and utilities for [Resizing](https://www.resizing.net/) - an image hosting and transformation service.
+
+## Requirements
+
+- Ruby 3.1.0 or later
 
 ## Installation
 
@@ -20,37 +26,59 @@ Or install it yourself as:
 
     $ gem install resizing
 
+## Configuration
+
+```ruby
+Resizing.configure = {
+  image_host: 'https://img.resizing.net',
+  video_host: 'https://video.resizing.net',
+  project_id: 'your-project-id',
+  secret_token: 'your-secret-token'
+}
+```
+
 ## Usage
 
+### Basic Client Usage
+
+```ruby
+# Initialize client
+client = Resizing::Client.new
+
+# Upload image to resizing
+file = File.open('sample.jpg', 'r')
+response = client.post(file)
+# => {
+#      "id"=>"a4ed2bf0-a4cf-44fa-9c82-b53e581cb469",
+#      "project_id"=>"098a2a0d-0000-0000-0000-000000000000",
+#      "content_type"=>"image/jpeg",
+#      "latest_version_id"=>"LJY5bxBF7Ryxfr5kC1F.63W8bzp3pcUm",
+#      "latest_etag"=>"\"190143614e6c342637584f46f18f8c58\"",
+#      "created_at"=>"2020-05-15T15:33:10.711Z",
+#      "updated_at"=>"2020-05-15T15:33:10.711Z",
+#      "url"=>"/projects/098a2a0d-0000-0000-0000-000000000000/upload/images/a4ed2bf0-a4cf-44fa-9c82-b53e581cb469"
+#    }
+
+# Generate transformation URL
+image_id = response['id']
+transformation_url = Resizing.url_from_image_id(image_id, nil, ['w_200', 'h_300'])
+# => "https://img.resizing.net/projects/.../upload/images/.../w_200,h_300"
 ```
-  # initialize client
-  options = {
-    project_id: '098a2a0d-0000-0000-0000-000000000000',
-    secret_token: '4g1cshg......rbs6'
-  }
-  client = Resizing::Client.new(options)
 
-  # upload image to resizing
-  file = File.open('sample.jpg', 'r')
-  response = client.post(file)
-  => {
-       "id"=>"a4ed2bf0-a4cf-44fa-9c82-b53e581cb469",
-       "project_id"=>"098a2a0d-0000-0000-0000-000000000000",
-       "content_type"=>"image/jpeg",
-       "latest_version_id"=>"LJY5bxBF7Ryxfr5kC1F.63W8bzp3pcUm",
-       "latest_etag"=>"\"190143614e6c342637584f46f18f8c58\"",
-       "created_at"=>"2020-05-15T15:33:10.711Z",
-       "updated_at"=>"2020-05-15T15:33:10.711Z",
-       "url"=>"/projects/098a2a0d-0000-0000-0000-000000000000/upload/images/a4ed2bf0-a4cf-44fa-9c82-b53e581cb469"
-     }
+### CarrierWave Integration
 
-  name = response['url']
-  # get transformation url
-  name = response['url']
-  transform = {width: 200, height: 300}
+```ruby
+class ImageUploader < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
 
-  transformation_url = Resizing.url(name, transform)
-  => "https://www.resizing.net/projects/098a2a0d-0000-0000-0000-000000000000/upload/images/a4ed2bf0-a4cf-44fa-9c82-b53e581cb469/width_200,height_300"
+  version :list_smallest do
+    process resize_to_fill: [200, 200]
+  end
+end
+
+class User
+  mount_uploader :image, ImageUploader
+end
 ```
 
 ## Development
@@ -61,8 +89,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/jksy/resizing.
-
+Bug reports and pull requests are welcome on GitHub at https://github.com/jksy/resizing-gem.
 
 ## License
 
