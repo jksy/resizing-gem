@@ -47,6 +47,88 @@ VCR.configure do |c|
   end
 end
 
+# VCRカセットのリクエストが実際に使用されたかを検証するヘルパー
+module VCRRequestAssertions
+  # VCRカセット内でブロックを実行し、カセットのインタラクションがすべて使用されたことを確認
+  #
+  # @param cassette_name [String] VCRカセット名
+  # @param options [Hash] VCR.use_cassetteに渡すオプション
+  # @yield 実行するブロック
+  # @return [void]
+  #
+  # @example
+  #   assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+  #     model.remove_resizing_picture!
+  #     model.save!
+  #   end
+  def assert_vcr_requests_made(cassette_name, options = {}, &block)
+    options = { record: :none }.merge(options)
+
+    VCR.use_cassette(cassette_name, options) do |cassette|
+      interaction_list = cassette.http_interactions
+      initial_count = interaction_list.remaining_unused_interaction_count
+
+      assert initial_count.positive?,
+             "Cassette '#{cassette_name}' should have at least 1 interaction"
+
+      yield cassette if block_given?
+
+      remaining_count = interaction_list.remaining_unused_interaction_count
+      used_count = initial_count - remaining_count
+
+      assert_equal 0, remaining_count,
+                   "Expected all #{initial_count} cassette interactions to be used, " \
+                   "but #{remaining_count} remain unused (#{used_count} were used)"
+    end
+  end
+
+  # VCRカセット内でブロックを実行し、指定した数のインタラクションが使用されたことを確認
+  #
+  # @param cassette_name [String] VCRカセット名
+  # @param expected_count [Integer] 使用されるべきインタラクション数
+  # @param options [Hash] VCR.use_cassetteに渡すオプション
+  # @yield 実行するブロック
+  # @return [void]
+  #
+  # @example
+  #   assert_vcr_requests_count 'client/post', 1 do
+  #     Resizing.post(file)
+  #   end
+  def assert_vcr_requests_count(cassette_name, expected_count, options = {}, &block)
+    options = { record: :none }.merge(options)
+
+    VCR.use_cassette(cassette_name, options) do |cassette|
+      interaction_list = cassette.http_interactions
+      initial_count = interaction_list.remaining_unused_interaction_count
+
+      yield cassette if block_given?
+
+      remaining_count = interaction_list.remaining_unused_interaction_count
+      used_count = initial_count - remaining_count
+
+      assert_equal expected_count, used_count,
+                   "Expected #{expected_count} cassette interactions to be used, " \
+                   "but #{used_count} were used"
+    end
+  end
+
+  # VCRカセット内でブロックを実行し、リクエストが発行されないことを確認
+  #
+  # @param cassette_name [String] VCRカセット名
+  # @param options [Hash] VCR.use_cassetteに渡すオプション
+  # @yield 実行するブロック
+  # @return [void]
+  #
+  # @example
+  #   assert_vcr_no_requests 'carrier_wave_test/remove_resizing_picture' do
+  #     model.remove_resizing_picture = true
+  #     # save!を呼ばないのでリクエストは発行されない
+  #   end
+  def assert_vcr_no_requests(cassette_name, options = {}, &block)
+    assert_vcr_requests_count(cassette_name, 0, options, &block)
+  end
+end
+
 ActiveRecord::Base.establish_connection(
   adapter: 'mysql2',
   host: '127.0.0.1',

@@ -4,6 +4,8 @@ require 'test_helper'
 
 module Resizing
   class CarrierWaveTest < Minitest::Test
+    include VCRRequestAssertions
+
     def setup
       TestModel.delete_all
       TestJPGModel.delete_all
@@ -23,33 +25,42 @@ module Resizing
 
     def test_remove_resizing_picture
       model = prepare_model TestModel
+      model.save!
 
-      VCR.use_cassette 'carrier_wave_test/remove_resizing_picture' do
+      # VCRカセットのDELETEリクエストが実際に発行されたことを確認
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
         model.remove_resizing_picture!
-
-        assert_nil model.resizing_picture_url
+        model.save!
       end
+
+      # DELETEが成功した結果、URLがnilになることを確認
+      assert_nil model.resizing_picture_url
     end
 
-    def test_do_not_raise_if_empty_column_is_removed
+    def test_remove_calls_delete_immediately
       model = prepare_model TestModel
+      model.save!
 
-      VCR.use_cassette 'carrier_wave_test/remove_resizing_picture' do
+      # remove!を呼んだとき即時にDELETEリクエストがとぶことを確認する
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
         model.resizing_picture.remove!
       end
     end
 
     def test_blank_returns_true_after_remove
       model = prepare_model TestModel
+      model.save!
 
-      VCR.use_cassette 'carrier_wave_test/remove_resizing_picture' do
-        refute model.resizing_picture.blank?, 'resizing_picture should not be blank before remove'
+      refute model.resizing_picture.blank?, 'resizing_picture should not be blank before remove'
 
+      # DELETEリクエストが発行されたことを確認
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
         model.remove_resizing_picture!
-
-        assert model.resizing_picture.blank?, 'resizing_picture should be blank after remove'
-        assert_nil model.resizing_picture_url
+        model.save!
       end
+
+      assert model.resizing_picture.blank?, 'resizing_picture should be blank after remove'
+      assert_nil model.resizing_picture_url
     end
 
     def test_blank_returns_true_for_new_record
@@ -65,12 +76,12 @@ module Resizing
 
       model.remove_resizing_picture = true
 
-      # フラグを設定した時点ではHTTP通信は発生しない
-      # save時に削除が実行される
-      VCR.use_cassette 'carrier_wave_test/remove_resizing_picture' do
+      # save時にDELETEリクエストが発行されたことを確認
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
         model.save!
       end
 
+      # DELETEが成功した結果、blank?がtrueになることを確認
       assert model.resizing_picture.blank?, 'resizing_picture should be blank after save'
       assert_nil model.resizing_picture_url
     end
@@ -117,10 +128,13 @@ module Resizing
 
     def test_is_successful
       model = TestModel.new
-      VCR.use_cassette 'carrier_wave_test/save', record: :once do
+
+      # POSTリクエストが発行されたことを確認
+      assert_vcr_requests_made 'carrier_wave_test/save' do
         file = File.open('test/data/images/sample1.jpg', 'r')
         model.resizing_picture = file
       end
+
       assert_equal('http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e/', model.resizing_picture_url)
     end
 
@@ -155,8 +169,9 @@ module Resizing
     end
 
     def prepare_model(model)
+      result = nil
       VCR.use_cassette 'carrier_wave_test/save', record: :once do
-        model = model.new
+        result = model.new
         file = File.open('test/data/images/sample1.jpg', 'r')
         uploaded_file = ActionDispatch::Http::UploadedFile.new(
           filename: File.basename(file.path),
@@ -164,18 +179,9 @@ module Resizing
           tempfile: file
         )
 
-        model.resizing_picture = uploaded_file
-        return model
+        result.resizing_picture = uploaded_file
       end
-    end
-
-    def prepare_model_with_tempfile(model)
-      VCR.use_cassette 'carrier_wave_test/save', record: :once do
-        model = model.new
-        file = File.open('test/data/images/sample1.jpg', 'r')
-        model.resizing_picture = file
-        return model
-      end
+      result
     end
   end
 end
