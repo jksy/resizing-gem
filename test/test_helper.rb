@@ -61,7 +61,7 @@ module VCRRequestAssertions
   #     model.remove_resizing_picture!
   #     model.save!
   #   end
-  def assert_vcr_requests_made(cassette_name, options = {}, &block)
+  def assert_vcr_requests_made(cassette_name, options = {})
     options = { record: :none }.merge(options)
 
     VCR.use_cassette(cassette_name, options) do |cassette|
@@ -94,7 +94,7 @@ module VCRRequestAssertions
   #   assert_vcr_requests_count 'client/post', 1 do
   #     Resizing.post(file)
   #   end
-  def assert_vcr_requests_count(cassette_name, expected_count, options = {}, &block)
+  def assert_vcr_requests_count(cassette_name, expected_count, options = {})
     options = { record: :none }.merge(options)
 
     VCR.use_cassette(cassette_name, options) do |cassette|
@@ -196,4 +196,63 @@ end
 
 class TestModelWithDefaultURL < ::ActiveRecord::Base
   mount_uploader :resizing_picture, ResizingUploaderWithDefaultURL
+end
+
+# コールバックのテスト用モデル
+# mount_uploader が登録する各種コールバックが正しく動作するかをテストするため
+# カスタムコールバックを追加して呼び出しを追跡する
+class TestModelWithCallbackTracking < ::ActiveRecord::Base
+  self.table_name = 'test_models'
+
+  mount_uploader :resizing_picture, ResizingUploader
+
+  attr_accessor :callback_log
+
+  # before_save / after_save コールバック
+  before_save :track_before_save
+  after_save :track_after_save
+
+  # before_destroy / after_destroy コールバック
+  before_destroy :track_before_destroy
+  after_destroy :track_after_destroy
+
+  # after_commit コールバック
+  after_commit :track_create_commit, on: :create
+  after_commit :track_update_commit, on: :update
+  after_commit :track_destroy_commit, on: :destroy
+
+  def initialize(*args)
+    super
+    @callback_log = []
+  end
+
+  private
+
+  def track_before_save
+    @callback_log << :before_save
+  end
+
+  def track_after_save
+    @callback_log << :after_save
+  end
+
+  def track_before_destroy
+    @callback_log << :before_destroy
+  end
+
+  def track_after_destroy
+    @callback_log << :after_destroy
+  end
+
+  def track_create_commit
+    @callback_log << :create_commit
+  end
+
+  def track_update_commit
+    @callback_log << :update_commit
+  end
+
+  def track_destroy_commit
+    @callback_log << :destroy_commit
+  end
 end
