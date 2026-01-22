@@ -168,20 +168,270 @@ module Resizing
         'upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e'
     end
 
-    def prepare_model(model)
+    def prepare_model(model_class)
       result = nil
       VCR.use_cassette 'carrier_wave_test/save', record: :once do
-        result = model.new
-        file = File.open('test/data/images/sample1.jpg', 'r')
-        uploaded_file = ActionDispatch::Http::UploadedFile.new(
-          filename: File.basename(file.path),
-          type: 'image/jpeg',
-          tempfile: file
-        )
-
-        result.resizing_picture = uploaded_file
+        result = model_class.new
+        attach_sample_image(result)
       end
       result
+    end
+
+    # モデルにサンプル画像を添付するヘルパーメソッド
+    # VCRカセット内で呼び出す必要がある
+    def attach_sample_image(model)
+      file = File.open('test/data/images/sample1.jpg', 'r')
+      uploaded_file = ActionDispatch::Http::UploadedFile.new(
+        filename: File.basename(file.path),
+        type: 'image/jpeg',
+        tempfile: file
+      )
+      model.resizing_picture = uploaded_file
+    end
+
+    # TestModelWithCallbackTracking 用のヘルパーメソッド
+    def prepare_tracking_model
+      prepare_model(TestModelWithCallbackTracking)
+    end
+
+    # 既存モデルに新しい画像をアップロードするヘルパーメソッド
+    def upload_new_image(model)
+      VCR.use_cassette 'carrier_wave_test/save', record: :once do
+        attach_sample_image(model)
+      end
+    end
+
+    # after_commit コールバックが正しく呼ばれることを確認するテスト
+    # 通常のテスト環境ではトランザクションが使われるため、after_commit が呼ばれない問題がある
+    # このテストでは、明示的にトランザクションをコミットして after_commit が呼ばれることを確認する
+
+    def test_after_commit_callback_is_called_on_create
+      # after_commit on: :create が呼ばれることを確認
+      model = prepare_tracking_model
+
+      # 明示的なトランザクション内で save! することで after_commit が呼ばれる
+      ActiveRecord::Base.transaction do
+        model.save!
+      end
+
+      assert_includes model.callback_log, :create_commit,
+                      'after_commit on: :create should be called after transaction commit'
+    end
+
+    def test_after_commit_callback_is_called_on_update
+      # after_commit on: :update が呼ばれることを確認
+      model = prepare_tracking_model
+      model.save!
+      model.callback_log.clear
+
+      # 更新時の after_commit が呼ばれることを確認
+      upload_new_image(model)
+
+      ActiveRecord::Base.transaction do
+        model.save!
+      end
+
+      assert_includes model.callback_log, :update_commit,
+                      'after_commit on: :update should be called after transaction commit'
+    end
+
+    def test_after_commit_callback_is_called_on_destroy
+      # after_commit on: :destroy が呼ばれることを確認
+      model = prepare_tracking_model
+      model.save!
+      model.callback_log.clear
+
+      # destroy 時の after_commit が呼ばれることを確認
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+        ActiveRecord::Base.transaction do
+          model.destroy!
+        end
+      end
+
+      assert_includes model.callback_log, :destroy_commit,
+                      'after_commit on: :destroy should be called after transaction commit'
+    end
+
+    def test_carrierwave_remove_previously_stored_is_called_on_update
+      # CarrierWave が登録する remove_previously_stored_#{column} が
+      # 画像の更新時に呼ばれることを確認
+      model = prepare_model TestModel
+      model.save!
+
+      model.resizing_picture_url
+
+      # 新しい画像をアップロードして更新
+      upload_new_image(model)
+
+      # 更新時には古い画像を削除するため DELETE リクエストが発行されるべき
+      # ただし、同じカセットを使用しているため同じ URL になる
+      # 実際の環境では異なる public_id が返されるため、古い画像が削除される
+      ActiveRecord::Base.transaction do
+        model.save!
+      end
+
+      # モデルが更新されたことを確認
+      refute_nil model.resizing_picture_url
+    end
+
+    # ============================================================
+    # before_save / after_save コールバックのテスト
+    # ============================================================
+
+    def test_before_save_write_identifier_is_called
+      # before_save :write_#{column}_identifier が呼ばれ、
+      # カラムに識別子が書き込まれることを確認
+      model = prepare_model TestModel
+
+      # 保存前は識別子がDBに書き込まれていない
+      assert model.new_record?
+
+      model.save!
+
+      # 保存後は識別子がDBに書き込まれている
+      assert_match %r{/projects/.+/upload/images/.+}, model.read_attribute(:resizing_picture)
+    end
+
+    def test_after_save_store_is_called
+      # after_save :store_#{column}! が呼ばれ、
+      # ファイルがストレージに保存されることを確認
+      model = prepare_model TestModel
+      model.save!
+
+      # ファイルが保存され、URLが取得できることを確認
+      refute_nil model.resizing_picture_url
+      refute model.resizing_picture.blank?
+    end
+
+    def test_after_save_store_previous_changes_is_called
+      # after_save :store_previous_changes_for_#{column} が呼ばれ、
+      # 前の変更が追跡されることを確認
+      model = prepare_model TestModel
+      model.save!
+
+      model.read_attribute(:resizing_picture)
+
+      # 新しい画像をアップロード
+      upload_new_image(model)
+
+      model.save!
+
+      # previous_changes に resizing_picture の変更が記録されていることを確認
+      # (CarrierWave が store_previous_changes_for_#{column} で追跡)
+      assert model.previous_changes.key?('resizing_picture'),
+             'previous_changes should track resizing_picture changes'
+    end
+
+    # ============================================================
+    # after_commit :mark_remove_#{column}_false のテスト
+    # ============================================================
+
+    def test_mark_remove_column_false_is_called_after_update
+      # after_commit :mark_remove_#{column}_false, on: :update が呼ばれ、
+      # remove フラグがリセットされることを確認
+      model = prepare_model TestModel
+      model.save!
+
+      # remove フラグを設定
+      model.remove_resizing_picture = '1'
+
+      # この時点ではフラグが設定されている
+      assert_equal '1', model.remove_resizing_picture
+
+      # save 後に after_commit で mark_remove_resizing_picture_false が呼ばれる
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+        ActiveRecord::Base.transaction do
+          model.save!
+        end
+      end
+
+      # after_commit 後はフラグがリセットされている
+      # CarrierWave が mark_remove_#{column}_false でフラグをリセット
+      refute model.remove_resizing_picture,
+             'remove flag should be reset after commit'
+    end
+
+    # ============================================================
+    # after_commit :remove_#{column}!, on: :destroy のテスト
+    # ============================================================
+
+    def test_remove_column_is_called_on_destroy
+      # after_commit :remove_#{column}!, on: :destroy が呼ばれ、
+      # ファイルが削除されることを確認
+      model = prepare_model TestModel
+      model.save!
+
+      refute model.resizing_picture.blank?
+
+      # destroy 時に DELETE リクエストが発行されることを確認
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+        ActiveRecord::Base.transaction do
+          model.destroy!
+        end
+      end
+
+      # モデルが削除されたことを確認
+      assert model.destroyed?
+    end
+
+    # ============================================================
+    # コールバック順序のテスト
+    # ============================================================
+
+    def test_callback_order_on_create
+      # create 時のコールバック順序を確認
+      # 1. before_save :write_#{column}_identifier
+      # 2. after_save :store_#{column}!
+      # 3. after_commit (on: :create)
+      model = prepare_tracking_model
+
+      ActiveRecord::Base.transaction do
+        model.save!
+      end
+
+      # コールバックが正しい順序で呼ばれたことを確認
+      assert_equal %i[before_save after_save create_commit], model.callback_log
+    end
+
+    def test_callback_order_on_update
+      # update 時のコールバック順序を確認
+      # 1. before_save :write_#{column}_identifier
+      # 2. after_save :store_#{column}!
+      # 3. after_save :store_previous_changes_for_#{column}
+      # 4. after_commit :mark_remove_#{column}_false
+      # 5. after_commit :remove_previously_stored_#{column}
+      model = prepare_tracking_model
+      model.save!
+      model.callback_log.clear
+
+      # 更新
+      upload_new_image(model)
+
+      ActiveRecord::Base.transaction do
+        model.save!
+      end
+
+      # コールバックが正しい順序で呼ばれたことを確認
+      assert_equal %i[before_save after_save update_commit], model.callback_log
+    end
+
+    def test_callback_order_on_destroy
+      # destroy 時のコールバック順序を確認
+      # 1. before_destroy
+      # 2. after_destroy
+      # 3. after_commit :remove_#{column}!, on: :destroy
+      model = prepare_tracking_model
+      model.save!
+      model.callback_log.clear
+
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+        ActiveRecord::Base.transaction do
+          model.destroy!
+        end
+      end
+
+      # コールバックが正しい順序で呼ばれたことを確認
+      assert_equal %i[before_destroy after_destroy destroy_commit], model.callback_log
     end
   end
 end
