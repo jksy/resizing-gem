@@ -6,6 +6,15 @@ require 'faraday/multipart'
 require 'json'
 
 module Resizing
+  # Faraday 1.x uses Faraday::UploadIO, Faraday 2.x uses Faraday::Multipart::FilePart
+  def self.file_part_class
+    if defined?(Faraday::Multipart::FilePart)
+      Faraday::Multipart::FilePart
+    else
+      Faraday::UploadIO
+    end
+  end
+
   autoload :Constants, 'resizing/constants'
   autoload :Configurable, 'resizing/configurable'
   autoload :HttpClientable, 'resizing/http_clientable'

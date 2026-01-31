@@ -12,17 +12,19 @@ permissions:
 
 jobs:
   test:
-    name: Ruby ${{ matrix.ruby }} / Rails ${{ matrix.rails }}
+    name: Ruby ${{ matrix.ruby }} / Rails ${{ matrix.rails }} / Faraday ${{ matrix.faraday }}
     strategy:
       fail-fast: false
       matrix:
         ruby: ['3.1']
         rails: ['6.1', '7.0']
+        faraday: ['1.0', '2.0']
 
     runs-on: ubuntu-22.04
 
     env:
       RAILS_VERSION: ${{ matrix.rails }}
+      FARADAY_VERSION: ${{ matrix.faraday }}
 
     steps:
       - uses: actions/checkout@v4
@@ -50,6 +52,10 @@ jobs:
       - name: bundle install
         run: |
           bundle install
+
+      - name: Show Faraday version
+        run: |
+          bundle list | grep faraday
 
       - name: Run test
         run: |
