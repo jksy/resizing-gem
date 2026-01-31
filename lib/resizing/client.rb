@@ -45,7 +45,7 @@ module Resizing
 
       url = build_post_url
       params = {
-        image: Faraday::Multipart::FilePart.new(filename_or_io, options[:content_type], filename)
+        image: Resizing.file_part_class.new(filename_or_io, options[:content_type], filename)
       }
 
       response = handle_faraday_error do
@@ -64,7 +64,7 @@ module Resizing
 
       url = build_put_url(image_id)
       params = {
-        image: Faraday::Multipart::FilePart.new(filename_or_io, options[:content_type], filename)
+        image: Resizing.file_part_class.new(filename_or_io, options[:content_type], filename)
       }
 
       response = handle_faraday_error do
