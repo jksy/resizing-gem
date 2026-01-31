@@ -29,11 +29,20 @@ module Resizing
     def initialize(*args)
       @requested_format = nil
       @default_format = nil
+      @retrieved_identifier = nil
       super
     end
 
+    # Override to store the identifier and set up @file for later use
+    def retrieve_from_store!(identifier)
+      @retrieved_identifier = identifier
+      super
+      # Ensure @file is set up so that remove! can call @file.delete
+      file
+    end
+
     def file
-      file_identifier = identifier || read_column
+      file_identifier = @retrieved_identifier || identifier || read_column
 
       return nil if file_identifier.blank?
 

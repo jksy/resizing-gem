@@ -29,7 +29,7 @@ module Resizing
           @content_type || file.try(:content_type)
         end
 
-        # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+        # rubocop:disable Metrics/AbcSize
         def delete
           # Use the identifier from constructor if available, otherwise try to get from model
           if @public_id.present?
@@ -44,23 +44,27 @@ module Resizing
             @public_id = Resizing::PublicId.new(column_value)
           end
 
-          return if @public_id.empty? # do nothing
+          return if @public_id.empty?
 
-          # 以下、既存のコード（変更なし）
           resp = client.delete(@public_id.image_id)
+
+          # NOTE: 削除時のカラムクリアは以下の理由で必要:
+          # - 画像更新時: 古い画像IDと新しい画像IDが異なるため、古い画像削除時に新しいIDを消さないようにする
+          # - 明示的なremove!時: カラムをnilにする必要がある
+          # - clear_column_if_current_imageは削除される画像IDと現在のカラム値を比較して判断
           if resp['error'] == 'ActiveRecord::RecordNotFound' # 404 not found
-            model.send :write_attribute, serialization_column, nil unless model.destroyed?
+            clear_column_if_current_image
             return
           end
 
           if @public_id.image_id == resp['id']
-            model.send :write_attribute, serialization_column, nil unless model.destroyed?
+            clear_column_if_current_image
             return
           end
 
           raise APIError, "raise someone error:#{resp.inspect}"
         end
-        # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+        # rubocop:enable Metrics/AbcSize
 
         def extension
           raise NotImplementedError, 'this method is do not used. maybe'
@@ -95,6 +99,10 @@ module Resizing
         end
 
         def current_path
+          # Return the path from @public_id if set (for retrieve scenarios),
+          # otherwise fall back to reading from model
+          return @public_id.to_s if @public_id.present?
+
           @current_path = model.send :read_attribute, serialization_column
         end
         alias path current_path
@@ -131,11 +139,14 @@ module Resizing
           @public_id = Resizing::PublicId.new(@response['public_id'])
           @content_type = @response['content_type']
 
-          # force update column
-          # model_class
-          #   .where(primary_key_name => model.send(primary_key_name))
-          #   .update_all(serialization_column=>@public_id)
-
+          # NOTE: 理想的にはStorage::File内でモデルのカラムをいじらず、CarrierWaveに任せるべきだが、
+          # 現在の実装では以下の理由で必要:
+          # - CarrierWaveは write_uploader(column, mounter.identifiers.first) でカラムを更新
+          # - mounter.identifiers -> uploaders.map(&:identifier) -> storage.identifier -> uploader.filename
+          # - resizing-gemの filenameメソッドは read_column を返す（既存のカラム値）
+          # - そのため、CarrierWaveに任せると旧い値が書き戻されてしまう
+          # TODO: これを修正するには、Remote#identifierをオーバーライドして@public_id.to_sを返すか、
+          #       uploader.filenameの実装を変更する必要がある
           # save new value to model class
           model.send :write_attribute, serialization_column, @public_id.to_s
 
@@ -175,6 +186,20 @@ module Resizing
 
         def serialization_column
           @serialization_column ||= model.send(:_mounter, uploader.mounted_as).send(:serialization_column)
+        end
+
+        # Only clear the column if the deleted image is the current one
+        # (not when deleting an old image during update)
+        def clear_column_if_current_image
+          return if model.destroyed?
+
+          current_value = model.send(:read_attribute, serialization_column)
+          current_public_id = Resizing::PublicId.new(current_value)
+
+          # Only clear if the deleted image is the same as the current one
+          return unless current_public_id.image_id == @public_id.image_id
+
+          model.send :write_attribute, serialization_column, nil
         end
 
         ##
