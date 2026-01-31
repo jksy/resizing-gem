@@ -274,6 +274,35 @@ module Resizing
       refute_nil model.resizing_picture_url
     end
 
+    def test_delete_is_called_when_image_is_updated
+      # 画像更新時に古い画像を削除する DELETE リクエストが発行されることを確認
+      # VCR カセット update_image.yml には以下が含まれる:
+      # 1. POST (古い画像のアップロード) -> old-image-id を返す
+      # 2. POST (新しい画像のアップロード) -> new-image-id を返す
+      # 3. DELETE (古い画像の削除) -> old-image-id を削除
+
+      assert_vcr_requests_made 'carrier_wave_test/update_image' do
+        model = TestModel.new
+        model.resizing_picture = File.open(File.expand_path('../data/images/sample1.jpg', __dir__))
+        model.save!
+
+        old_public_id = model.read_attribute(:resizing_picture)
+        assert_match(/old-image-id/, old_public_id)
+
+        # 新しい画像をアップロードして更新（同じカセット内で）
+        model.resizing_picture = File.open(File.expand_path('../data/images/sample1.jpg', __dir__))
+
+        ActiveRecord::Base.transaction do
+          model.save!
+        end
+
+        # 更新後は新しい画像の public_id が設定されている
+        new_public_id = model.read_attribute(:resizing_picture)
+        assert_match(/new-image-id/, new_public_id)
+      end
+      # カセット内の全リクエスト（POST x2, DELETE x1）が発行されたことを確認
+    end
+
     # ============================================================
     # before_save / after_save コールバックのテスト
     # ============================================================
