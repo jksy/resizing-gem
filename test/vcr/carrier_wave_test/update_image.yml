@@ -1,0 +1,63 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/
+    body:
+      encoding: ASCII-8BIT
+      string: ''
+    headers:
+      User-Agent:
+      - Faraday v1.0.1
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - application/json; charset=utf-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"old-image-id-1111-1111-111111111111","project_id":"e06e710d-f026-4dcf-b2c0-eab0de8bb83f","content_type":"image/jpeg","version":"v1","public_id":"/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/old-image-id-1111-1111-111111111111/v1"}'
+  recorded_at: Sun, 11 Oct 2020 04:56:48 GMT
+- request:
+    method: post
+    uri: http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/
+    body:
+      encoding: ASCII-8BIT
+      string: ''
+    headers:
+      User-Agent:
+      - Faraday v1.0.1
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - application/json; charset=utf-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"new-image-id-2222-2222-222222222222","project_id":"e06e710d-f026-4dcf-b2c0-eab0de8bb83f","content_type":"image/jpeg","version":"v2","public_id":"/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/new-image-id-2222-2222-222222222222/v2"}'
+  recorded_at: Sun, 11 Oct 2020 04:56:49 GMT
+- request:
+    method: delete
+    uri: http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/old-image-id-1111-1111-111111111111
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - Faraday v1.0.1
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - application/json; charset=utf-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"old-image-id-1111-1111-111111111111","project_id":"e06e710d-f026-4dcf-b2c0-eab0de8bb83f"}'
+  recorded_at: Sun, 11 Oct 2020 04:56:50 GMT
+recorded_with: VCR 6.0.0
