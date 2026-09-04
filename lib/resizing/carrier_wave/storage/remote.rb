@@ -12,9 +12,13 @@ module Resizing
           f
         end
 
-        def remove!(file)
-          f = Resizing::CarrierWave::Storage::File.new(uploader)
-          f.delete(file)
+        # NOTE: CarrierWave 2.2.x never reaches here (Uploader::Remove#remove! calls
+        # @file.delete directly), but newer versions may remove through the storage.
+        # File#delete takes no argument and resolves the image to delete by itself, so
+        # reuse the given file when it is already ours instead of building a new one.
+        def remove!(file = nil)
+          f = file.is_a?(Resizing::CarrierWave::Storage::File) ? file : Resizing::CarrierWave::Storage::File.new(uploader)
+          f.delete
           f
         end
 

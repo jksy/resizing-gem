@@ -8,6 +8,7 @@ module Resizing
     module Storage
       class FileTest < Minitest::Test
         include VCRRequestAssertions
+        include FakeApiClientAssertions
 
         def setup
           @configuration_template = {
@@ -179,26 +180,6 @@ module Resizing
           'error' => 'ActiveRecord::RecordNotFound',
           'message' => "Upload::Image##{IMAGE_ID} not found(no record)"
         }.freeze
-
-        # Resizing::Client の代わりに使う偽クライアント (delete の応答を固定し、呼び出しを記録する)
-        class FakeApiClient
-          attr_reader :deleted_ids
-
-          def initialize(response)
-            @response = response
-            @deleted_ids = []
-          end
-
-          def delete(image_id)
-            @deleted_ids << image_id
-            @response.dup
-          end
-        end
-
-        def with_fake_api_client(response)
-          fake = FakeApiClient.new(response)
-          Resizing::Client.stub(:new, fake) { yield fake }
-        end
 
         def model_with_column(value)
           model = TestModel.new

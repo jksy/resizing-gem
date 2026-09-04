@@ -6,6 +6,8 @@ module Resizing
   module CarrierWave
     module Storage
       class RemoteTest < Minitest::Test
+        include FakeApiClientAssertions
+
         def setup
           @configuration_template = {
             image_host: 'http://192.168.56.101:5000',
@@ -101,6 +103,54 @@ module Resizing
 
           refute_same first, second
           assert_equal first.public_id.to_s, second.public_id.to_s
+        end
+
+        IMAGE_ID = '14ea7aac-a194-4330-931f-6b562aec413d'
+        OTHER_IDENTIFIER = '/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/new-image-id-2222-2222-222222222222/v2'
+
+        def test_remove_deletes_the_image_stored_in_the_model_column
+          model = @uploader.model
+          model.send(:write_attribute, :resizing_picture, IDENTIFIER)
+
+          file = with_fake_api_client({ 'id' => IMAGE_ID }) do |fake|
+            result = @storage.remove!(nil)
+            assert_equal [IMAGE_ID], fake.deleted_ids
+            result
+          end
+
+          assert_instance_of Resizing::CarrierWave::Storage::File, file
+          assert_nil model.read_attribute(:resizing_picture)
+        end
+
+        def test_remove_accepts_a_carrier_wave_file_argument
+          # CarrierWave が storage.remove!(file) 経由で呼ぶ場合も ArgumentError にならないこと
+          model = @uploader.model
+          model.send(:write_attribute, :resizing_picture, IDENTIFIER)
+
+          with_fake_api_client({ 'id' => IMAGE_ID }) do |fake|
+            file = @uploader.file
+            result = @storage.remove!(file)
+
+            assert_equal [IMAGE_ID], fake.deleted_ids
+            assert_same file, result
+          end
+
+          assert_nil model.read_attribute(:resizing_picture)
+        end
+
+        def test_remove_deletes_the_given_file_not_the_current_column_value
+          # 画像更新後に古い画像を消す場合: 削除対象は渡された file、カラムは新しい画像のまま
+          model = @uploader.model
+          model.send(:write_attribute, :resizing_picture, OTHER_IDENTIFIER)
+          file = Resizing::CarrierWave::Storage::File.new(@uploader, IDENTIFIER)
+
+          with_fake_api_client({ 'id' => IMAGE_ID }) do |fake|
+            @storage.remove!(file)
+
+            assert_equal [IMAGE_ID], fake.deleted_ids
+          end
+
+          assert_equal OTHER_IDENTIFIER, model.read_attribute(:resizing_picture)
         end
 
         def test_storage_is_subclass_of_carrierwave_abstract_storage
