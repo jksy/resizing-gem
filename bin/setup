@@ -5,4 +5,7 @@ set -vx
 
 bundle install
 
+# Run the CI checks before every push (see git-hooks/pre-push)
+git config core.hooksPath git-hooks
+
 # Do any other automated setup that you need to do here

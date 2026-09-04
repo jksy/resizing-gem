@@ -1,0 +1,6 @@
+#!/bin/sh
+# Entry point for the pre-push hook. Enabled by bin/setup, which points
+# core.hooksPath at this directory.
+HOOKS_DIR="$(git rev-parse --show-toplevel)/git-hooks"
+
+"$HOOKS_DIR/pre-push-ruby.sh" || exit 1
