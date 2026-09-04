@@ -5,6 +5,10 @@ require 'simplecov-cobertura'
 
 SimpleCov.start do
   add_filter '/test/'
+  # bundle install で vendor/ 配下に入る gem を計測対象から除外し、
+  # カバレッジ率が lib の実態を表すようにする
+  add_filter '/vendor/'
+  track_files 'lib/**/*.rb'
 
   if ENV['CI']
     formatter SimpleCov::Formatter::CoberturaFormatter
