@@ -105,14 +105,29 @@ Requirements: Docker and either VS Code + the *Dev Containers* extension, or the
 
 The container provides:
 
-- Ruby 3.1 (change `VARIANT` in `.devcontainer/compose.yaml` to test another version,
-  e.g. `1-3.2-bookworm`, then rebuild the container)
+- Ruby managed by [rbenv](https://github.com/rbenv/rbenv), so the version can be changed
+  from inside the container (see below)
 - MySQL 5.7 with the `resizing_gem_test` database, matching CI
 - `RAILS_VERSION` (default `7.0`) to test against another Rails version, matching the
   `RAILS_VERSION` switch in the `Gemfile` and in CI
 
 Gems are installed into a named volume (`/usr/local/bundle`), so the host's `vendor/`
 directory is left untouched.
+
+#### Changing the Ruby version
+
+Ruby 3.1.7 is installed when the image is built, and `.ruby-version` is honoured on
+container creation. To switch to another version from inside the container:
+
+```console
+$ rbenv install 3.3.12
+$ rbenv local 3.3.12    # writes .ruby-version (gitignored)
+$ bundle install
+```
+
+`rbenv install` needs no `sudo`; the build dependencies are already in the image. To
+change the version the image ships with, set the `RUBY_VERSION` build arg in
+`.devcontainer/compose.yaml` and rebuild.
 
 ### Without a Dev Container
 

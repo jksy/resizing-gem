@@ -4,7 +4,9 @@
 
 ## 開発環境
 
-devcontainer（`.devcontainer/`）を用意してある。VS Code の "Reopen in Container"、または `devcontainer up --workspace-folder .` で、Ruby・MySQL・`bundle install` まで揃った状態になる。Ruby のバージョンを変えて試す場合は `.devcontainer/compose.yaml` の `VARIANT` を変更してリビルドする。
+devcontainer（`.devcontainer/`）を用意してある。VS Code の "Reopen in Container"、または `devcontainer up --workspace-folder .` で、Ruby・MySQL・`bundle install` まで揃った状態になる。
+
+Ruby は rbenv 管理で `.ruby-version` に従う。別バージョンを試す場合はコンテナ内で `rbenv install <version>` → `rbenv local <version>` → `bundle install`（sudo 不要）。イメージに焼くバージョンを変える場合は `.devcontainer/compose.yaml` の `RUBY_VERSION` を変更してリビルドする。
 
 devcontainer を使わない場合はテスト用に MySQL を自前で起動する（`docker compose up -d mysql`）。接続先は `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_DATABASE` / `MYSQL_USER` / `MYSQL_PASSWORD` で上書きでき、既定は `root:secret@127.0.0.1:3306/resizing_gem_test`。
 

@@ -2,6 +2,19 @@
 # Runs once after the dev container is created.
 set -euo pipefail
 
+# Honour a .ruby-version that asks for a Ruby the image does not carry.
+# (.ruby-version is gitignored, so it differs from machine to machine.)
+if [ -f .ruby-version ]; then
+  required="$(cat .ruby-version)"
+  if ! rbenv versions --bare | grep -qx "${required}"; then
+    echo "==> installing Ruby ${required} (from .ruby-version)"
+    rbenv install "${required}"
+    rbenv rehash
+  fi
+fi
+
+echo "==> ruby $(ruby -e 'print RUBY_VERSION')"
+
 echo "==> bundle install"
 bundle install
 
