@@ -69,7 +69,7 @@ module Resizing
 
     def test_that_it_has_no_secret_token
       template = @template.dup
-      template.delete(:project_id)
+      template.delete(:secret_token)
       assert_raises ConfigurationError do
         Resizing::Configuration.new template
       end
@@ -262,6 +262,142 @@ module Resizing
       config = Resizing::Configuration.new template
 
       assert_equal true, config.enable_mock
+    end
+
+    def test_that_it_has_default_response_timeout
+      template = @template.dup
+      template.delete(:response_timeout)
+      config = Resizing::Configuration.new template
+      assert_equal(Resizing::Configuration::DEFAULT_RESPONSE_TIMEOUT, config.response_timeout)
+    end
+
+    def test_that_it_has_same_response_timeout
+      config = Resizing::Configuration.new @template
+      assert_equal(@template[:response_timeout], config.response_timeout)
+    end
+
+    def test_that_it_raises_when_initialized_without_hash
+      assert_raises(ConfigurationError) { Resizing::Configuration.new }
+      assert_raises(ConfigurationError) { Resizing::Configuration.new(nil) }
+      assert_raises(ConfigurationError) { Resizing::Configuration.new('not a hash') }
+    end
+
+    def test_that_it_can_be_initialized_with_only_required_keys
+      config = Resizing::Configuration.new(project_id: 'project', secret_token: 'token')
+
+      assert_equal 'project', config.project_id
+      assert_equal 'token', config.secret_token
+      assert_equal Resizing::Configuration::DEFAULT_IMAGE_HOST, config.image_host
+      assert_equal Resizing::Configuration::DEFAULT_VIDEO_HOST, config.video_host
+      assert_equal Resizing::Configuration::DEFAULT_OPEN_TIMEOUT, config.open_timeout
+      assert_equal Resizing::Configuration::DEFAULT_RESPONSE_TIMEOUT, config.response_timeout
+      assert_equal false, config.enable_mock
+    end
+
+    def test_that_string_attributes_are_frozen_copies_of_input
+      template = @template.dup
+      template[:image_host] = +'http://mutable.host'
+      template[:project_id] = +'mutable-project'
+      template[:secret_token] = +'mutable-token'
+      config = Resizing::Configuration.new template
+
+      assert config.image_host.frozen?
+      assert config.project_id.frozen?
+      assert config.secret_token.frozen?
+
+      # 入力の Hash の文字列を後から変更しても設定値には影響しない
+      template[:image_host] << '/changed'
+      template[:project_id] << '-changed'
+      template[:secret_token] << '-changed'
+      assert_equal 'http://mutable.host', config.image_host
+      assert_equal 'mutable-project', config.project_id
+      assert_equal 'mutable-token', config.secret_token
+    end
+
+    def test_that_auth_header_is_version_timestamp_and_sha256_of_timestamp_and_secret_token
+      # サーバー側 (ResizingTokenAuthenticator) は "v1,<unix time>,<sha256>" 形式を期待している
+      now = Time.parse('2024-01-02 03:04:05 UTC')
+      Timecop.freeze(now) do
+        config = Resizing::Configuration.new @template
+        header = config.generate_auth_header
+
+        assert_match(/\Av\d,\d+,[0-9a-f]{64}\z/, header)
+
+        version, timestamp, token = header.split(',')
+        assert_equal 'v1', version
+        assert_equal now.to_i.to_s, timestamp
+        assert_equal Digest::SHA2.hexdigest("#{now.to_i}|#{@template[:secret_token]}"), token
+      end
+    end
+
+    def test_that_auth_header_changes_with_time
+      config = Resizing::Configuration.new @template
+      first = Timecop.freeze(Time.parse('2024-01-01 00:00:00 UTC')) { config.generate_auth_header }
+      second = Timecop.freeze(Time.parse('2024-01-01 00:00:01 UTC')) { config.generate_auth_header }
+
+      refute_equal first, second
+    end
+
+    def test_that_it_return_image_url_with_transformations
+      config = Resizing::Configuration.new @template
+      assert_equal(
+        'http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/some-image-id/w_100,h_200',
+        config.generate_image_url('some-image-id', nil, [{ w: 100, h: 200 }])
+      )
+    end
+
+    def test_that_it_return_image_url_with_version_id_and_transformations
+      config = Resizing::Configuration.new @template
+      assert_equal(
+        'http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/some-image-id/vversion-id/w_40,h_40,c_fill/f_webp',
+        config.generate_image_url('some-image-id', 'version-id', [{ c: 'fill', w: 40, h: 40 }, { f: 'webp' }])
+      )
+    end
+
+    def test_that_it_return_image_url_accepts_single_hash_transformation
+      config = Resizing::Configuration.new @template
+      assert_equal(
+        'http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/some-image-id/w_100',
+        config.generate_image_url('some-image-id', nil, { w: 100 })
+      )
+    end
+
+    def test_that_it_return_image_url_without_trailing_slash_for_empty_transformation
+      config = Resizing::Configuration.new @template
+      expected = 'http://192.168.56.101:5000/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/some-image-id'
+
+      assert_equal expected, config.generate_image_url('some-image-id', nil, [])
+      assert_equal expected, config.generate_image_url('some-image-id', nil, [{}])
+      assert_equal expected, config.generate_image_url('some-image-id', nil, { unknown: 1 })
+    end
+
+    def test_transformation_path_normalizes_key_order_to_transform_options_order
+      # Hash#slice は引数の順で返すため、入力順に関係なく TRANSFORM_OPTIONS の順 (w, h, f, c, q) になる
+      config = Resizing::Configuration.new @template
+
+      assert_equal 'w_100,h_200', config.transformation_path(h: 200, w: 100)
+      assert_equal 'w_100,h_200', config.transformation_path(w: 100, h: 200)
+      assert_equal 'w_40,h_40,f_webp,c_fill,q_80', config.transformation_path(q: 80, c: 'fill', f: 'webp', h: 40, w: 40)
+    end
+
+    def test_transformation_path_with_quality
+      config = Resizing::Configuration.new @template
+
+      assert_equal 'q_80', config.transformation_path(q: 80)
+      assert_equal 'w_100,q_auto', config.transformation_path(w: 100, q: 'auto')
+    end
+
+    def test_equality_returns_false_when_any_compared_attribute_differs
+      base = Resizing::Configuration.new @template
+      {
+        video_host: 'http://different.host',
+        secret_token: 'different-token',
+        open_timeout: 99,
+        response_timeout: 99
+      }.each do |key, value|
+        other = Resizing::Configuration.new @template.merge(key => value)
+        refute_equal base, other, "#{key} should be compared by =="
+      end
     end
   end
 end

@@ -69,6 +69,45 @@ module Resizing
           assert_instance_of Resizing::CarrierWave::Storage::File, result
           assert_equal identifier, result.public_id.to_s
         end
+
+        IDENTIFIER = '/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e'
+
+        def test_store_uploads_and_returns_file_with_public_id
+          VCR.use_cassette 'carrier_wave_test/save', record: :none do
+            file = @storage.store!(::File.open('test/data/images/sample1.jpg', 'r'))
+
+            assert_instance_of Resizing::CarrierWave::Storage::File, file
+            assert_equal IDENTIFIER, file.public_id.to_s
+            assert_equal 'image/jpeg', file.content_type
+          end
+
+          assert_equal IDENTIFIER, @uploader.model.read_attribute(:resizing_picture)
+        end
+
+        def test_cache_uploads_immediately_like_store
+          # Resizing はキャッシュをサポートしないため cache! でも直接アップロードする
+          VCR.use_cassette 'carrier_wave_test/save', record: :none do
+            file = @storage.cache!(::File.open('test/data/images/sample1.jpg', 'r'))
+
+            assert_instance_of Resizing::CarrierWave::Storage::File, file
+            assert_equal IDENTIFIER, file.public_id.to_s
+          end
+
+          assert_equal IDENTIFIER, @uploader.model.read_attribute(:resizing_picture)
+        end
+
+        def test_retrieve_returns_new_file_instance_each_time
+          first = @storage.retrieve!(IDENTIFIER)
+          second = @storage.retrieve!(IDENTIFIER)
+
+          refute_same first, second
+          assert_equal first.public_id.to_s, second.public_id.to_s
+        end
+
+        def test_storage_is_subclass_of_carrierwave_abstract_storage
+          assert Remote < ::CarrierWave::Storage::Abstract
+          assert_same @uploader, @storage.uploader
+        end
       end
     end
   end
