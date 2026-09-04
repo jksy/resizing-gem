@@ -28,7 +28,7 @@ module Resizing
       case attr = attrs.first
       when Hash
         raise_configiration_error if attr[:project_id].nil? || attr[:secret_token].nil?
-        raise_configiration_error if attr[:host].present?
+        raise_deprecated_host_error unless blank_value?(attr[:host])
 
         initialize_by_hash attr
         return
@@ -89,14 +89,22 @@ module Resizing
 
     private
 
+    # ActiveSupport の Object#present? / #blank? に依存しないための素の Ruby 実装。
+    # このgemはRails外からも利用されるため、activesupportがロードされていない前提で動作する必要がある。
+    def blank_value?(value)
+      value.nil? || value.to_s.strip.empty?
+    end
+
+    def raise_deprecated_host_error
+      raise ConfigurationError, 'The host on configuration is deprecated. Use image_host, video_host'
+    end
+
     def raise_configiration_error
       raise ConfigurationError, 'need hash and some keys like :image_host, video_host, :project_id, :secret_token'
     end
 
     # rubocop:disable Metrics/AbcSize
     def initialize_by_hash(attr)
-      raise 'The host on configuration is deprecated. Use image_host, video_host' if attr[:host].present?
-
       @image_host = attr[:image_host].dup.freeze || DEFAULT_IMAGE_HOST
       @video_host = attr[:video_host].dup.freeze || DEFAULT_VIDEO_HOST
       @project_id = attr[:project_id].dup.freeze
