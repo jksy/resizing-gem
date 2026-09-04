@@ -82,6 +82,37 @@ class User
 end
 ```
 
+`process` declares the transformation applied when the browser fetches the image URL, so
+the processors are never run as local image processing on upload.
+
+The uploader validations hooked on CarrierWave's `:cache` callbacks are checked before the
+image is uploaded to Resizing:
+
+```ruby
+class ImageUploader < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  def extension_allowlist
+    %w[jpg jpeg gif png]
+  end
+
+  def content_type_allowlist
+    [%r{\Aimage/}]
+  end
+
+  def size_range
+    0..(5 * 1024 * 1024)
+  end
+end
+```
+
+`extension_denylist` and `content_type_denylist` work the same way. A rejected file is not
+uploaded, and the model becomes invalid with an error on the mounted column, as in plain
+CarrierWave.
+
+Versions are not uploaded separately: a version only changes the transformation in the
+generated URL, so a single upload backs every version.
+
 ## Development
 
 ### Dev Container (recommended)

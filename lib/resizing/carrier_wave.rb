@@ -104,16 +104,49 @@ module Resizing
       @transform.push(:resize_to_fit, *args)
     end
 
+    # Resizing has no cache storage, so the file is uploaded to Resizing directly here
+    # instead of being copied to a local workfile and handed to cache_storage.
+    #
+    # The :cache callbacks are still run, so that the uploader settings hooked on them
+    # (extension_allowlist / extension_denylist / content_type_allowlist /
+    # content_type_denylist / size_range) are honoured before the upload happens.
+    # The callbacks that do not fit the Resizing flow (process! and cache_versions!)
+    # are disabled below.
     def cache!(new_file)
       return if new_file.nil?
 
-      file = storage.store!(new_file)
-      # do not assign @cache_id, bacause resizing do not support cache
-      # save to resizing directly
-      # @cache_id = file.public_id
+      # SanitizedFile responds to #extension / #content_type / #size, which the
+      # before :cache callbacks need. The original object is handed to the storage,
+      # because it carries the original filename sent to Resizing.
+      sanitized = ::CarrierWave::SanitizedFile.new(new_file)
+      return if sanitized.empty?
 
-      @filename = file.public_id.to_s
-      @file = file
+      with_callbacks(:cache, sanitized) do
+        file = storage.store!(new_file)
+        # do not assign @cache_id, bacause resizing do not support cache
+        # save to resizing directly
+        # @cache_id = file.public_id
+
+        @filename = file.public_id.to_s
+        @file = file
+      end
+    end
+
+    # process! is called before :cache
+    # Disable on Resizing, because `process` is repurposed as a definition of the
+    # transformation applied when the browser fetches the image URL (see #transform_string),
+    # so the processors must not be run as actual image processing on upload.
+    # https://github.com/carrierwaveuploader/carrierwave/blob/28190e99299a6131c0424a5d10205f471e39f3cd/lib/carrierwave/uploader/processing.rb#L12
+    def process!(*args)
+      # NOP
+    end
+
+    # cache_versions! is called after :cache
+    # Disable on Resizing, because each version would upload the same image again and
+    # the resulting public_id would be stored nowhere, leaving orphan images behind.
+    # https://github.com/carrierwaveuploader/carrierwave/blob/28190e99299a6131c0424a5d10205f471e39f3cd/lib/carrierwave/uploader/versions.rb#L17
+    def cache_versions!(*args)
+      # NOP
     end
 
     def filename

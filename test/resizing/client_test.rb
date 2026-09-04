@@ -4,22 +4,14 @@ require 'test_helper'
 
 module Resizing
   class ClientTest < Minitest::Test
-    def setup
-      @configuration_template = {
-        image_host: 'http://192.168.56.101:5000',
-        project_id: 'e06e710d-f026-4dcf-b2c0-eab0de8bb83f',
-        secret_token: 'ewbym2r1pk49x1d2lxdbiiavnqp25j2kh00hsg3koy0ppm620x5mhlmgl3rq5ci8',
-        open_timeout: 10,
-        response_timeout: 20
-      }
-    end
+    include ResizingTestConfiguration
 
     def teardown
       # NOP
     end
 
     def test_is_initialized
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
 
       client = Resizing::Client.new
       assert(!client.config.nil?)
@@ -27,14 +19,14 @@ module Resizing
     end
 
     def test_is_initialized_with_configuration
-      config = Resizing::Configuration.new(@configuration_template)
+      config = Resizing::Configuration.new(configuration_template)
       client = Resizing::Client.new(config)
       assert(!client.config.nil?)
       assert_equal(client.config, config)
     end
 
     def test_is_postable_with_filename
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
 
       client = Resizing::Client.new
       VCR.use_cassette 'client/post', record: :once do
@@ -52,7 +44,7 @@ module Resizing
     end
 
     def test_is_unpostable_with_filename
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
 
       client = Resizing::Client.new
       VCR.use_cassette 'client/post', record: :once do
@@ -63,7 +55,7 @@ module Resizing
     end
 
     def test_is_postable_with_file
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
 
       client = Resizing::Client.new
       VCR.use_cassette 'client/post', record: :once do
@@ -82,7 +74,7 @@ module Resizing
     end
 
     def test_is_timeout_with_post_method
-      Resizing.configure = @configuration_template.merge(project_id: 'timeout_project_id')
+      Resizing.configure = configuration_template.merge(project_id: 'timeout_project_id')
 
       client = Resizing::Client.new
       f = File.open('test/data/images/sample1.jpg', 'r')
@@ -92,7 +84,7 @@ module Resizing
     end
 
     def test_is_putable_file
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
 
       client = Resizing::Client.new
       VCR.use_cassette 'client/put', record: :once do
@@ -114,7 +106,7 @@ module Resizing
     end
 
     def test_is_timeout_with_put_method
-      Resizing.configure = @configuration_template.merge(project_id: 'timeout_project_id')
+      Resizing.configure = configuration_template.merge(project_id: 'timeout_project_id')
 
       client = Resizing::Client.new
       name = 'AWEaewfAreaweFAFASfwe'
@@ -126,7 +118,7 @@ module Resizing
     end
 
     def test_raise_error
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
 
       client = Resizing::Client.new
       VCR.use_cassette 'client/error', record: :once do
@@ -138,7 +130,7 @@ module Resizing
     end
 
     def test_handleable_response_body_from_resizing
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
 
       client = Resizing::Client.new
       VCR.use_cassette 'client/error', record: :once do
@@ -158,7 +150,7 @@ module Resizing
     def test_get_the_metadata
       # TODO
 
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
 
       client = Resizing::Client.new
       VCR.use_cassette 'client/metadata', record: :once do
@@ -201,7 +193,7 @@ module Resizing
     end
 
     def test_get_raises_not_implemented_error
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
       client = Resizing::Client.new
 
       assert_raises NotImplementedError do
@@ -210,7 +202,7 @@ module Resizing
     end
 
     def test_post_raises_error_without_content_type
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
       client = Resizing::Client.new
 
       assert_raises ArgumentError do
@@ -219,7 +211,7 @@ module Resizing
     end
 
     def test_post_raises_error_with_invalid_io
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
       client = Resizing::Client.new
 
       assert_raises ArgumentError do
@@ -228,7 +220,7 @@ module Resizing
     end
 
     def test_put_raises_error_without_content_type
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
       client = Resizing::Client.new
 
       assert_raises ArgumentError do
@@ -269,7 +261,7 @@ module Resizing
     end
 
     def client_with_fake_http(**fake_options)
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
       client = Resizing::Client.new
       fake = FakeHttpClient.new(**fake_options)
       client.instance_variable_set(:@http_client, fake)
@@ -277,7 +269,7 @@ module Resizing
     end
 
     def base_url
-      "#{@configuration_template[:image_host]}/projects/#{@configuration_template[:project_id]}/upload/images"
+      "#{configuration_template[:image_host]}/projects/#{configuration_template[:project_id]}/upload/images"
     end
 
     def sample_path
@@ -393,7 +385,7 @@ module Resizing
     end
 
     def test_put_raises_error_with_invalid_io
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
       client = Resizing::Client.new
 
       assert_raises ArgumentError do
@@ -482,7 +474,7 @@ module Resizing
 
     def test_is_deletable
       # client/delete.yml は別プロジェクト ID で記録されている
-      Resizing.configure = @configuration_template.merge(project_id: '098a2a0d-c387-4135-a071-1254d6d7e70a')
+      Resizing.configure = configuration_template.merge(project_id: '098a2a0d-c387-4135-a071-1254d6d7e70a')
       client = Resizing::Client.new
       image_id = '28c49144-c00d-4cb5-8619-98ce95977b9c'
 
@@ -499,7 +491,7 @@ module Resizing
     end
 
     def test_is_timeout_with_delete_method
-      Resizing.configure = @configuration_template.merge(project_id: 'timeout_project_id')
+      Resizing.configure = configuration_template.merge(project_id: 'timeout_project_id')
       client = Resizing::Client.new
 
       assert_raises Resizing::APIError do
@@ -508,7 +500,7 @@ module Resizing
     end
 
     def test_is_timeout_with_metadata_method
-      Resizing.configure = @configuration_template.merge(project_id: 'timeout_project_id')
+      Resizing.configure = configuration_template.merge(project_id: 'timeout_project_id')
       client = Resizing::Client.new
 
       assert_raises Resizing::APIError do
@@ -521,27 +513,27 @@ module Resizing
     # ============================================================
 
     def test_is_initialized_with_hash
-      client = Resizing::Client.new(@configuration_template)
+      client = Resizing::Client.new(configuration_template)
 
-      assert_equal Resizing::Configuration.new(@configuration_template), client.config
+      assert_equal Resizing::Configuration.new(configuration_template), client.config
     end
 
     def test_each_client_instance_keeps_its_own_configuration
-      Resizing.configure = @configuration_template
-      other = Resizing::Client.new(@configuration_template.merge(project_id: 'other-project'))
+      Resizing.configure = configuration_template
+      other = Resizing::Client.new(configuration_template.merge(project_id: 'other-project'))
 
       assert_equal 'other-project', other.config.project_id
-      assert_equal @configuration_template[:project_id], Resizing::Client.new.config.project_id
+      assert_equal configuration_template[:project_id], Resizing::Client.new.config.project_id
     end
 
     def test_client_uses_configuration_at_instantiation
-      Resizing.configure = @configuration_template
+      Resizing.configure = configuration_template
       client = Resizing::Client.new
 
       # インスタンス生成後にグローバル設定を差し替えても既存クライアントには影響しない
-      Resizing.configure = @configuration_template.merge(project_id: 'replaced-project')
+      Resizing.configure = configuration_template.merge(project_id: 'replaced-project')
 
-      assert_equal @configuration_template[:project_id], client.config.project_id
+      assert_equal configuration_template[:project_id], client.config.project_id
     end
   end
 end
