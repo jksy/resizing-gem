@@ -462,5 +462,208 @@ module Resizing
       # コールバックが正しい順序で呼ばれたことを確認
       assert_equal %i[before_destroy after_destroy destroy_commit], model.callback_log
     end
+
+    # ============================================================
+    # DB から再読込したモデルに対する操作 (retrieve_from_store! 経由)
+    # ============================================================
+
+    def test_url_of_freshly_loaded_model_matches_saved_url
+      model = prepare_model TestModel
+      model.save!
+
+      loaded = TestModel.find(model.id)
+
+      assert_equal "#{expect_url}/", loaded.resizing_picture_url
+      assert_equal "#{expect_url}/c_fill,w_40,h_40", loaded.resizing_picture_url(:small)
+      refute loaded.resizing_picture.blank?
+    end
+
+    def test_remove_on_freshly_loaded_model_deletes_remote_image_and_clears_column
+      model = prepare_model TestModel
+      model.save!
+
+      loaded = TestModel.find(model.id)
+
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+        loaded.remove_resizing_picture!
+        loaded.save!
+      end
+
+      assert_nil loaded.read_attribute(:resizing_picture)
+      assert_nil loaded.resizing_picture_url
+      assert_nil TestModel.find(model.id).read_attribute(:resizing_picture)
+    end
+
+    def test_remove_flag_on_freshly_loaded_model_deletes_remote_image_and_clears_column
+      model = prepare_model TestModel
+      model.save!
+
+      loaded = TestModel.find(model.id)
+      loaded.remove_resizing_picture = true
+
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+        loaded.save!
+      end
+
+      assert loaded.resizing_picture.blank?
+      assert_nil TestModel.find(model.id).read_attribute(:resizing_picture)
+    end
+
+    def test_destroy_on_freshly_loaded_model_deletes_remote_image
+      model = prepare_model TestModel
+      model.save!
+
+      loaded = TestModel.find(model.id)
+
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+        ActiveRecord::Base.transaction do
+          loaded.destroy!
+        end
+      end
+
+      assert loaded.destroyed?
+      assert_nil TestModel.find_by(id: model.id)
+    end
+
+    def test_remove_persists_nil_to_database
+      model = prepare_model TestModel
+      model.save!
+
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+        model.remove_resizing_picture!
+        model.save!
+      end
+
+      assert_nil TestModel.find(model.id).read_attribute(:resizing_picture)
+    end
+
+    # ============================================================
+    # 代入時の挙動
+    # ============================================================
+
+    def test_column_is_set_immediately_after_assignment
+      model = TestModel.new
+
+      assert_vcr_requests_made 'carrier_wave_test/save' do
+        attach_sample_image(model)
+      end
+
+      assert_equal expect_identifier, model.read_attribute(:resizing_picture)
+      assert_equal expect_identifier, model.resizing_picture.identifier
+      assert_equal expect_identifier, model.resizing_picture.file.public_id.to_s
+      assert_equal 'image/jpeg', model.resizing_picture.file.content_type
+      assert model.resizing_picture.present?
+    end
+
+    def test_save_after_assignment_does_not_upload_again
+      model = prepare_model TestModel
+
+      # 代入時に既にアップロード済みなので、save! で再度 POST は発行されない
+      assert_vcr_no_requests 'carrier_wave_test/save' do
+        model.save!
+      end
+
+      assert_equal expect_identifier, TestModel.find(model.id).read_attribute(:resizing_picture)
+    end
+
+    def test_assigning_nil_keeps_existing_image
+      model = prepare_model TestModel
+      model.save!
+
+      assert_vcr_no_requests 'carrier_wave_test/save' do
+        model.resizing_picture = nil
+        model.save!
+      end
+
+      assert_equal expect_identifier, model.read_attribute(:resizing_picture)
+      assert_equal "#{expect_url}/", model.resizing_picture_url
+    end
+
+    def test_assigning_blank_string_keeps_existing_image
+      model = prepare_model TestModel
+      model.save!
+
+      assert_vcr_no_requests 'carrier_wave_test/save' do
+        model.resizing_picture = ''
+        model.save!
+      end
+
+      assert_equal expect_identifier, model.read_attribute(:resizing_picture)
+    end
+
+    def test_assigning_plain_file_object_uploads_image
+      model = TestModel.new
+
+      assert_vcr_requests_made 'carrier_wave_test/save' do
+        model.resizing_picture = File.open('test/data/images/sample1.jpg', 'r')
+      end
+
+      assert_equal expect_identifier, model.read_attribute(:resizing_picture)
+    end
+
+    def test_default_url_is_returned_after_remove
+      TestModelWithDefaultURL.delete_all
+      model = prepare_model TestModelWithDefaultURL
+      model.save!
+      refute_equal 'http://example.com/test.jpg', model.resizing_picture_url
+
+      assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+        model.remove_resizing_picture!
+        model.save!
+      end
+
+      assert_equal 'http://example.com/test.jpg', model.resizing_picture_url
+    end
+
+    # ============================================================
+    # 画像更新時の永続化
+    # ============================================================
+
+    def test_updated_image_is_persisted_and_old_image_deleted
+      # update_image カセット: POST(old) -> POST(new) -> DELETE(old)
+      model = nil
+      assert_vcr_requests_made 'carrier_wave_test/update_image' do
+        model = TestModel.new
+        model.resizing_picture = File.open('test/data/images/sample1.jpg', 'r')
+        model.save!
+
+        model.resizing_picture = File.open('test/data/images/sample1.jpg', 'r')
+        ActiveRecord::Base.transaction do
+          model.save!
+        end
+      end
+
+      loaded = TestModel.find(model.id)
+      assert_equal(
+        '/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/new-image-id-2222-2222-222222222222/v2',
+        loaded.read_attribute(:resizing_picture)
+      )
+      assert_equal(
+        'http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/new-image-id-2222-2222-222222222222/v2/',
+        loaded.resizing_picture_url
+      )
+    end
+
+    def test_previous_changes_after_update_records_old_and_new_identifier
+      model = nil
+      assert_vcr_requests_made 'carrier_wave_test/update_image' do
+        model = TestModel.new
+        model.resizing_picture = File.open('test/data/images/sample1.jpg', 'r')
+        model.save!
+
+        model.resizing_picture = File.open('test/data/images/sample1.jpg', 'r')
+        ActiveRecord::Base.transaction do
+          model.save!
+        end
+      end
+
+      old_value, new_value = model.previous_changes['resizing_picture']
+      assert_match(/old-image-id/, old_value)
+      assert_match(/new-image-id/, new_value)
+    end
+
+    def expect_identifier
+      '/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e'
+    end
   end
 end

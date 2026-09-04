@@ -203,4 +203,95 @@ class ResizingModuleTest < Minitest::Test
     assert_instance_of Hash, result
     assert_equal 'image_id', result['id']
   end
+
+  def test_post_delegates_to_client
+    Resizing.configure = {
+      image_host: 'https://img.example.com',
+      project_id: 'project123',
+      secret_token: 'token123',
+      enable_mock: true
+    }
+
+    result = Resizing.post('test/data/images/sample1.jpg', content_type: 'image/jpeg')
+
+    assert_instance_of Hash, result
+    assert_equal '87263920-2081-498e-a107-9625f4fde01b', result['id']
+  end
+
+  def test_client_raises_configuration_error_when_not_configured
+    assert_raises(Resizing::ConfigurationError) { Resizing.client }
+  end
+
+  def test_api_methods_raise_configuration_error_when_not_configured
+    assert_raises(Resizing::ConfigurationError) { Resizing.post('dummy', content_type: 'image/jpeg') }
+    assert_raises(Resizing::ConfigurationError) { Resizing.put('id', 'dummy', content_type: 'image/jpeg') }
+    assert_raises(Resizing::ConfigurationError) { Resizing.delete('id') }
+    assert_raises(Resizing::ConfigurationError) { Resizing.metadata('id', {}) }
+    assert_raises(Resizing::ConfigurationError) { Resizing.url_from_image_id('id') }
+    assert_raises(Resizing::ConfigurationError) { Resizing.generate_identifier }
+  end
+
+  def test_configure_setter_raises_for_invalid_hash
+    assert_raises(Resizing::ConfigurationError) { Resizing.configure = { project_id: 'only-project' } }
+    assert_raises(Resizing::ConfigurationError) { Resizing.configure = { secret_token: 'only-token' } }
+    assert_raises(Resizing::ConfigurationError) do
+      Resizing.configure = { project_id: 'p', secret_token: 's', host: 'deprecated-host' }
+    end
+  end
+
+  def test_configure_setter_replaces_previous_configuration
+    Resizing.configure = { project_id: 'first', secret_token: 'token' }
+    Resizing.configure = { project_id: 'second', secret_token: 'token' }
+
+    assert_equal 'second', Resizing.configure.project_id
+  end
+
+  def test_client_reflects_latest_configuration
+    Resizing.configure = { project_id: 'p', secret_token: 's', enable_mock: false }
+    assert_instance_of Resizing::Client, Resizing.client
+
+    Resizing.configure = { project_id: 'p', secret_token: 's', enable_mock: true }
+    assert_instance_of Resizing::MockClient, Resizing.client
+  end
+
+  def test_separate_public_id_extracts_project_id_image_id_and_version
+    matched = Resizing.separate_public_id(
+      '/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c/v1Id850q34fgsaer23w'
+    )
+
+    assert_equal '098a2a0d-c387-4135-a071-1254d6d7e70a', matched[:project_id]
+    assert_equal '28c49144-c00d-4cb5-8619-98ce95977b9c', matched[:image_id]
+    assert_equal '1Id850q34fgsaer23w', matched[:version]
+  end
+
+  def test_separate_public_id_without_version
+    matched = Resizing.separate_public_id(
+      '/projects/098a2a0d-c387-4135-a071-1254d6d7e70a/upload/images/28c49144-c00d-4cb5-8619-98ce95977b9c'
+    )
+
+    assert_equal '28c49144-c00d-4cb5-8619-98ce95977b9c', matched[:image_id]
+    assert_nil matched[:version]
+  end
+
+  def test_separate_public_id_returns_nil_for_unrelated_string
+    assert_nil Resizing.separate_public_id('/foo/bar')
+    assert_nil Resizing.separate_public_id('')
+  end
+
+  def test_generate_identifier_returns_new_value_each_time
+    Resizing.configure = { project_id: '098a2a0d-c387-4135-a071-1254d6d7e70a', secret_token: 'token' }
+
+    first = Resizing.generate_identifier
+    second = Resizing.generate_identifier
+
+    refute_equal first, second
+    # 生成した identifier は PublicId として解釈できる
+    assert_equal '098a2a0d-c387-4135-a071-1254d6d7e70a', Resizing::PublicId.new(first).project_id
+  end
+
+  def test_url_from_image_id_uses_default_image_host_when_not_specified
+    Resizing.configure = { project_id: 'project123', secret_token: 'token123' }
+
+    assert_equal 'https://img.resizing.net/projects/project123/upload/images/image456', Resizing.url_from_image_id('image456')
+  end
 end

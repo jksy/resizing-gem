@@ -80,5 +80,32 @@ module Resizing
         assert_includes e.message, 'TimeoutError'
       end
     end
+
+    def test_http_client_uses_multipart_and_url_encoded_request_middleware
+      handlers = @client.http_client.builder.handlers
+
+      assert_includes handlers, Faraday::Multipart::Middleware
+      assert_includes handlers, Faraday::Request::UrlEncoded
+    end
+
+    def test_handle_faraday_error_does_not_rescue_other_faraday_errors
+      # TimeoutError 以外の Faraday エラーはそのまま伝播する (現状の仕様)
+      assert_raises Faraday::ConnectionFailed do
+        @client.handle_faraday_error { raise Faraday::ConnectionFailed, 'connection refused' }
+      end
+    end
+
+    def test_handle_faraday_error_does_not_rescue_non_faraday_errors
+      assert_raises RuntimeError do
+        @client.handle_faraday_error { raise 'unexpected' }
+      end
+    end
+
+    def test_handle_timeout_error_message_includes_original_message
+      error = Faraday::TimeoutError.new('execution expired')
+
+      raised = assert_raises(Resizing::APIError) { @client.handle_timeout_error(error) }
+      assert_includes raised.message, 'execution expired'
+    end
   end
 end
