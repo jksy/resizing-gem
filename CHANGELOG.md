@@ -1,5 +1,8 @@
 # Changelog
 
+> このファイルは v0.8.2 までの履歴です。以降のリリースノートは
+> [GitHub Releases](https://github.com/jksy/resizing-gem/releases) に一本化しています。
+
 **Merged pull requests:**
 
 - v0.8.2 [\#53](https://github.com/jksy/resizing-gem/pull/53) ([jksy](https://github.com/jksy))
