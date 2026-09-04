@@ -55,6 +55,18 @@ module Resizing
       assert_nil model.read_attribute(:resizing_picture)
     end
 
+    def test_cache_ignores_empty_file
+      # 中身のないファイルは CarrierWave 本体の cache! と同じくアップロードしない
+      model = TestModel.new
+      uploader = ResizingUploader.new(model, :resizing_picture)
+
+      assert_vcr_no_requests 'carrier_wave_test/save' do
+        assert_nil uploader.cache!(StringIO.new(''))
+      end
+
+      assert_nil model.read_attribute(:resizing_picture)
+    end
+
     # ============================================================
     # Resizing の設計に合わないコールバックが発火しないこと
     # ============================================================
