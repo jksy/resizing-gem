@@ -21,6 +21,9 @@
           "editor.insertSpaces": true
         },
         "rubyLsp.formatter": "rubocop",
+        "rubyLsp.rubyVersionManager": {
+          "identifier": "rbenv"
+        },
         "files.trimTrailingWhitespace": true,
         "files.insertFinalNewline": true
       }

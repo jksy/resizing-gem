@@ -54,3 +54,10 @@ ENV BUNDLE_PATH=/usr/local/bundle \
     BUNDLE_APP_CONFIG=/usr/local/bundle
 
 RUN mkdir -p "${BUNDLE_PATH}" && chown -R vscode:vscode "${BUNDLE_PATH}"
+
+# The Ruby LSP extension generates .ruby-lsp/ in the workspace and records there
+# which gems it has installed. A copy generated on the host would point at gems
+# this container does not have, so compose.yaml keeps it on its own volume.
+# Creating the directory here gives that volume the right owner.
+RUN mkdir -p /workspaces/resizing-gem/.ruby-lsp \
+    && chown -R vscode:vscode /workspaces

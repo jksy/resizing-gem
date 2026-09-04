@@ -112,7 +112,9 @@ The container provides:
   `RAILS_VERSION` switch in the `Gemfile` and in CI
 
 Gems are installed into a named volume (`/usr/local/bundle`), so the host's `vendor/`
-directory is left untouched.
+directory is left untouched. The `.ruby-lsp/` directory the Ruby LSP extension generates
+is kept on its own volume for the same reason: it records which gems are installed, and a
+copy generated on the host would point at gems the container does not have.
 
 #### Changing the Ruby version
 

@@ -24,6 +24,8 @@ services:
     volumes:
       - ..:/workspaces/resizing-gem:cached
       - bundle:/usr/local/bundle
+      # Not shared with the host: see the Dockerfile
+      - ruby-lsp:/workspaces/resizing-gem/.ruby-lsp
     depends_on:
       db:
         condition: service_healthy
@@ -47,4 +49,5 @@ services:
 
 volumes:
   bundle:
+  ruby-lsp:
   db-data:
