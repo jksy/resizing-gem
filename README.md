@@ -31,11 +31,12 @@ Or install it yourself as:
 ```ruby
 Resizing.configure = {
   image_host: 'https://img.resizing.net',
-  video_host: 'https://video.resizing.net',
   project_id: 'your-project-id',
   secret_token: 'your-secret-token'
 }
 ```
+
+`video_host` は動画 API の廃止にともない非推奨です。指定しても利用されず、`Configuration#video_host` や `Configuration::DEFAULT_VIDEO_HOST` を参照すると警告が出ます。将来のバージョンで削除します。
 
 ## Usage
 

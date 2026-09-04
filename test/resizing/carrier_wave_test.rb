@@ -12,7 +12,6 @@ module Resizing
 
       @configuration_template = {
         image_host: 'http://192.168.56.101:5000',
-        video_host: 'http://192.168.56.101:5000',
         project_id: 'e06e710d-f026-4dcf-b2c0-eab0de8bb83f',
         secret_token: 'ewbym2r1pk49x1d2lxdbiiavnqp25j2kh00hsg3koy0ppm620x5mhlmgl3rq5ci8',
         open_timeout: 10,
