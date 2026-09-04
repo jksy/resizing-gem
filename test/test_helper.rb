@@ -306,8 +306,80 @@ class ResizingUploaderWithDefaultURL < CarrierWave::Uploader::Base
   end
 end
 
+# before :cache コールバック (拡張子 / content_type / サイズのチェック) のテスト用アップローダ
+class ResizingUploaderWithExtensionAllowlist < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  def extension_allowlist
+    %w[png]
+  end
+end
+
+class ResizingUploaderWithExtensionDenylist < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  def extension_denylist
+    %w[jpg]
+  end
+end
+
+class ResizingUploaderWithContentTypeAllowlist < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  def content_type_allowlist
+    ['image/png']
+  end
+end
+
+class ResizingUploaderWithSizeRange < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  def size_range
+    0..10
+  end
+end
+
+# process! が発火しないことのテスト用アップローダ
+# convert / transformation は配信 URL の transform を組み立てるための宣言であり
+# uploader のメソッドとしては存在しないので、process! が走ると NoMethodError になる
+class ResizingUploaderWithUndefinedProcessor < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  process convert: 'png'
+end
+
 class TestModel < ::ActiveRecord::Base
   mount_uploader :resizing_picture, ResizingUploader
+end
+
+class TestModelWithExtensionAllowlist < ::ActiveRecord::Base
+  self.table_name = 'test_models'
+
+  mount_uploader :resizing_picture, ResizingUploaderWithExtensionAllowlist
+end
+
+class TestModelWithExtensionDenylist < ::ActiveRecord::Base
+  self.table_name = 'test_models'
+
+  mount_uploader :resizing_picture, ResizingUploaderWithExtensionDenylist
+end
+
+class TestModelWithContentTypeAllowlist < ::ActiveRecord::Base
+  self.table_name = 'test_models'
+
+  mount_uploader :resizing_picture, ResizingUploaderWithContentTypeAllowlist
+end
+
+class TestModelWithSizeRange < ::ActiveRecord::Base
+  self.table_name = 'test_models'
+
+  mount_uploader :resizing_picture, ResizingUploaderWithSizeRange
+end
+
+class TestModelWithUndefinedProcessor < ::ActiveRecord::Base
+  self.table_name = 'test_models'
+
+  mount_uploader :resizing_picture, ResizingUploaderWithUndefinedProcessor
 end
 
 class TestJPGModel < ::ActiveRecord::Base
