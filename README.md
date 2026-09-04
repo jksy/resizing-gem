@@ -83,7 +83,65 @@ end
 
 ## Development
 
+### Dev Container (recommended)
+
+This repository ships a [Dev Container](https://containers.dev/) so that everyone develops
+against the same Ruby / MySQL setup.
+
+Requirements: Docker and either VS Code + the *Dev Containers* extension, or the
+[`devcontainer` CLI](https://github.com/devcontainers/cli).
+
+1. Open the repository in VS Code and run **Dev Containers: Reopen in Container**
+   (or run `devcontainer up --workspace-folder .`).
+2. `bundle install` and the MySQL wait are executed automatically by
+   `.devcontainer/post-create.sh`.
+3. Inside the container:
+
+   ```console
+   $ bundle exec rake test    # run the tests
+   $ bundle exec rubocop      # run the linter
+   $ bin/console              # interactive prompt
+   ```
+
+The container provides:
+
+- Ruby managed by [rbenv](https://github.com/rbenv/rbenv), so the version can be changed
+  from inside the container (see below)
+- MySQL 5.7 with the `resizing_gem_test` database, matching CI
+- `RAILS_VERSION` (default `7.0`) to test against another Rails version, matching the
+  `RAILS_VERSION` switch in the `Gemfile` and in CI
+
+Gems are installed into a named volume (`/usr/local/bundle`). `vendor/`, `.bundle/` and
+`.ruby-lsp/` are kept on their own volumes so that Ruby artifacts generated on the host do
+not leak into the container through the bind mount: `vendor/` holds gems whose native
+extensions are built against the host's libraries, `.bundle/config` points `BUNDLE_PATH`
+at it, and `.ruby-lsp/` records which gems the Ruby LSP extension has installed. The host
+copies are left untouched.
+
+#### Changing the Ruby version
+
+Ruby 3.1.7 is installed when the image is built, and `.ruby-version` is honoured on
+container creation. To switch to another version from inside the container:
+
+```console
+$ rbenv install 3.3.12
+$ rbenv local 3.3.12    # writes .ruby-version (gitignored)
+$ bundle install
+```
+
+`rbenv install` needs no `sudo`; the build dependencies are already in the image. To
+change the version the image ships with, set the `RUBY_VERSION` build arg in
+`.devcontainer/compose.yaml` and rebuild.
+
+### Without a Dev Container
+
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+
+The tests need a MySQL server. `docker-compose.yml` in the repository root starts a
+suitable one (`docker compose up -d mysql`). The connection settings default to
+`root:secret@127.0.0.1:3306/resizing_gem_test` and can be overridden with the
+`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER` and `MYSQL_PASSWORD`
+environment variables.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 

@@ -1,0 +1,32 @@
+{
+  "name": "resizing-gem",
+  "dockerComposeFile": "compose.yaml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/resizing-gem",
+  "remoteUser": "vscode",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": ".devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Shopify.ruby-lsp",
+        "eamodio.gitlens"
+      ],
+      "settings": {
+        "[ruby]": {
+          "editor.defaultFormatter": "Shopify.ruby-lsp",
+          "editor.tabSize": 2,
+          "editor.insertSpaces": true
+        },
+        "rubyLsp.formatter": "rubocop",
+        "rubyLsp.rubyVersionManager": {
+          "identifier": "rbenv"
+        },
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true
+      }
+    }
+  }
+}
