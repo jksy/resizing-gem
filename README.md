@@ -139,10 +139,18 @@ change the version the image ships with, set the `RUBY_VERSION` build arg in
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
 
 The tests need a MySQL server. `docker-compose.yml` in the repository root starts a
-suitable one (`docker compose up -d mysql`). The connection settings default to
-`root:secret@127.0.0.1:3306/resizing_gem_test` and can be overridden with the
-`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER` and `MYSQL_PASSWORD`
-environment variables.
+suitable one (`docker compose up -d mysql`).
+
+Each test process creates its own database (`resizing_gem_test_<host>_<pid>`) and drops it
+when the run finishes, so several test processes can share one MySQL server without
+breaking each other's tables. Databases left behind by killed processes are cleaned up on
+the next run.
+
+The connection defaults to `root:secret@127.0.0.1:3306` and can be overridden with the
+`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER` and `MYSQL_PASSWORD` environment variables.
+Setting `MYSQL_DATABASE` uses that database as is and never drops it; in that case give
+each concurrent test process a different name, otherwise they will overwrite each other's
+tables.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 

@@ -24,6 +24,8 @@ SimpleCov.start do
 end
 
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+require 'digest'
+require 'socket'
 require 'time'
 require 'timecop'
 require 'vcr'
@@ -133,17 +135,95 @@ module VCRRequestAssertions
   end
 end
 
-# The connection can be overridden with environment variables
-# (the dev container runs MySQL in a separate container)
-ActiveRecord::Base.establish_connection(
-  adapter: 'mysql2',
-  host: ENV.fetch('MYSQL_HOST', '127.0.0.1'),
-  port: Integer(ENV.fetch('MYSQL_PORT', '3306')),
-  database: ENV.fetch('MYSQL_DATABASE', 'resizing_gem_test'),
-  encoding: 'utf8',
-  username: ENV.fetch('MYSQL_USER', 'root'),
-  password: ENV.fetch('MYSQL_PASSWORD', 'secret')
-)
+# Test database setup
+#
+# By default each test process creates its own database and drops it when the
+# run finishes, so that several test processes sharing one MySQL server do not
+# overwrite each other's tables and records.
+#
+# The server can be overridden with MYSQL_HOST / MYSQL_PORT / MYSQL_USER /
+# MYSQL_PASSWORD (the dev container runs MySQL in a separate container).
+# Setting MYSQL_DATABASE uses that database as is and never drops it; give each
+# concurrent process a different name in that case.
+module TestDatabase
+  BASE_NAME = 'resizing_gem_test'
+
+  module_function
+
+  # Host identifier mixed into the per-process database name, so that PIDs from
+  # different hosts do not collide on a shared MySQL server
+  def host_token
+    @host_token ||= Digest::MD5.hexdigest(Socket.gethostname)[0, 8]
+  end
+
+  def per_process_name_pattern
+    /\A#{Regexp.escape(BASE_NAME)}_#{host_token}_(\d+)\z/
+  end
+
+  def database_name
+    @database_name ||= ENV['MYSQL_DATABASE'] || "#{BASE_NAME}_#{host_token}_#{Process.pid}"
+  end
+
+  # Whether the database belongs to this process alone and can be dropped
+  def ephemeral?
+    ENV['MYSQL_DATABASE'].nil?
+  end
+
+  def server_config
+    {
+      adapter: 'mysql2',
+      host: ENV.fetch('MYSQL_HOST', '127.0.0.1'),
+      port: Integer(ENV.fetch('MYSQL_PORT', '3306')),
+      encoding: 'utf8',
+      username: ENV.fetch('MYSQL_USER', 'root'),
+      password: ENV.fetch('MYSQL_PASSWORD', 'secret')
+    }
+  end
+
+  def setup
+    ActiveRecord::Base.establish_connection(server_config)
+    drop_abandoned_databases if ephemeral?
+    ActiveRecord::Base.connection.execute("create database if not exists `#{database_name}`")
+    ActiveRecord::Base.establish_connection(server_config.merge(database: database_name))
+
+    # Minitest.after_run, not at_exit: at_exit handlers run in reverse order of
+    # registration, so this one would drop the database before the tests run
+    Minitest.after_run { drop_database } if ephemeral?
+  end
+
+  def drop_database
+    ActiveRecord::Base.establish_connection(server_config)
+    ActiveRecord::Base.connection.execute("drop database if exists `#{database_name}`")
+  rescue StandardError => e
+    warn "failed to drop test database #{database_name}: #{e.message}"
+  end
+
+  # Clean up databases left behind by processes that were killed before they
+  # could drop their own
+  def drop_abandoned_databases
+    connection = ActiveRecord::Base.connection
+
+    connection.select_values('show databases').each do |database|
+      matched = per_process_name_pattern.match(database)
+      next if matched.nil? || process_alive?(matched[1].to_i)
+
+      connection.execute("drop database if exists `#{database}`")
+    end
+  rescue StandardError => e
+    warn "failed to drop abandoned test databases: #{e.message}"
+  end
+
+  def process_alive?(pid)
+    Process.kill(0, pid)
+    true
+  rescue Errno::ESRCH
+    false
+  rescue Errno::EPERM
+    true
+  end
+end
+
+TestDatabase.setup
 
 ActiveRecord::Schema.define do
   self.verbose = false
