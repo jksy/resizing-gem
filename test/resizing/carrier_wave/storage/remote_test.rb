@@ -6,6 +6,8 @@ module Resizing
   module CarrierWave
     module Storage
       class RemoteTest < Minitest::Test
+        include FakeApiClientAssertions
+
         def setup
           @configuration_template = {
             image_host: 'http://192.168.56.101:5000',
@@ -105,26 +107,6 @@ module Resizing
 
         IMAGE_ID = '14ea7aac-a194-4330-931f-6b562aec413d'
         OTHER_IDENTIFIER = '/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/new-image-id-2222-2222-222222222222/v2'
-
-        # Resizing::Client の代わりに使う偽クライアント (delete の呼び出しを記録する)
-        class FakeApiClient
-          attr_reader :deleted_ids
-
-          def initialize(response)
-            @response = response
-            @deleted_ids = []
-          end
-
-          def delete(image_id)
-            @deleted_ids << image_id
-            @response.dup
-          end
-        end
-
-        def with_fake_api_client(response)
-          fake = FakeApiClient.new(response)
-          Resizing::Client.stub(:new, fake) { yield fake }
-        end
 
         def test_remove_deletes_the_image_stored_in_the_model_column
           model = @uploader.model

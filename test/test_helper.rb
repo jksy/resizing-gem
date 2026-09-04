@@ -53,6 +53,40 @@ VCR.configure do |c|
   end
 end
 
+# Resizing::Client の代わりに使う偽クライアント (delete の応答を固定し、呼び出しを記録する)
+class FakeApiClient
+  attr_reader :deleted_ids
+
+  def initialize(response)
+    @response = response
+    @deleted_ids = []
+  end
+
+  def delete(image_id)
+    @deleted_ids << image_id
+    @response.dup
+  end
+end
+
+# Resizing::Client を FakeApiClient に差し替えるヘルパー
+module FakeApiClientAssertions
+  # Resizing::Client.new が FakeApiClient を返す状態でブロックを実行する
+  #
+  # @param response [Hash] 偽クライアントの delete が返す固定レスポンス
+  # @yield [FakeApiClient] 差し替えた偽クライアント
+  # @return [Object] ブロックの戻り値
+  #
+  # @example
+  #   with_fake_api_client({ 'id' => IMAGE_ID }) do |fake|
+  #     file.delete
+  #     assert_equal [IMAGE_ID], fake.deleted_ids
+  #   end
+  def with_fake_api_client(response)
+    fake = FakeApiClient.new(response)
+    Resizing::Client.stub(:new, fake) { yield fake }
+  end
+end
+
 # VCRカセットのリクエストが実際に使用されたかを検証するヘルパー
 module VCRRequestAssertions
   # VCRカセット内でブロックを実行し、カセットのインタラクションがすべて使用されたことを確認
