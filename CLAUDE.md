@@ -8,7 +8,9 @@ devcontainer（`.devcontainer/`）を用意してある。VS Code の "Reopen in
 
 Ruby は rbenv 管理で `.ruby-version` に従う。別バージョンを試す場合はコンテナ内で `rbenv install <version>` → `rbenv local <version>` → `bundle install`（sudo 不要）。イメージに焼くバージョンを変える場合は `.devcontainer/compose.yaml` の `RUBY_VERSION` を変更してリビルドする。
 
-devcontainer を使わない場合はテスト用に MySQL を自前で起動する（`docker compose up -d mysql`）。接続先は `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_DATABASE` / `MYSQL_USER` / `MYSQL_PASSWORD` で上書きでき、既定は `root:secret@127.0.0.1:3306/resizing_gem_test`。
+devcontainer を使わない場合はテスト用に MySQL を自前で起動する（`docker compose up -d mysql`）。接続先は `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_USER` / `MYSQL_PASSWORD` で上書きでき、既定は `root:secret@127.0.0.1:3306`。
+
+データベースはテストプロセスごとに `resizing_gem_test_<ホスト識別子>_<pid>` を作成し、終了時に破棄する（並行実行しても壊れないようにするため。強制終了で残ったものは次回実行時に掃除する）。`MYSQL_DATABASE` を指定した場合はそのデータベースをそのまま使い破棄もしないので、並行実行するときは名前を分ける。
 
 ## テスト・Lint
 
