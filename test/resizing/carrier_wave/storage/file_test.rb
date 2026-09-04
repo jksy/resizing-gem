@@ -603,6 +603,29 @@ module Resizing
           end
         end
 
+        # Issue #94: カラムに空文字が入っているレコードでも delete で例外にならない
+        def test_delete_does_nothing_when_column_is_empty_string
+          model = model_with_column('')
+          file = Resizing::CarrierWave::Storage::File.new(model.resizing_picture)
+
+          with_fake_api_client({ 'id' => IMAGE_ID }) do |fake|
+            assert_nil file.delete
+            assert_empty fake.deleted_ids
+          end
+
+          assert_equal '', model.read_attribute(:resizing_picture)
+        end
+
+        def test_delete_does_nothing_when_identifier_is_empty_string
+          model = model_with_column('')
+          file = Resizing::CarrierWave::Storage::File.new(model.resizing_picture, '')
+
+          with_fake_api_client({ 'id' => IMAGE_ID }) do |fake|
+            assert_nil file.delete
+            assert_empty fake.deleted_ids
+          end
+        end
+
         def test_delete_with_valid_public_id_clears_model_column
           VCR.use_cassette 'carrier_wave_test/remove_resizing_picture', record: :none do
             model = model_with_column(IDENTIFIER)

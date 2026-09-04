@@ -7,8 +7,9 @@ module Resizing
       parsed
     end
 
+    # nil / 空文字 / 空白のみの文字列はいずれも「値なし」として扱う
     def empty?
-      @public_id.to_s.empty?
+      @public_id.to_s.strip.empty?
     end
 
     def image_id
@@ -39,7 +40,7 @@ module Resizing
     private
 
     def parsed
-      return nil if @public_id.nil?
+      return nil if empty?
 
       unless defined? @parsed
         @parsed = Resizing.separate_public_id(@public_id)

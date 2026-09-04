@@ -75,6 +75,39 @@ module Resizing
       assert_equal '', public_id.to_s
     end
 
+    def test_empty_string_public_id_is_empty_and_has_no_parts
+      public_id = Resizing::PublicId.new ''
+
+      assert public_id.empty?
+      assert_nil public_id.image_id
+      assert_nil public_id.project_id
+      assert_nil public_id.version
+      assert_equal '', public_id.to_s
+    end
+
+    def test_empty_string_public_id_does_not_raise
+      # Issue #94: nil は許容されるのに空文字は RuntimeError になっていた
+      Resizing::PublicId.new ''
+    end
+
+    def test_empty_string_public_id_behaves_same_as_nil
+      from_empty_string = Resizing::PublicId.new ''
+      from_nil = Resizing::PublicId.new nil
+
+      parts = ->(public_id) { [public_id.empty?, public_id.image_id, public_id.project_id, public_id.version, public_id.to_s] }
+
+      assert_equal parts.call(from_nil), parts.call(from_empty_string)
+    end
+
+    def test_whitespace_only_public_id_is_treated_as_empty
+      public_id = Resizing::PublicId.new "  \t\n "
+
+      assert public_id.empty?
+      assert_nil public_id.image_id
+      assert_nil public_id.project_id
+      assert_nil public_id.version
+    end
+
     def test_invalid_public_id_raises_error
       assert_raises(RuntimeError) { Resizing::PublicId.new 'not/a/public/id' }
       assert_raises(RuntimeError) { Resizing::PublicId.new "/projects/#{@project_id}/upload/videos/#{@image_id}" }
