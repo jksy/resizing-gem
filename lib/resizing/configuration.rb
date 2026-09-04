@@ -15,10 +15,17 @@ module Resizing
   #   Resizing::Client.new(configuration)
   #++
   class Configuration
-    attr_reader :image_host, :video_host, :project_id, :secret_token, :open_timeout, :response_timeout, :enable_mock
+    attr_reader :image_host, :project_id, :secret_token, :open_timeout, :response_timeout, :enable_mock
     DEFAULT_HOST = 'https://img.resizing.net'
     DEFAULT_IMAGE_HOST = 'https://img.resizing.net'
-    DEFAULT_VIDEO_HOST = 'https://video.resizing.net'
+    VIDEO_HOST_FALLBACK = 'https://video.resizing.net'
+    private_constant :VIDEO_HOST_FALLBACK
+    # 動画 API はサービス側で廃止されたため非推奨。将来のバージョンで削除する
+    DEFAULT_VIDEO_HOST = VIDEO_HOST_FALLBACK
+    deprecate_constant :DEFAULT_VIDEO_HOST
+    DEPRECATED_VIDEO_HOST_MESSAGE = '[resizing] video_host is deprecated: ' \
+                                    'the video API has been removed from Resizing and this value is no longer used. ' \
+                                    'It will be deleted in a future version.'
     DEFAULT_OPEN_TIMEOUT = 2
     DEFAULT_RESPONSE_TIMEOUT = 10
 
@@ -79,10 +86,18 @@ module Resizing
       ::SecureRandom.uuid
     end
 
+    # 動画 API の廃止により非推奨。値は保持するが利用されない
+    def video_host
+      warn_video_host_deprecation
+      @video_host
+    end
+
     def ==(other)
       return false unless self.class == other.class
 
-      %i[image_host video_host project_id secret_token open_timeout response_timeout].all? do |name|
+      return false unless @video_host == other.instance_variable_get(:@video_host)
+
+      %i[image_host project_id secret_token open_timeout response_timeout].all? do |name|
         send(name) == other.send(name)
       end
     end
@@ -96,23 +111,30 @@ module Resizing
     end
 
     def raise_deprecated_host_error
-      raise ConfigurationError, 'The host on configuration is deprecated. Use image_host, video_host'
+      raise ConfigurationError, 'The host on configuration is deprecated. Use image_host'
+    end
+
+    def deprecated_video_host(value)
+      warn_video_host_deprecation unless value.nil?
+      value.dup.freeze || VIDEO_HOST_FALLBACK
+    end
+
+    def warn_video_host_deprecation
+      warn DEPRECATED_VIDEO_HOST_MESSAGE
     end
 
     def raise_configiration_error
-      raise ConfigurationError, 'need hash and some keys like :image_host, video_host, :project_id, :secret_token'
+      raise ConfigurationError, 'need hash and some keys like :image_host, :project_id, :secret_token'
     end
 
-    # rubocop:disable Metrics/AbcSize
     def initialize_by_hash(attr)
       @image_host = attr[:image_host].dup.freeze || DEFAULT_IMAGE_HOST
-      @video_host = attr[:video_host].dup.freeze || DEFAULT_VIDEO_HOST
+      @video_host = deprecated_video_host(attr[:video_host])
       @project_id = attr[:project_id].dup.freeze
       @secret_token = attr[:secret_token].dup.freeze
       @open_timeout = attr[:open_timeout] || DEFAULT_OPEN_TIMEOUT
       @response_timeout = attr[:response_timeout] || DEFAULT_RESPONSE_TIMEOUT
       @enable_mock = attr[:enable_mock] || false
     end
-    # rubocop:enable Metrics/AbcSize
   end
 end

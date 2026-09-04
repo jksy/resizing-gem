@@ -9,7 +9,6 @@ module Resizing
     def setup
       @template = {
         image_host: 'http://192.168.56.101:5000',
-        video_host: 'http://192.168.56.101:5000',
         project_id: '098a2a0d-c387-4135-a071-1254d6d7e70a',
         secret_token: '4g1cshg2lq8j93ufhvqrpjswxmtjz12yhfvq6w79jpwi7cr7nnknoqgwzkwerbs6',
         open_timeout: 10,
@@ -28,11 +27,13 @@ module Resizing
       assert_equal(config.image_host, Resizing::Configuration::DEFAULT_IMAGE_HOST)
     end
 
-    def test_that_it_has_default_video_host
-      template = @template.dup
-      template.delete(:video_host)
-      config = Resizing::Configuration.new template
-      assert_equal(config.video_host, Resizing::Configuration::DEFAULT_VIDEO_HOST)
+    # 動画 API の廃止にともない video_host は非推奨。値は保持するが参照時に警告を出す
+    def test_that_video_host_reader_warns_and_still_returns_the_default
+      config = Resizing::Configuration.new @template.dup
+
+      _out, err = capture_io { assert_equal('https://video.resizing.net', config.video_host) }
+
+      assert_includes err, Resizing::Configuration::DEPRECATED_VIDEO_HOST_MESSAGE
     end
 
     def test_that_it_need_raise_exception_if_host_presented
@@ -82,10 +83,38 @@ module Resizing
       assert_equal(config.image_host, template[:image_host])
     end
 
-    def test_that_it_has_same_video_host_value
+    def test_that_passing_video_host_warns_but_keeps_the_value
       template = @template.dup
-      config = Resizing::Configuration.new template
-      assert_equal(config.video_host, template[:video_host])
+      template[:video_host] = 'http://192.168.56.101:5000'
+
+      _out, err = capture_io { @config = Resizing::Configuration.new template }
+
+      assert_includes err, Resizing::Configuration::DEPRECATED_VIDEO_HOST_MESSAGE
+      capture_io { assert_equal(template[:video_host], @config.video_host) }
+    end
+
+    # 非推奨だが == の比較対象からは外さない。比較そのものは警告を出さない
+    def test_equality_still_compares_the_deprecated_video_host
+      base = other = nil
+      capture_io do
+        base = Resizing::Configuration.new @template.merge(video_host: 'https://a.example.com')
+        other = Resizing::Configuration.new @template.merge(video_host: 'https://b.example.com')
+      end
+
+      _out, err = capture_io { refute_equal base, other }
+
+      assert_empty err
+    end
+
+    def test_that_the_default_video_host_constant_is_deprecated
+      previous = Warning[:deprecated]
+      Warning[:deprecated] = true
+
+      _out, err = capture_io { Resizing::Configuration::DEFAULT_VIDEO_HOST }
+
+      assert_match(/DEFAULT_VIDEO_HOST is deprecated/, err)
+    ensure
+      Warning[:deprecated] = previous
     end
 
     def test_that_it_has_no_project_id
@@ -323,7 +352,6 @@ module Resizing
       assert_equal 'project', config.project_id
       assert_equal 'token', config.secret_token
       assert_equal Resizing::Configuration::DEFAULT_IMAGE_HOST, config.image_host
-      assert_equal Resizing::Configuration::DEFAULT_VIDEO_HOST, config.video_host
       assert_equal Resizing::Configuration::DEFAULT_OPEN_TIMEOUT, config.open_timeout
       assert_equal Resizing::Configuration::DEFAULT_RESPONSE_TIMEOUT, config.response_timeout
       assert_equal false, config.enable_mock
@@ -425,7 +453,6 @@ module Resizing
     def test_equality_returns_false_when_any_compared_attribute_differs
       base = Resizing::Configuration.new @template
       {
-        video_host: 'http://different.host',
         secret_token: 'different-token',
         open_timeout: 99,
         response_timeout: 99

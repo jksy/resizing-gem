@@ -294,4 +294,23 @@ class ResizingModuleTest < Minitest::Test
 
     assert_equal 'https://img.resizing.net/projects/project123/upload/images/image456', Resizing.url_from_image_id('image456')
   end
+
+  # Issue #95: 実体のないファイルを指す autoload が残っていると
+  # その定数を参照した瞬間に LoadError になるため、
+  # 全 autoload 先が実際にロードできることを確認する
+  def test_all_autoload_targets_are_loadable
+    source = File.read(File.expand_path('../lib/resizing.rb', __dir__))
+    const_names = source.scan(/autoload\s+:(\w+),/).flatten
+
+    refute_empty const_names
+
+    const_names.each do |const_name|
+      assert Resizing.const_get(const_name), "Resizing::#{const_name} should be loadable"
+    end
+  end
+
+  def test_video_constant_is_not_registered
+    refute_includes Resizing.constants, :Video
+    assert_raises(NameError) { Resizing.const_get(:Video) }
+  end
 end

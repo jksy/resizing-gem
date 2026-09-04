@@ -6,7 +6,6 @@ module Resizing
   # usage.
   #   options = {
   #     image_host: 'https://img.resizing.net',
-  #     video_host: 'https://video.resizing.net',
   #     project_id: '098a2a0d-0000-0000-0000-000000000000',
   #     secret_token: '4g1cshg......rbs6'
   #   }
