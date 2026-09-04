@@ -111,10 +111,12 @@ The container provides:
 - `RAILS_VERSION` (default `7.0`) to test against another Rails version, matching the
   `RAILS_VERSION` switch in the `Gemfile` and in CI
 
-Gems are installed into a named volume (`/usr/local/bundle`), so the host's `vendor/`
-directory is left untouched. The `.ruby-lsp/` directory the Ruby LSP extension generates
-is kept on its own volume for the same reason: it records which gems are installed, and a
-copy generated on the host would point at gems the container does not have.
+Gems are installed into a named volume (`/usr/local/bundle`). `vendor/`, `.bundle/` and
+`.ruby-lsp/` are kept on their own volumes so that Ruby artifacts generated on the host do
+not leak into the container through the bind mount: `vendor/` holds gems whose native
+extensions are built against the host's libraries, `.bundle/config` points `BUNDLE_PATH`
+at it, and `.ruby-lsp/` records which gems the Ruby LSP extension has installed. The host
+copies are left untouched.
 
 #### Changing the Ruby version
 

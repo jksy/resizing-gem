@@ -47,17 +47,27 @@ RUN rbenv install "${RUBY_VERSION}" \
     && rbenv rehash \
     && chown -R vscode:vscode "${RBENV_ROOT}"
 
-# Install gems into a named volume so the host's vendor/ directory and
-# .bundle/config (BUNDLE_PATH: vendor) are left untouched. BUNDLE_APP_CONFIG
-# makes bundler ignore the workspace .bundle/config.
-ENV BUNDLE_PATH=/usr/local/bundle \
-    BUNDLE_APP_CONFIG=/usr/local/bundle
+# Install gems into a named volume, so nothing is written to the bind-mounted
+# workspace and a rebuild does not have to fetch them again.
+ENV BUNDLE_PATH=/usr/local/bundle
 
 RUN mkdir -p "${BUNDLE_PATH}" && chown -R vscode:vscode "${BUNDLE_PATH}"
 
-# The Ruby LSP extension generates .ruby-lsp/ in the workspace and records there
-# which gems it has installed. A copy generated on the host would point at gems
-# this container does not have, so compose.yaml keeps it on its own volume.
-# Creating the directory here gives that volume the right owner.
-RUN mkdir -p /workspaces/resizing-gem/.ruby-lsp \
+# Ruby artifacts generated on the host must not leak in through the bind mount:
+# vendor/ holds gems with native extensions built against the host's glibc,
+# .bundle/config points BUNDLE_PATH at it, and .ruby-lsp/ records which gems the
+# Ruby LSP extension has installed. compose.yaml keeps all three on their own
+# volumes; creating the directories here gives those volumes the right owner.
+RUN mkdir -p /workspaces/resizing-gem/vendor \
+             /workspaces/resizing-gem/.bundle \
+             /workspaces/resizing-gem/.ruby-lsp \
     && chown -R vscode:vscode /workspaces
+
+# Bundler's global config, so that BUNDLE_PATH also applies to tools that
+# compose their own bundle with a clean environment. The Ruby LSP extension
+# builds one under .ruby-lsp/, which makes that directory bundler's app root,
+# so a config in the workspace root would not be read for it.
+RUN mkdir -p /home/vscode/.bundle \
+    && printf '%s\n' '---' 'BUNDLE_PATH: "/usr/local/bundle"' \
+        > /home/vscode/.bundle/config \
+    && chown -R vscode:vscode /home/vscode/.bundle

@@ -25,6 +25,8 @@ services:
       - ..:/workspaces/resizing-gem:cached
       - bundle:/usr/local/bundle
       # Not shared with the host: see the Dockerfile
+      - vendor:/workspaces/resizing-gem/vendor
+      - bundle-config:/workspaces/resizing-gem/.bundle
       - ruby-lsp:/workspaces/resizing-gem/.ruby-lsp
     depends_on:
       db:
@@ -49,5 +51,7 @@ services:
 
 volumes:
   bundle:
+  vendor:
+  bundle-config:
   ruby-lsp:
   db-data:
