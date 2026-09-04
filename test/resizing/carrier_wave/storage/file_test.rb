@@ -7,6 +7,8 @@ module Resizing
   module CarrierWave
     module Storage
       class FileTest < Minitest::Test
+        include VCRRequestAssertions
+
         def setup
           @configuration_template = {
             image_host: 'http://192.168.56.101:5000',
@@ -485,6 +487,121 @@ module Resizing
 
           assert_equal OTHER_IDENTIFIER, file.public_id.to_s
           assert_equal OTHER_IDENTIFIER, file.current_path
+        end
+
+        # ============================================================
+        # Issue #91: 未定義の `file` を参照していたメソッド群
+        # (size / content_type / read / exists? / attributes)
+        # ============================================================
+
+        # test/vcr/client/metadata.yml のカセットに対応する identifier
+        METADATA_IDENTIFIER = '/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/87263920-2081-498e-a107-9625f4fde01b/vHg9VFvdI6HRzLFbV495VdwVmHIspLRCo'
+        METADATA_SIZE = 848_590
+
+        def storage_file_for(identifier)
+          Resizing::CarrierWave::Storage::File.new(TestModel.new.resizing_picture, identifier)
+        end
+
+        def test_size_content_type_exists_and_attributes_come_from_metadata_api
+          file = storage_file_for(METADATA_IDENTIFIER)
+
+          # メタデータは1回だけ取得され、以降はメモ化される
+          assert_vcr_requests_made 'client/metadata' do
+            assert_equal METADATA_SIZE, file.size
+            assert_equal 'image/jpeg', file.content_type
+            assert file.exists?
+            assert_equal 'sample1.jpg', file.attributes['filename']
+          end
+        end
+
+        def test_metadata_backed_methods_do_not_raise_name_error_without_public_id
+          file = new_storage_file
+
+          # public_id がないのでリクエストは発行されず、既定値を返す
+          assert_vcr_no_requests 'client/metadata' do
+            assert_equal 0, file.size
+            assert_nil file.content_type
+            refute file.exists?
+            assert_nil file.attributes
+          end
+        end
+
+        def test_metadata_backed_methods_do_not_raise_when_api_fails
+          file = storage_file_for(IDENTIFIER)
+
+          Resizing.stub(:metadata, ->(*) { raise Resizing::APIError, 'boom' }) do
+            assert_equal 0, file.size
+            assert_nil file.content_type
+            refute file.exists?
+            assert_nil file.attributes
+          end
+        end
+
+        def test_metadata_not_found_response_is_treated_as_missing
+          file = storage_file_for(IDENTIFIER)
+          not_found = { 'error' => 'ActiveRecord::RecordNotFound' }
+
+          Resizing.stub(:metadata, ->(*) { not_found }) do
+            refute file.exists?
+            assert_equal 0, file.size
+            assert_nil file.content_type
+          end
+        end
+
+        def test_content_type_prefers_locally_known_value_over_metadata_api
+          file = new_storage_file
+
+          # store 済みで content_type が分かっている場合はメタデータを取りに行かない
+          assert_vcr_no_requests 'client/metadata' do
+            capture_post { file.store(::File.open('test/data/images/sample1.jpg', 'r')) }
+
+            assert_equal 'image/jpeg', file.content_type
+          end
+        end
+
+        def test_metadata_falls_back_to_model_column_when_built_without_identifier
+          model = model_with_column(METADATA_IDENTIFIER)
+          file = Resizing::CarrierWave::Storage::File.new(model.resizing_picture)
+
+          assert_vcr_requests_made 'client/metadata' do
+            assert_equal METADATA_SIZE, file.size
+          end
+        end
+
+        def test_retrieve_drops_cached_metadata_only_when_identifier_changes
+          file = storage_file_for(METADATA_IDENTIFIER)
+
+          assert_vcr_requests_made 'client/metadata' do
+            assert_equal METADATA_SIZE, file.size
+            # 同じ identifier での retrieve ではメタデータを再取得しない
+            file.retrieve(METADATA_IDENTIFIER)
+            assert_equal METADATA_SIZE, file.size
+          end
+
+          file.retrieve(IDENTIFIER)
+          Resizing.stub(:metadata, ->(*) { { 'size' => 1 } }) do
+            assert_equal 1, file.size
+          end
+        end
+
+        def test_read_raises_not_implemented_error_instead_of_name_error
+          file = storage_file_for(METADATA_IDENTIFIER)
+
+          error = assert_raises(NotImplementedError) { file.read }
+          assert_match(/Resizing/, error.message)
+        end
+
+        # Issue #91 の再現手順: DB から読み直したモデルの size が NameError にならないこと
+        # (CarrierWave の Uploader::Proxy#size は file.try(:size) を呼ぶ)
+        def test_uploader_proxy_size_and_content_type_for_model_loaded_from_db
+          model = model_with_column(METADATA_IDENTIFIER)
+          model.save!
+          loaded = TestModel.find(model.id)
+
+          assert_vcr_requests_made 'client/metadata' do
+            assert_equal METADATA_SIZE, loaded.resizing_picture.size
+            assert_equal 'image/jpeg', loaded.resizing_picture.content_type
+          end
         end
 
         def test_delete_with_valid_public_id_clears_model_column

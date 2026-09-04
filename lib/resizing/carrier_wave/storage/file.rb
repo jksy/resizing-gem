@@ -16,20 +16,28 @@ module Resizing
           @uploader = uploader
           @content_type = nil
           @public_id = Resizing::PublicId.new(identifier)
-          @file = nil
           @metadata = nil
+          @metadata_fetched = false
         end
 
+        # Metadata of the stored image, as returned by the Resizing metadata API.
+        #
+        # === Returns
+        #
+        # [Hash, nil] metadata hash, or nil when the image is unknown/unreachable
         def attributes
-          file.attributes
+          metadata
         end
 
         def authenticated_url(_options = {})
           nil
         end
 
+        # NOTE: Called through CarrierWave's Uploader::Proxy#content_type, so it must not
+        # raise. Falls back to the metadata API when the content type is not known locally
+        # (e.g. the model was reloaded from the DB), and returns nil if it cannot be fetched.
         def content_type
-          @content_type || file.try(:content_type)
+          @content_type ||= metadata && metadata['content_type']
         end
 
         # rubocop:disable Metrics/AbcSize
@@ -76,29 +84,25 @@ module Resizing
         ##
         # Read content of file from service
         #
-        # === Returns
-        #
-        # [String] contents of file
+        # NOTE: Resizing keeps no local copy of the stored image and this gem has no API to
+        # download the binary (Resizing::Client#get is not implemented either), so reading the
+        # content would require a new download API. It is not called by the regular CarrierWave
+        # flow (only through Uploader::Proxy#read, i.e. explicitly by the application), so it
+        # raises instead of silently returning nil.
         def read
-          file_body = file.body
-
-          return if file_body.nil?
-          return file_body unless file_body.is_a?(::File)
-
-          # Fog::Storage::XXX::File#body could return the source file which was upoloaded to the remote server.
-          read_source_file(file_body) if ::File.exist?(file_body.path)
-
-          # If the source file doesn't exist, the remote content is read
-          @file = nil
-          file.body
+          raise NotImplementedError, 'Resizing does not support reading the stored image content'
         end
 
+        # NOTE: Called through CarrierWave's Uploader::Proxy#size, so it must not raise.
+        # The size is only known to the Resizing service, so it comes from the metadata API.
+        # Returns 0 when it cannot be fetched, following Uploader::Proxy#size, which itself
+        # falls back to 0, so that the return value is always an Integer.
         def size
-          file.nil? ? 0 : file.content_length
+          (metadata && metadata['size']) || 0
         end
 
         def exists?
-          !!file
+          !metadata.nil?
         end
 
         def current_path
@@ -169,8 +173,12 @@ module Resizing
         #   CarrierWave::Storage::Fog::File.new(@uploader, @base, new_path)
         # end
 
+        # NOTE: Resizing::CarrierWave#file calls this on every access, so the cached metadata
+        # is only dropped when the identifier actually changes.
         def retrieve(identifier)
-          @public_id = Resizing::PublicId.new(identifier)
+          new_public_id = Resizing::PublicId.new(identifier)
+          reset_metadata unless new_public_id.to_s == @public_id.to_s
+          @public_id = new_public_id
         end
 
         private
@@ -218,15 +226,52 @@ module Resizing
         end
 
         ##
-        # lookup file
+        # Metadata of the stored image, fetched lazily from the Resizing metadata API
+        # and memoized (including a failed lookup, so it is fetched at most once).
+        #
+        # This replaces the Fog-derived `file` method (`directory.files.head(path)`) that this
+        # class used to rely on: Resizing has no equivalent of a remote file handle, and the
+        # metadata endpoint is the only source of size / content_type / filename.
         #
         # === Returns
         #
-        # [Fog::#{provider}::File] file data from remote service
-        #
-        # def file
-        #   @file ||= directory.files.head(path)
-        # end
+        # [Hash, nil] metadata hash, or nil when there is no image or it cannot be fetched
+        def metadata
+          return @metadata if @metadata_fetched
+
+          @metadata_fetched = true
+          @metadata = fetch_metadata
+        end
+
+        def reset_metadata
+          @metadata = nil
+          @metadata_fetched = false
+        end
+
+        # NOTE: Never raises. These values are read on ordinary code paths (CarrierWave's
+        # Uploader::Proxy delegates size / content_type to this object), so a transient API
+        # failure must not break the caller; the absence of metadata is reported as nil.
+        def fetch_metadata
+          image_id = metadata_image_id
+          return nil if image_id.nil? || image_id.empty?
+
+          result = Resizing.metadata(image_id, {})
+          return nil if !result.is_a?(Hash) || result['error']
+
+          result
+        rescue StandardError
+          nil
+        end
+
+        # The image to look up: the identifier this instance was built with/retrieved,
+        # falling back to the value currently stored in the model column.
+        def metadata_image_id
+          return @public_id.image_id if @public_id.present?
+
+          Resizing::PublicId.new(model.send(:read_attribute, serialization_column)).image_id
+        rescue StandardError
+          nil
+        end
 
         # Guess the content type from a file name/path.
         # Returns DEFAULT_CONTENT_TYPE when the extension is unknown to MIME::Types,
@@ -235,17 +280,6 @@ module Resizing
           return DEFAULT_CONTENT_TYPE if path.nil?
 
           MIME::Types.type_for(path.to_s).first&.content_type || DEFAULT_CONTENT_TYPE
-        end
-
-        def read_source_file(file_body)
-          return unless ::File.exist?(file_body.path)
-
-          begin
-            file_body = ::File.open(file_body.path) if file_body.closed? # Reopen if it's already closed
-            file_body.read
-          ensure
-            file_body.close
-          end
         end
 
         def url_options_supported?(local_file)
