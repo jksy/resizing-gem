@@ -4,6 +4,8 @@ require 'test_helper'
 
 module Resizing
   class ConfigurationTest < Minitest::Test
+    ACTIVE_SUPPORT_OBJECT_EXTENSIONS = %i[present? blank? try].freeze
+
     def setup
       @template = {
         image_host: 'http://192.168.56.101:5000',
@@ -38,6 +40,39 @@ module Resizing
       template[:host] = 'need raise execption if host is presented'
       assert_raises ConfigurationError do
         _config = Resizing::Configuration.new template
+      end
+    end
+
+    def test_that_it_does_not_raise_exception_if_host_is_nil
+      template = @template.dup
+      template[:host] = nil
+      config = Resizing::Configuration.new template
+      assert_equal(config.image_host, template[:image_host])
+    end
+
+    def test_that_it_does_not_raise_exception_if_host_is_empty_string
+      ['', '   '].each do |host|
+        template = @template.dup
+        template[:host] = host
+        config = Resizing::Configuration.new template
+        assert_equal(config.image_host, template[:image_host])
+      end
+    end
+
+    # Rails 外(ActiveSupport 未ロード)から利用されるため、
+    # Configuration は present? / blank? などの ActiveSupport 拡張に依存してはいけない。
+    # see: https://github.com/jksy/resizing-gem/issues/87
+    def test_that_it_does_not_depend_on_active_support_object_extensions
+      without_active_support_object_extensions do
+        template = @template.dup
+        config = Resizing::Configuration.new template
+        assert_equal(config.image_host, template[:image_host])
+
+        template_with_host = @template.dup
+        template_with_host[:host] = 'https://www.resizing.net'
+        assert_raises ConfigurationError do
+          Resizing::Configuration.new template_with_host
+        end
       end
     end
 
@@ -398,6 +433,33 @@ module Resizing
         other = Resizing::Configuration.new @template.merge(key => value)
         refute_equal base, other, "#{key} should be compared by =="
       end
+    end
+
+    private
+
+    def without_active_support_object_extensions
+      removed = each_active_support_extension.map do |klass, method_name|
+        klass.send(:alias_method, backup_name(method_name), method_name)
+        klass.send(:undef_method, method_name)
+        [klass, method_name]
+      end
+
+      yield
+    ensure
+      removed&.each do |klass, method_name|
+        klass.send(:alias_method, method_name, backup_name(method_name))
+        klass.send(:remove_method, backup_name(method_name))
+      end
+    end
+
+    def each_active_support_extension
+      [NilClass, String].product(ACTIVE_SUPPORT_OBJECT_EXTENSIONS).select do |klass, method_name|
+        klass.method_defined?(method_name)
+      end
+    end
+
+    def backup_name(method_name)
+      :"__resizing_test_original_#{method_name}"
     end
   end
 end
