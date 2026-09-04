@@ -34,7 +34,48 @@ module Resizing
         assert_includes result['public_id'], name
         assert result.key?('latest_version_id')
         assert result.key?('latest_etag')
+
+        # id と public_id の image_id が一致していること
+        public_id = Resizing::PublicId.new(result['public_id'])
+        assert_equal name, public_id.image_id
+        # カセットに含まれる元の image_id が残っていないこと
+        refute_includes result['public_id'], 'AWEaewfAreaweFAFASfwe'
+        # version がカセットの固定値から更新されていること
+        refute_equal 'fztekhN_WoeXo8ZkCZ4i5jcQvmPpZewR', result['version']
+        refute_includes result['public_id'], 'vfztekhN_WoeXo8ZkCZ4i5jcQvmPpZewR'
+        # version / latest_version_id / public_id の version が揃っていること
+        assert_equal result['version'], public_id.version
+        assert_equal result['latest_version_id'], public_id.version
       end
+    end
+
+    def test_put_generates_new_version_for_each_call
+      name = 'test-image-123'
+      first = @client.put(name, nil, {})
+      second = @client.put(name, nil, {})
+
+      refute_equal first['version'], second['version']
+      refute_equal first['public_id'], second['public_id']
+    end
+
+    def test_metadata_returns_public_id_for_given_name
+      name = 'metadata-test-image'
+      result = @client.metadata(name)
+      public_id = Resizing::PublicId.new(result['public_id'])
+
+      assert_equal result['id'], public_id.image_id
+      assert_equal name, public_id.image_id
+    end
+
+    def test_delete_keeps_version_from_cassette
+      name = 'delete-test-image'
+      result = @client.delete(name)
+      public_id = Resizing::PublicId.new(result['public_id'])
+
+      assert_equal name, public_id.image_id
+      assert_equal result['project_id'], public_id.project_id
+      assert_equal result['latest_version_id'], public_id.version
+      refute_includes result['public_id'], '28c49144-c00d-4cb5-8619-98ce95977b9c'
     end
 
     def test_delete_returns_parsed_json_with_modified_name
@@ -55,8 +96,17 @@ module Resizing
 
         assert_instance_of Hash, result
         assert_equal name, result['id']
-        # The cassette contains a fixed public_id, so we just check it exists
         assert result.key?('public_id')
+
+        # id と public_id の image_id が一致していること
+        public_id = Resizing::PublicId.new(result['public_id'])
+        assert_equal name, public_id.image_id
+        assert_equal result['id'], public_id.image_id
+        # カセットに含まれる元の image_id が残っていないこと
+        refute_includes result['public_id'], '87263920-2081-498e-a107-9625f4fde01b'
+        # project_id と version はカセットの値を引き継ぐこと
+        assert_equal result['project_id'], public_id.project_id
+        assert_equal result['version'], public_id.version
       end
     end
 
