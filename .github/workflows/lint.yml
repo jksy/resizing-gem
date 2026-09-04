@@ -1,0 +1,37 @@
+name: lint
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  rubocop:
+    name: RuboCop
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Install ruby dependencies"
+        run: |
+          sudo apt update
+          sudo apt install -y libyaml-dev curl libmysqlclient-dev
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          # Matches the devcontainer, so local and CI report the same offenses
+          ruby-version: '3.1'
+          bundler-cache: false
+
+      - name: bundle install
+        run: |
+          bundle install
+
+      - name: Run RuboCop
+        run: |
+          bundle exec rubocop

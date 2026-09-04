@@ -24,7 +24,7 @@ RAILS_VERSION=7.1 bundle exec rake test                     # Rails バージョ
 bundle exec rubocop
 ```
 
-ローカルで実行できない場合、テストの確認は CI（`.github/workflows/test.yml`。Ruby 3.1〜3.4 × Rails 6.1〜7.2）に任せてよい。
+ローカルで実行できない場合、確認は CI に任せてよい。テストは `.github/workflows/test.yml`（Ruby 3.1〜3.4 × Rails 6.1〜7.2）、RuboCop は `.github/workflows/lint.yml`（Ruby 3.1）で走る。
 
 ## push 前チェック
 
