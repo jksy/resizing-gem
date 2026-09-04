@@ -1,0 +1,49 @@
+# A distinct project name and service name so this does not collide with the
+# docker-compose.yml in the repository root (project resizing-gem, service mysql)
+name: resizing-gem-devcontainer
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        # Change this and rebuild the container to test another Ruby version
+        VARIANT: 1-3.1-bookworm
+    command: sleep infinity
+    environment:
+      # test/test_helper.rb reads these to build the ActiveRecord connection
+      MYSQL_HOST: db
+      MYSQL_PORT: '3306'
+      MYSQL_DATABASE: resizing_gem_test
+      MYSQL_USER: root
+      MYSQL_PASSWORD: secret
+      # The Gemfile switches the Rails version with this
+      RAILS_VERSION: '7.0'
+    volumes:
+      - ..:/workspaces/resizing-gem:cached
+      - bundle:/usr/local/bundle
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:5.7.29
+    # mysql:5.7 is published for amd64 only, so run it emulated on Apple Silicon
+    platform: linux/amd64
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_bin
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: resizing_gem_test
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-uroot', '-psecret']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+volumes:
+  bundle:
+  db-data:

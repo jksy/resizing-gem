@@ -83,7 +83,46 @@ end
 
 ## Development
 
+### Dev Container (recommended)
+
+This repository ships a [Dev Container](https://containers.dev/) so that everyone develops
+against the same Ruby / MySQL setup.
+
+Requirements: Docker and either VS Code + the *Dev Containers* extension, or the
+[`devcontainer` CLI](https://github.com/devcontainers/cli).
+
+1. Open the repository in VS Code and run **Dev Containers: Reopen in Container**
+   (or run `devcontainer up --workspace-folder .`).
+2. `bundle install` and the MySQL wait are executed automatically by
+   `.devcontainer/post-create.sh`.
+3. Inside the container:
+
+   ```console
+   $ bundle exec rake test    # run the tests
+   $ bundle exec rubocop      # run the linter
+   $ bin/console              # interactive prompt
+   ```
+
+The container provides:
+
+- Ruby 3.1 (change `VARIANT` in `.devcontainer/compose.yaml` to test another version,
+  e.g. `1-3.2-bookworm`, then rebuild the container)
+- MySQL 5.7 with the `resizing_gem_test` database, matching CI
+- `RAILS_VERSION` (default `7.0`) to test against another Rails version, matching the
+  `RAILS_VERSION` switch in the `Gemfile` and in CI
+
+Gems are installed into a named volume (`/usr/local/bundle`), so the host's `vendor/`
+directory is left untouched.
+
+### Without a Dev Container
+
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+
+The tests need a MySQL server. `docker-compose.yml` in the repository root starts a
+suitable one (`docker compose up -d mysql`). The connection settings default to
+`root:secret@127.0.0.1:3306/resizing_gem_test` and can be overridden with the
+`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER` and `MYSQL_PASSWORD`
+environment variables.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 

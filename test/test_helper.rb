@@ -129,14 +129,16 @@ module VCRRequestAssertions
   end
 end
 
+# The connection can be overridden with environment variables
+# (the dev container runs MySQL in a separate container)
 ActiveRecord::Base.establish_connection(
   adapter: 'mysql2',
-  host: '127.0.0.1',
-  port: 3306,
-  database: 'resizing_gem_test',
+  host: ENV.fetch('MYSQL_HOST', '127.0.0.1'),
+  port: Integer(ENV.fetch('MYSQL_PORT', '3306')),
+  database: ENV.fetch('MYSQL_DATABASE', 'resizing_gem_test'),
   encoding: 'utf8',
-  username: 'root',
-  password: 'secret'
+  username: ENV.fetch('MYSQL_USER', 'root'),
+  password: ENV.fetch('MYSQL_PASSWORD', 'secret')
 )
 
 ActiveRecord::Schema.define do
