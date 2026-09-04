@@ -6,7 +6,7 @@ module Resizing
       mod.send(:attr_reader, :config)
     end
 
-    def initialize_config *attrs
+    def initialize_config(*attrs)
       config = if attrs.first.is_a? Configuration
                  attrs.first
                elsif attrs.first.nil?

@@ -17,6 +17,7 @@ devcontainer を使わない場合はテスト用に MySQL を自前で起動す
 外部 API 呼び出しは `test/vcr/` のカセットを使い、実 API を叩くテストは追加しない。
 
 ```bash
+bundle exec rake ci                                         # RuboCop + テスト（push 前チェックと同じ）
 bundle exec rake test                                       # 全件
 bundle exec ruby -Itest -Ilib test/resizing/client_test.rb  # 単一ファイル
 RAILS_VERSION=7.1 bundle exec rake test                     # Rails バージョンを変えて実行
@@ -24,6 +25,19 @@ bundle exec rubocop
 ```
 
 ローカルで実行できない場合、テストの確認は CI（`.github/workflows/test.yml`。Ruby 3.1〜3.4 × Rails 6.1〜7.2）に任せてよい。
+
+## push 前チェック
+
+`git push` すると `git-hooks/pre-push` が `bundle exec rake ci`（RuboCop + テスト）を実行し、失敗した時点で push を中断する。**CI が落ちる前に気づくための仕組みなので、`--no-verify` で飛ばさないこと**（飛ばした場合はその旨を報告する）。
+
+有効化はクローンごとに一度だけ必要で、`bin/setup` が `git config core.hooksPath git-hooks` を設定する。設定済みかは `git config core.hooksPath` で確認できる（worktree でも設定は共有される）。
+
+```bash
+bin/setup                        # bundle install + git hooks の有効化
+PRE_PUSH_SKIP_TESTS=1 git push   # RuboCop だけにしてテストを省く
+```
+
+チェックは gem が入っている環境で走る。`bundle check` が通る環境（devcontainer の中、または `bundle install` 済みのホスト）ならそのまま、通らなければ devcontainer CLI か docker compose 経由で devcontainer 内で実行する。
 
 ## PR 運用
 
