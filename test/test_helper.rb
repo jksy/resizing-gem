@@ -169,6 +169,58 @@ module VCRRequestAssertions
   end
 end
 
+# 全テストで共通の Resizing の設定と、アップロードのテスト用ヘルパー
+#
+# 設定値と識別子は test/vcr/ のカセットに記録されているホスト・プロジェクト・
+# レスポンスと揃えてあるので、変更するときはカセットも合わせて録り直すこと
+module ResizingTestConfiguration
+  CONFIGURATION_TEMPLATE = {
+    image_host: 'http://192.168.56.101:5000',
+    project_id: 'e06e710d-f026-4dcf-b2c0-eab0de8bb83f',
+    secret_token: 'ewbym2r1pk49x1d2lxdbiiavnqp25j2kh00hsg3koy0ppm620x5mhlmgl3rq5ci8',
+    open_timeout: 10,
+    response_timeout: 20
+  }.freeze
+
+  # carrier_wave_test/save カセットが返す画像の public id
+  UPLOADED_IDENTIFIER = '/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/' \
+                        '14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e'
+
+  def configuration_template
+    CONFIGURATION_TEMPLATE
+  end
+
+  # @param overrides [Hash] 既定の設定を上書きする値
+  def configure_resizing(overrides = {})
+    Resizing.configure = CONFIGURATION_TEMPLATE.merge(overrides)
+  end
+
+  def expect_identifier
+    UPLOADED_IDENTIFIER
+  end
+
+  def expect_url
+    "#{CONFIGURATION_TEMPLATE[:image_host]}#{UPLOADED_IDENTIFIER}"
+  end
+
+  # アップロード用のサンプル画像
+  # 実際に POST が発行されるので VCR カセット内で使うこと
+  def sample_uploaded_file
+    file = File.open('test/data/images/sample1.jpg', 'r')
+    ActionDispatch::Http::UploadedFile.new(
+      filename: File.basename(file.path),
+      type: 'image/jpeg',
+      tempfile: file
+    )
+  end
+
+  # モデルにサンプル画像を添付するヘルパーメソッド
+  # VCRカセット内で呼び出す必要がある
+  def attach_sample_image(model)
+    model.resizing_picture = sample_uploaded_file
+  end
+end
+
 # Test database setup
 #
 # By default each test process creates its own database and drops it when the

@@ -7,8 +7,9 @@ module Resizing
   # (モデルの保存・削除を伴う結合テストは carrier_wave_test.rb を参照)
   class CarrierWaveUploaderTest < Minitest::Test
     include VCRRequestAssertions
+    include ResizingTestConfiguration
 
-    IDENTIFIER = '/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e'
+    IDENTIFIER = ResizingTestConfiguration::UPLOADED_IDENTIFIER
 
     class TransformationUploader < ::CarrierWave::Uploader::Base
       include Resizing::CarrierWave
@@ -34,12 +35,7 @@ module Resizing
     end
 
     def setup
-      @configuration_template = {
-        image_host: 'http://192.168.56.101:5000',
-        project_id: 'e06e710d-f026-4dcf-b2c0-eab0de8bb83f',
-        secret_token: 'ewbym2r1pk49x1d2lxdbiiavnqp25j2kh00hsg3koy0ppm620x5mhlmgl3rq5ci8'
-      }
-      Resizing.configure = @configuration_template
+      configure_resizing
     end
 
     def teardown
@@ -104,7 +100,7 @@ module Resizing
       assert_equal "http://192.168.56.101:5000#{IDENTIFIER}/", model.resizing_picture.url
 
       # image_host を差し替えると URL も追従する (保存済みカラム値にはホストを含まない)
-      Resizing.configure = @configuration_template.merge(image_host: 'https://cdn.example.com')
+      configure_resizing(image_host: 'https://cdn.example.com')
       assert_equal "https://cdn.example.com#{IDENTIFIER}/", model.resizing_picture.url
     end
 

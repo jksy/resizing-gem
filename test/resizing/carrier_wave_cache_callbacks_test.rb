@@ -9,17 +9,11 @@ module Resizing
   # - process! と cache_versions! は Resizing の設計に合わないので発火しない
   class CarrierWaveCacheCallbacksTest < Minitest::Test
     include VCRRequestAssertions
+    include ResizingTestConfiguration
 
     def setup
       TestModel.delete_all
-
-      Resizing.configure = {
-        image_host: 'http://192.168.56.101:5000',
-        project_id: 'e06e710d-f026-4dcf-b2c0-eab0de8bb83f',
-        secret_token: 'ewbym2r1pk49x1d2lxdbiiavnqp25j2kh00hsg3koy0ppm620x5mhlmgl3rq5ci8',
-        open_timeout: 10,
-        response_timeout: 20
-      }
+      configure_resizing
     end
 
     def teardown; end
@@ -108,19 +102,6 @@ module Resizing
       refute model.valid?, "#{model_class} should be invalid after the file was rejected"
       refute_empty model.errors[:resizing_picture]
       assert_nil model.read_attribute(:resizing_picture)
-    end
-
-    def sample_uploaded_file
-      file = File.open('test/data/images/sample1.jpg', 'r')
-      ActionDispatch::Http::UploadedFile.new(
-        filename: File.basename(file.path),
-        type: 'image/jpeg',
-        tempfile: file
-      )
-    end
-
-    def expect_identifier
-      '/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e'
     end
   end
 end

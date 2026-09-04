@@ -5,19 +5,13 @@ require 'test_helper'
 module Resizing
   class CarrierWaveTest < Minitest::Test
     include VCRRequestAssertions
+    include ResizingTestConfiguration
 
     def setup
       TestModel.delete_all
       TestJPGModel.delete_all
 
-      @configuration_template = {
-        image_host: 'http://192.168.56.101:5000',
-        project_id: 'e06e710d-f026-4dcf-b2c0-eab0de8bb83f',
-        secret_token: 'ewbym2r1pk49x1d2lxdbiiavnqp25j2kh00hsg3koy0ppm620x5mhlmgl3rq5ci8',
-        open_timeout: 10,
-        response_timeout: 20
-      }
-      Resizing.configure = @configuration_template
+      configure_resizing
     end
 
     def teardown; end
@@ -162,11 +156,6 @@ module Resizing
       assert_instance_of Resizing::CarrierWave::Storage::File, file
     end
 
-    def expect_url
-      'http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/' \
-        'upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e'
-    end
-
     def prepare_model(model_class)
       result = nil
       VCR.use_cassette 'carrier_wave_test/save', record: :once do
@@ -174,18 +163,6 @@ module Resizing
         attach_sample_image(result)
       end
       result
-    end
-
-    # モデルにサンプル画像を添付するヘルパーメソッド
-    # VCRカセット内で呼び出す必要がある
-    def attach_sample_image(model)
-      file = File.open('test/data/images/sample1.jpg', 'r')
-      uploaded_file = ActionDispatch::Http::UploadedFile.new(
-        filename: File.basename(file.path),
-        type: 'image/jpeg',
-        tempfile: file
-      )
-      model.resizing_picture = uploaded_file
     end
 
     # TestModelWithCallbackTracking 用のヘルパーメソッド
@@ -659,10 +636,6 @@ module Resizing
       old_value, new_value = model.previous_changes['resizing_picture']
       assert_match(/old-image-id/, old_value)
       assert_match(/new-image-id/, new_value)
-    end
-
-    def expect_identifier
-      '/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e'
     end
   end
 end
