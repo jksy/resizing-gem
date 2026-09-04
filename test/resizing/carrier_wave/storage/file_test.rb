@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'test_helper'
+require 'tempfile'
 
 module Resizing
   module CarrierWave
@@ -358,6 +359,36 @@ module Resizing
           assert_equal 'image/jpeg', captured[:options][:content_type]
           assert_equal 'sample1.jpg', captured[:options][:filename]
           assert_equal 0, captured[:content].pos
+        end
+
+        # Issue #88: MIME::Types に登録のない拡張子でも例外にならず、
+        # application/octet-stream にフォールバックすること
+        def test_store_falls_back_to_octet_stream_for_unknown_extension
+          # 前提: この拡張子は MIME::Types に登録されていない
+          assert_empty MIME::Types.type_for('bookmark.url')
+
+          file = new_storage_file
+          tempfile = Tempfile.new(['bookmark', '.url'])
+          begin
+            tempfile.write("[InternetShortcut]\nURL=https://example.com/\n")
+            tempfile.rewind
+
+            captured = capture_post { file.store(tempfile) }
+
+            assert_equal 'application/octet-stream', captured[:options][:content_type]
+            assert_equal ::File.basename(tempfile.path), captured[:options][:filename]
+          ensure
+            tempfile.close!
+          end
+        end
+
+        def test_guess_content_type_falls_back_for_unknown_or_missing_path
+          file = new_storage_file
+
+          assert_equal 'image/jpeg', file.send(:guess_content_type, 'sample1.jpg')
+          assert_equal 'application/octet-stream', file.send(:guess_content_type, 'bookmark.url')
+          assert_equal 'application/octet-stream', file.send(:guess_content_type, 'no_extension')
+          assert_equal 'application/octet-stream', file.send(:guess_content_type, nil)
         end
 
         def test_store_sends_basename_only_as_filename

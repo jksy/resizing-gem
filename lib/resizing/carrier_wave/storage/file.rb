@@ -7,6 +7,9 @@ module Resizing
       class File
         include ::CarrierWave::Utilities::Uri
 
+        # Fallback content type used when the type cannot be determined from the file name.
+        DEFAULT_CONTENT_TYPE = 'application/octet-stream'
+
         attr_reader :public_id
 
         def initialize(uploader, identifier = nil)
@@ -118,8 +121,10 @@ module Resizing
           @content_type ||= if new_file.respond_to? :content_type
                               new_file.content_type
                             else
-                              # guess content-type from extension
-                              MIME::Types.type_for(new_file.path).first.content_type
+                              # Guess content-type from extension. MIME::Types returns an empty
+                              # list for extensions it does not know (e.g. `.url`), so fall back
+                              # to the generic binary type instead of raising NoMethodError.
+                              guess_content_type(new_file.path)
                             end
 
           original_filename = new_file.try(:original_filename) || new_file.try(:filename) || new_file.try(:path)
@@ -222,6 +227,15 @@ module Resizing
         # def file
         #   @file ||= directory.files.head(path)
         # end
+
+        # Guess the content type from a file name/path.
+        # Returns DEFAULT_CONTENT_TYPE when the extension is unknown to MIME::Types,
+        # which is the same convention CarrierWave/Rack use for unidentifiable files.
+        def guess_content_type(path)
+          return DEFAULT_CONTENT_TYPE if path.nil?
+
+          MIME::Types.type_for(path.to_s).first&.content_type || DEFAULT_CONTENT_TYPE
+        end
 
         def read_source_file(file_body)
           return unless ::File.exist?(file_body.path)
