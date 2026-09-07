@@ -26,8 +26,8 @@ Gem::Specification.new do |spec|
     `git ls-files -z`.split("\x0")
   end
   spec.require_paths = ['lib']
-  spec.add_runtime_dependency 'faraday', '~> 2.3'
-  spec.add_runtime_dependency 'faraday-multipart'
+  spec.add_runtime_dependency 'faraday', '>= 1.0', '< 3'
+  spec.add_runtime_dependency 'faraday-multipart', '>= 1.0'
   spec.add_development_dependency 'carrierwave', '~> 2.2.5'
   spec.add_development_dependency 'fog-aws'
   spec.add_development_dependency 'minitest', '~> 5.16'

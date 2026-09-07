@@ -9,6 +9,11 @@ gemspec
 rails_version = ENV['RAILS_VERSION'] || '7.0'
 gem 'rails', "~> #{rails_version}"
 
+# Allow testing against different Faraday versions (e.g. FARADAY_VERSION=1.10).
+# Unset, the gemspec constraint picks the latest release.
+faraday_version = ENV['FARADAY_VERSION']
+gem 'faraday', "~> #{faraday_version}" if faraday_version
+
 gem 'byebug'
 gem 'mysql2'
 gem 'pry-byebug'
