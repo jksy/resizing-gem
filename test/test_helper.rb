@@ -8,6 +8,9 @@ SimpleCov.start do
   # bundle install で vendor/ 配下に入る gem を計測対象から除外し、
   # カバレッジ率が lib の実態を表すようにする
   add_filter '/vendor/'
+  # version.rb is loaded by the gemspec before SimpleCov starts, so it always shows
+  # 0% coverage. Exclude it so that release PRs do not fail the patch check.
+  add_filter '/lib/resizing/version.rb'
   track_files 'lib/**/*.rb'
 
   if ENV['CI']
