@@ -64,13 +64,24 @@ module Resizing
       end
 
       def lookup_extensions(type)
-        if defined?(::MIME::Types)
+        if mime_types_available?
           ::MIME::Types[type].flat_map(&:extensions).map(&:downcase).uniq
-        elsif defined?(::MiniMime)
-          [::MiniMime.lookup_by_content_type(type)&.extension].compact.map(&:downcase)
+        elsif mini_mime_available?
+          extension = ::MiniMime.lookup_by_content_type(type)&.extension
+          extension.nil? ? [] : [extension.downcase]
         else
           []
         end
+      end
+
+      # Which lookup library is loaded depends on the application (CarrierWave 1.x loads
+      # MIME::Types, 2.x+ loads MiniMime); the tests stub these to exercise each path.
+      def mime_types_available?
+        !defined?(::MIME::Types).nil?
+      end
+
+      def mini_mime_available?
+        !defined?(::MiniMime).nil?
       end
     end
   end
