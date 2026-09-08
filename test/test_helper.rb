@@ -222,6 +222,31 @@ module ResizingTestConfiguration
   def attach_sample_image(model)
     model.resizing_picture = sample_uploaded_file
   end
+
+  # `remote_<column>_url=` でダウンロードされたのと同じ形のファイル
+  # (CarrierWave::Downloader::RemoteFile) を、HTTP を発行せずに組み立てる
+  #
+  # @param url [String] ダウンロード元 URL (ファイル名の決定に使われる)
+  # @param content_type [String] レスポンスの Content-Type
+  # @param body [String] レスポンスボディ (既定はサンプル画像)
+  def sample_remote_file(url, content_type:, body: File.binread('test/data/images/sample1.jpg'))
+    response = Net::HTTPOK.new('1.1', '200', 'OK')
+    response['Content-Type'] = content_type
+    response.instance_variable_set(:@body, body)
+    response.instance_variable_set(:@read, true)
+    response.uri = URI.parse(url)
+    ::CarrierWave::Downloader::RemoteFile.new(response)
+  end
+
+  # `remote_<column>_url=` のダウンロードを差し替えて、与えた RemoteFile を返すようにする
+  # (テストからは外部 HTTP を発行しないため)
+  #
+  # @param remote_file [CarrierWave::Downloader::RemoteFile] ダウンロード結果として返すファイル
+  def with_stubbed_download(remote_file, &block)
+    downloader = Object.new
+    downloader.define_singleton_method(:download) { |_url, _headers = {}| remote_file }
+    ::CarrierWave::Downloader::Base.stub(:new, downloader, &block)
+  end
 end
 
 # Test database setup
@@ -378,6 +403,16 @@ class ResizingUploaderWithExtensionDenylist < CarrierWave::Uploader::Base
   end
 end
 
+# 拡張子の判定が content_type から行われることのテスト用アップローダ
+# (sample1.jpg / image/jpeg を受け付け、image/png は拒否する)
+class ResizingUploaderWithJpegAllowlist < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  def extension_allowlist
+    %w[jpg jpeg]
+  end
+end
+
 class ResizingUploaderWithContentTypeAllowlist < CarrierWave::Uploader::Base
   include Resizing::CarrierWave
 
@@ -417,6 +452,12 @@ class TestModelWithExtensionDenylist < ::ActiveRecord::Base
   self.table_name = 'test_models'
 
   mount_uploader :resizing_picture, ResizingUploaderWithExtensionDenylist
+end
+
+class TestModelWithJpegAllowlist < ::ActiveRecord::Base
+  self.table_name = 'test_models'
+
+  mount_uploader :resizing_picture, ResizingUploaderWithJpegAllowlist
 end
 
 class TestModelWithContentTypeAllowlist < ::ActiveRecord::Base
