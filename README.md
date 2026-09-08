@@ -9,6 +9,7 @@ Client and utilities for [Resizing](https://www.resizing.net/) - an image hostin
 ## Requirements
 
 - Ruby 3.1.0 or later
+- Faraday 1.x or 2.x (tested against 1.10 and the latest 2.x)
 
 ## Installation
 
