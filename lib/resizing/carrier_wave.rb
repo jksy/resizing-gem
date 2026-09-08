@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'resizing/carrier_wave/callback_file'
 require 'resizing/carrier_wave/storage/file'
 require 'resizing/carrier_wave/storage/remote'
 
@@ -115,10 +116,11 @@ module Resizing
     def cache!(new_file)
       return if new_file.nil?
 
-      # SanitizedFile responds to #extension / #content_type / #size, which the
-      # before :cache callbacks need. The original object is handed to the storage,
-      # because it carries the original filename sent to Resizing.
-      sanitized = ::CarrierWave::SanitizedFile.new(new_file)
+      # CallbackFile responds to #extension / #content_type / #size, which the
+      # before :cache callbacks need, with the extension derived from the content type
+      # (see CallbackFile). The original object is handed to the storage, because it
+      # carries the original filename sent to Resizing.
+      sanitized = CallbackFile.new(new_file)
       return if sanitized.empty?
 
       with_callbacks(:cache, sanitized) do

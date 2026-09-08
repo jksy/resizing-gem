@@ -110,6 +110,13 @@ end
 uploaded, and the model becomes invalid with an error on the mounted column, as in plain
 CarrierWave.
 
+The extension checked by `extension_allowlist` / `extension_denylist` is derived from the
+content type of the file whenever it is known, not from the file name. A file downloaded
+from a Resizing URL (e.g. assigned through `remote_<column>_url=`) ends with the version
+string, so its file name has no meaningful extension; the `Content-Type` of the response
+is used instead. When the content type is unknown (`application/octet-stream`), the
+extension of the file name is used as in plain CarrierWave.
+
 Versions are not uploaded separately: a version only changes the transformation in the
 generated URL, so a single upload backs every version.
 
