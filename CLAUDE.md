@@ -20,11 +20,11 @@ devcontainer を使わない場合はテスト用に MySQL を自前で起動す
 bundle exec rake ci                                         # RuboCop + テスト（push 前チェックと同じ）
 bundle exec rake test                                       # 全件
 bundle exec ruby -Itest -Ilib test/resizing/client_test.rb  # 単一ファイル
-RAILS_VERSION=7.1 bundle exec rake test                     # Rails バージョンを変えて実行
+RAILS_VERSION=7.1 bundle exec rake test                     # Rails バージョンを変えて実行（既定は Ruby 3.2 以上で 8.1、3.1 で 7.2）
 bundle exec rubocop
 ```
 
-ローカルで実行できない場合、確認は CI に任せてよい。テストは `.github/workflows/test.yml`（Ruby 3.1〜4.0 × Rails 6.1〜8.1）、RuboCop は `.github/workflows/lint.yml`（Ruby 3.1）で走る。
+ローカルで実行できない場合、確認は CI に任せてよい。テストは `.github/workflows/test.yml`（Ruby 3.1〜4.0 × Rails 7.0〜8.1）、RuboCop は `.github/workflows/lint.yml`（Ruby 3.1）で走る。
 
 ## push 前チェック
 
