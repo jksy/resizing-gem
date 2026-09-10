@@ -20,8 +20,8 @@ services:
       MYSQL_PORT: '3306'
       MYSQL_USER: root
       MYSQL_PASSWORD: secret
-      # The Gemfile switches the Rails version with this
-      RAILS_VERSION: '7.0'
+      # RAILS_VERSION is left unset on purpose: the Gemfile then picks the newest
+      # Rails that runs on the container's Ruby. Set it here to pin another version.
     volumes:
       - ..:/workspaces/resizing-gem:cached
       - bundle:/usr/local/bundle

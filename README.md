@@ -8,8 +8,13 @@ Client and utilities for [Resizing](https://www.resizing.net/) - an image hostin
 
 ## Requirements
 
-- Ruby 3.1.0 or later
+- Ruby 3.1.0 or later (tested against 3.1, 3.2, 3.3, 3.4 and 4.0)
+- Rails 7.0 or later for the CarrierWave integration (tested against 7.0, 7.1, 7.2, 8.0 and 8.1)
 - Faraday 1.x or 2.x (tested against 1.10 and the latest 2.x)
+
+The exact combinations exercised in CI are listed in `.github/workflows/test.yml`.
+Support for a Ruby or Rails series that has reached upstream end-of-life may be dropped in
+a minor release; such changes are announced in the release notes.
 
 ## Installation
 
@@ -148,8 +153,9 @@ The container provides:
 - Ruby managed by [rbenv](https://github.com/rbenv/rbenv), so the version can be changed
   from inside the container (see below)
 - MySQL 5.7 with the `resizing_gem_test` database, matching CI
-- `RAILS_VERSION` (default `7.0`) to test against another Rails version, matching the
-  `RAILS_VERSION` switch in the `Gemfile` and in CI
+- `RAILS_VERSION` to test against another Rails version, matching the `RAILS_VERSION`
+  switch in the `Gemfile` and in CI. Unset, the `Gemfile` picks the newest supported Rails
+  that runs on the current Ruby (8.1, or 7.2 on Ruby 3.1)
 
 Gems are installed into a named volume (`/usr/local/bundle`). `vendor/`, `.bundle/` and
 `.ruby-lsp/` are kept on their own volumes so that Ruby artifacts generated on the host do
