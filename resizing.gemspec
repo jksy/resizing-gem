@@ -30,7 +30,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'faraday-multipart', '>= 1.0'
   spec.add_development_dependency 'carrierwave', '~> 2.2.5'
   spec.add_development_dependency 'fog-aws'
-  spec.add_development_dependency 'minitest', '~> 5.16'
+  spec.add_development_dependency 'minitest', '~> 6.0'
   spec.add_development_dependency 'minitest-ci'
   spec.add_development_dependency 'mysql2'
   spec.add_development_dependency 'rubocop'
