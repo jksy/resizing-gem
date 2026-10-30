@@ -7,7 +7,6 @@ on:
       - master
 
 permissions:
-  id-token: write # This is required for codecov/codecov-action
   contents: read  # This is required for actions/checkout
 
 jobs:
@@ -38,9 +37,9 @@ jobs:
       FARADAY_VERSION: ${{ matrix.faraday }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: mirromutth/mysql-action@v1.1
+      - uses: mirromutth/mysql-action@de1fba8b3f90ce8db80f663a7043be3cf3231248 # v1.1
         with:
           host port: 3306
           container port: 3306
@@ -55,7 +54,7 @@ jobs:
           sudo apt update
           sudo apt install -y libyaml-dev curl libmysqlclient-dev
 
-      - uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: false
@@ -73,6 +72,28 @@ jobs:
           bundle exec rake test
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # Single status for the required checks: fails unless every test job
+  # succeeded, including when one is skipped or cancelled.
+  ci-passed:
+    if: always()
+    needs: [test]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Check test results
+        shell: bash
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<<"$NEEDS"
+          failed="$(jq -r '[to_entries[] | select(.value.result != "success") | .key] | join(", ")' <<<"$NEEDS")"
+          if [[ -n "$failed" ]]; then
+            echo "::error::Test jobs did not succeed: $failed"
+            exit 1
+          fi

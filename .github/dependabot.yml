@@ -1,0 +1,23 @@
+version: 2
+updates:
+  - package-ecosystem: bundler
+    directory: /
+    schedule:
+      interval: weekly
+
+  # The official tool images that CI runs, pinned by tag and digest in
+  # the Dockerfiles under .github/tools/.
+  - package-ecosystem: docker
+    directories:
+      - /.github/tools/actionlint
+      - /.github/tools/gitleaks
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ['*']
