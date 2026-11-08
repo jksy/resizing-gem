@@ -4,6 +4,13 @@ services:
   mysql:
     image: mysql:5.7.29
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_bin
+    # MySQL 5.7 sizes its file descriptor tables from the nofile limit. On hosts
+    # where containerd runs with LimitNOFILE=infinity, containers inherit about
+    # 2^31, and mysqld then allocates tens of GB of memory and never gets ready.
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     ports:
       - 3306:3306
     environment:
