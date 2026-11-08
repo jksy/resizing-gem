@@ -29,6 +29,10 @@ module Resizing
     include Resizing::Configurable
     include Resizing::HttpClientable
 
+    DEPRECATED_PUT_MESSAGE = '[resizing] Resizing::Client#put is deprecated: ' \
+                             'the image update API is deprecated on Resizing. ' \
+                             'Upload a new image with #post instead. It will be deleted in a future version.'
+
     def initialize(*attrs)
       initialize_config(*attrs)
     end
@@ -56,7 +60,9 @@ module Resizing
       handle_create_response(response)
     end
 
+    # @deprecated Use {#post} to upload a new image instead.
     def put(image_id, filename_or_io, options)
+      warn DEPRECATED_PUT_MESSAGE
       ensure_content_type(options)
       ensure_filename_or_io(filename_or_io)
       filename = gather_filename filename_or_io, options

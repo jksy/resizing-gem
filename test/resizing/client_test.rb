@@ -90,7 +90,8 @@ module Resizing
       VCR.use_cassette 'client/put', record: :once do
         f = File.open('test/data/images/sample1.jpg', 'r')
         name = 'AWEaewfAreaweFAFASfwe'
-        r = client.put(name, f, content_type: 'image/jpeg')
+        r = nil
+        capture_io { r = client.put(name, f, content_type: 'image/jpeg') }
         assert_equal(r['id'], name)
         assert_equal(r['project_id'], Resizing.configure.project_id)
         assert_equal(r['content_type'], 'image/jpeg')
@@ -112,8 +113,10 @@ module Resizing
       name = 'AWEaewfAreaweFAFASfwe'
       f = File.open('test/data/images/sample1.jpg', 'r')
 
-      assert_raises Resizing::APIError do
-        _r = client.put(name, f, content_type: 'image/jpeg')
+      capture_io do
+        assert_raises Resizing::APIError do
+          _r = client.put(name, f, content_type: 'image/jpeg')
+        end
       end
     end
 
@@ -223,8 +226,10 @@ module Resizing
       Resizing.configure = configuration_template
       client = Resizing::Client.new
 
-      assert_raises ArgumentError do
-        client.put('image_id', 'test/data/images/sample1.jpg', {})
+      capture_io do
+        assert_raises ArgumentError do
+          client.put('image_id', 'test/data/images/sample1.jpg', {})
+        end
       end
     end
 
@@ -364,7 +369,8 @@ module Resizing
     def test_put_sends_multipart_image_to_image_url_with_auth_header
       client, fake = client_with_fake_http(body: '{"id":"img-1"}')
 
-      result = client.put('img-1', sample_path, content_type: 'image/jpeg')
+      result = nil
+      capture_io { result = client.put('img-1', sample_path, content_type: 'image/jpeg') }
 
       request = fake.last_request
       assert_equal :put, request[:method]
@@ -380,7 +386,10 @@ module Resizing
     def test_put_raises_api_error_on_error_status
       client, = client_with_fake_http(status: 403, body: forbidden_body)
 
-      error = assert_raises(Resizing::APIError) { client.put('img-1', sample_path, content_type: 'image/jpeg') }
+      error = nil
+      capture_io do
+        error = assert_raises(Resizing::APIError) { client.put('img-1', sample_path, content_type: 'image/jpeg') }
+      end
       assert_equal 'invalid token is found', error.message
     end
 
@@ -388,9 +397,19 @@ module Resizing
       Resizing.configure = configuration_template
       client = Resizing::Client.new
 
-      assert_raises ArgumentError do
-        client.put('image_id', 12_345, content_type: 'image/jpeg')
+      capture_io do
+        assert_raises ArgumentError do
+          client.put('image_id', 12_345, content_type: 'image/jpeg')
+        end
       end
+    end
+
+    def test_put_warns_deprecation
+      client, = client_with_fake_http(body: '{"id":"img-1"}')
+
+      _out, err = capture_io { client.put('img-1', sample_path, content_type: 'image/jpeg') }
+
+      assert_includes err, Resizing::Client::DEPRECATED_PUT_MESSAGE
     end
 
     def test_delete_sends_delete_request_to_image_url_with_auth_header
