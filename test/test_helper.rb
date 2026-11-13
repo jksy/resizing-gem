@@ -56,17 +56,23 @@ VCR.configure do |c|
   end
 end
 
-# Resizing::Client の代わりに使う偽クライアント (delete の応答を固定し、呼び出しを記録する)
+# Resizing::Client の代わりに使う偽クライアント (delete / confirm の応答を固定し、呼び出しを記録する)
 class FakeApiClient
-  attr_reader :deleted_ids
+  attr_reader :deleted_ids, :confirmed_ids
 
   def initialize(response)
     @response = response
     @deleted_ids = []
+    @confirmed_ids = []
   end
 
   def delete(image_id)
     @deleted_ids << image_id
+    @response.dup
+  end
+
+  def confirm(image_id)
+    @confirmed_ids << image_id
     @response.dup
   end
 end
@@ -438,6 +444,15 @@ class ResizingUploaderWithUndefinedProcessor < CarrierWave::Uploader::Base
   process convert: 'png'
 end
 
+# Uploader that changes the expiry of the temporary image uploaded on assignment
+class ResizingUploaderWithCacheExpiresIn < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  def cache_expires_in
+    3600
+  end
+end
+
 class TestModel < ::ActiveRecord::Base
   mount_uploader :resizing_picture, ResizingUploader
 end
@@ -476,6 +491,12 @@ class TestModelWithUndefinedProcessor < ::ActiveRecord::Base
   self.table_name = 'test_models'
 
   mount_uploader :resizing_picture, ResizingUploaderWithUndefinedProcessor
+end
+
+class TestModelWithCacheExpiresIn < ::ActiveRecord::Base
+  self.table_name = 'test_models'
+
+  mount_uploader :resizing_picture, ResizingUploaderWithCacheExpiresIn
 end
 
 class TestJPGModel < ::ActiveRecord::Base

@@ -186,6 +186,20 @@ module Resizing
 
       assert_nil uploader.store_versions!
       assert_nil uploader.remove_versions!
+      assert_nil uploader.retrieve_versions_from_cache!(IDENTIFIER)
+    end
+
+    def test_cache_expires_in_defaults_to_nil
+      assert_nil TestModel.new.resizing_picture.cache_expires_in
+    end
+
+    def test_cached_file_is_not_deleted_after_storing
+      # 一時画像は確定するとそのまま保存済みの画像になるので、保存後に削除してはいけない
+      assert_equal false, TestModel.new.resizing_picture.delete_tmp_file_after_storage
+    end
+
+    def test_cache_name_is_nil_when_nothing_is_cached
+      assert_nil TestModel.new.resizing_picture.cache_name
     end
 
     def test_rename_raises_not_implemented_error

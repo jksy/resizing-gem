@@ -18,7 +18,7 @@ http_interactions:
       - application/json; charset=utf-8
     body:
       encoding: UTF-8
-      string: '{"id":"old-image-id-1111-1111-111111111111","project_id":"e06e710d-f026-4dcf-b2c0-eab0de8bb83f","content_type":"image/jpeg","version":"v1","public_id":"/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/old-image-id-1111-1111-111111111111/v1"}'
+      string: '{"id":"old-image-id-1111-1111-111111111111","project_id":"e06e710d-f026-4dcf-b2c0-eab0de8bb83f","content_type":"image/jpeg","version":"v1","public_id":"/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/old-image-id-1111-1111-111111111111/v1","temporary":true,"expires_at":"2020-10-12T04:56:48.000Z"}'
   recorded_at: Sun, 11 Oct 2020 04:56:48 GMT
 - request:
     method: post
@@ -38,7 +38,47 @@ http_interactions:
       - application/json; charset=utf-8
     body:
       encoding: UTF-8
-      string: '{"id":"new-image-id-2222-2222-222222222222","project_id":"e06e710d-f026-4dcf-b2c0-eab0de8bb83f","content_type":"image/jpeg","version":"v2","public_id":"/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/new-image-id-2222-2222-222222222222/v2"}'
+      string: '{"id":"new-image-id-2222-2222-222222222222","project_id":"e06e710d-f026-4dcf-b2c0-eab0de8bb83f","content_type":"image/jpeg","version":"v2","public_id":"/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/new-image-id-2222-2222-222222222222/v2","temporary":true,"expires_at":"2020-10-12T04:56:49.000Z"}'
+  recorded_at: Sun, 11 Oct 2020 04:56:49 GMT
+- request:
+    method: put
+    uri: http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/old-image-id-1111-1111-111111111111/confirm
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - Faraday v1.0.1
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - application/json; charset=utf-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"old-image-id-1111-1111-111111111111","project_id":"e06e710d-f026-4dcf-b2c0-eab0de8bb83f","content_type":"image/jpeg","version":"v1","public_id":"/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/old-image-id-1111-1111-111111111111/v1","temporary":false,"expires_at":null}'
+  recorded_at: Sun, 11 Oct 2020 04:56:48 GMT
+- request:
+    method: put
+    uri: http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/new-image-id-2222-2222-222222222222/confirm
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - Faraday v1.0.1
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - application/json; charset=utf-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"new-image-id-2222-2222-222222222222","project_id":"e06e710d-f026-4dcf-b2c0-eab0de8bb83f","content_type":"image/jpeg","version":"v2","public_id":"/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/new-image-id-2222-2222-222222222222/v2","temporary":false,"expires_at":null}'
   recorded_at: Sun, 11 Oct 2020 04:56:49 GMT
 - request:
     method: delete
