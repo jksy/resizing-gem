@@ -190,6 +190,21 @@ class ResizingModuleTest < Minitest::Test
     assert_equal 'image_id', result['id']
   end
 
+  def test_confirm_delegates_to_client
+    Resizing.configure = {
+      image_host: 'https://img.example.com',
+      project_id: 'project123',
+      secret_token: 'token123',
+      enable_mock: true
+    }
+
+    result = Resizing.confirm('image_id')
+
+    assert_instance_of Hash, result
+    assert_equal 'image_id', result['id']
+    assert_equal false, result['temporary']
+  end
+
   def test_metadata_delegates_to_client
     Resizing.configure = {
       image_host: 'https://img.example.com',
@@ -226,6 +241,7 @@ class ResizingModuleTest < Minitest::Test
     assert_raises(Resizing::ConfigurationError) { Resizing.post('dummy', content_type: 'image/jpeg') }
     assert_raises(Resizing::ConfigurationError) { Resizing.put('id', 'dummy', content_type: 'image/jpeg') }
     assert_raises(Resizing::ConfigurationError) { Resizing.delete('id') }
+    assert_raises(Resizing::ConfigurationError) { Resizing.confirm('id') }
     assert_raises(Resizing::ConfigurationError) { Resizing.metadata('id', {}) }
     assert_raises(Resizing::ConfigurationError) { Resizing.url_from_image_id('id') }
     assert_raises(Resizing::ConfigurationError) { Resizing.generate_identifier }

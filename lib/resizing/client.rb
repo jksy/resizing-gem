@@ -41,15 +41,23 @@ module Resizing
       raise NotImplementedError
     end
 
+    # Uploads an image.
+    #
+    # === Options
+    #
+    # [:content_type] content type of the image (required)
+    # [:filename] file name sent to Resizing (defaults to the basename of the path)
+    # [:temporary] uploads the image as a temporary image when true. It is deleted by
+    #              Resizing at its expires_at unless it is confirmed with #confirm.
+    # [:expires_in] seconds until a temporary image expires (Integer or
+    #               ActiveSupport::Duration). Resizing applies its default when omitted.
     def post(filename_or_io, options = {})
       ensure_content_type(options)
       ensure_filename_or_io(filename_or_io)
       filename = gather_filename filename_or_io, options
 
       url = build_post_url
-      params = {
-        image: Faraday::Multipart::FilePart.new(filename_or_io, options[:content_type], filename)
-      }
+      params = build_post_params(filename_or_io, options, filename)
 
       response = handle_faraday_error do
         http_client.post(url, params) do |request|
@@ -74,6 +82,21 @@ module Resizing
 
       response = handle_faraday_error do
         http_client.put(url, params) do |request|
+          request.headers['X-ResizingToken'] = config.generate_auth_header
+        end
+      end
+
+      handle_create_response(response)
+    end
+
+    # Confirms a temporary image, so that Resizing no longer deletes it at its expires_at.
+    # Confirming an image that is already confirmed succeeds without changing it.
+    # Raises APIError when the image is not found, deleted or already expired.
+    def confirm(image_id)
+      url = build_confirm_url(image_id)
+
+      response = handle_faraday_error do
+        http_client.put(url) do |request|
           request.headers['X-ResizingToken'] = config.generate_auth_header
         end
       end
@@ -129,6 +152,21 @@ module Resizing
 
     def build_metadata_url(image_id)
       "#{config.image_host}/projects/#{config.project_id}/upload/images/#{image_id}/metadata"
+    end
+
+    def build_confirm_url(image_id)
+      "#{config.image_host}/projects/#{config.project_id}/upload/images/#{image_id}/confirm"
+    end
+
+    def build_post_params(filename_or_io, options, filename)
+      params = {
+        image: Faraday::Multipart::FilePart.new(filename_or_io, options[:content_type], filename)
+      }
+      return params unless options[:temporary]
+
+      params[:temporary] = 'true'
+      params[:expires_in] = options[:expires_in].to_i.to_s unless options[:expires_in].nil?
+      params
     end
 
     def ensure_content_type(options)

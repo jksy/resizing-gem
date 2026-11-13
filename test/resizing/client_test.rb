@@ -309,6 +309,68 @@ module Resizing
       end
     end
 
+    def test_post_does_not_send_temporary_params_by_default
+      client, fake = client_with_fake_http
+
+      client.post(sample_path, content_type: 'image/jpeg')
+
+      assert_equal %i[image], fake.last_request[:params].keys
+    end
+
+    def test_post_sends_temporary_param
+      client, fake = client_with_fake_http
+
+      client.post(sample_path, content_type: 'image/jpeg', temporary: true)
+
+      params = fake.last_request[:params]
+      assert_equal 'true', params[:temporary]
+      refute params.key?(:expires_in)
+    end
+
+    def test_post_sends_expires_in_param_in_seconds
+      client, fake = client_with_fake_http
+
+      client.post(sample_path, content_type: 'image/jpeg', temporary: true, expires_in: 2.hours)
+
+      assert_equal '7200', fake.last_request[:params][:expires_in]
+    end
+
+    def test_post_ignores_expires_in_without_temporary
+      client, fake = client_with_fake_http
+
+      client.post(sample_path, content_type: 'image/jpeg', temporary: false, expires_in: 3600)
+
+      assert_equal %i[image], fake.last_request[:params].keys
+    end
+
+    def test_confirm_sends_put_request_to_confirm_url_with_auth_header
+      client, fake = client_with_fake_http(body: '{"id":"img-1","temporary":false,"expires_at":null}')
+
+      result = client.confirm('img-1')
+
+      request = fake.last_request
+      assert_equal :put, request[:method]
+      assert_equal "#{base_url}/img-1/confirm", request[:url]
+      assert_nil request[:params]
+      assert_match(/\Av1,\d+,[0-9a-f]{64}\z/, request[:headers]['X-ResizingToken'])
+      assert_equal({ 'id' => 'img-1', 'temporary' => false, 'expires_at' => nil }, result)
+    end
+
+    def test_confirm_raises_api_error_on_not_found
+      # 存在しない・期限切れ・削除済みの画像は確定できない
+      client, = client_with_fake_http(status: 404, body: not_found_body('img-1'))
+
+      error = assert_raises(Resizing::APIError) { client.confirm('img-1') }
+
+      assert_equal 'ActiveRecord::RecordNotFound', error.decoded_body['error']
+    end
+
+    def test_confirm_raises_api_error_when_response_is_nil
+      client, = client_with_fake_http(respond_with_nil: true)
+
+      assert_raises(Resizing::APIError) { client.confirm('img-1') }
+    end
+
     def test_post_uses_filename_option_over_path_basename
       client, fake = client_with_fake_http
 
@@ -515,6 +577,15 @@ module Resizing
 
       assert_raises Resizing::APIError do
         client.delete('some_image_id')
+      end
+    end
+
+    def test_is_timeout_with_confirm_method
+      Resizing.configure = configuration_template.merge(project_id: 'timeout_project_id')
+
+      client = Resizing::Client.new
+      assert_raises Resizing::APIError do
+        client.confirm('img-1')
       end
     end
 

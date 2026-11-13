@@ -72,6 +72,25 @@ transformation_url = Resizing.url_from_image_id(image_id, nil, ['w_200', 'h_300'
 # => "https://img.resizing.net/projects/.../upload/images/.../w_200,h_300"
 ```
 
+#### Temporary images
+
+An image uploaded with `temporary: true` is deleted by Resizing at its `expires_at`
+unless it is confirmed before then. `expires_in` is the number of seconds until it
+expires (Resizing's default when omitted).
+
+```ruby
+response = client.post(file, content_type: 'image/jpeg', temporary: true, expires_in: 3600)
+response['temporary']  # => true
+response['expires_at'] # => "2020-05-15T16:33:10.711Z"
+
+# Keep the image
+client.confirm(response['id'])
+```
+
+A temporary image can be fetched and transformed like any other image until it expires.
+Confirming an image that is already confirmed succeeds without changing it; confirming
+an expired or deleted image raises `Resizing::APIError`.
+
 ### CarrierWave Integration
 
 ```ruby
