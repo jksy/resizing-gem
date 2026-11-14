@@ -1,7 +1,3 @@
-# A distinct project name and service name so this does not collide with the
-# docker-compose.yml in the repository root (project resizing-gem, service mysql)
-name: resizing-gem-devcontainer
-
 services:
   app:
     build:
