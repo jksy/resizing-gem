@@ -48,11 +48,11 @@ PRE_PUSH_SKIP_TESTS=1 git push   # RuboCop だけにしてテストを省く
   - バージョンバンプだけの PR には `release` を付ける（リリースノートから除外される）
   - `ruby` / `tests` / `github_actions` / `documentation` / `dependencies` は `.github/labeler.yml` で自動付与される。種別ラベルは自動では付かない
 - Issue 番号は PR タイトルに含めず、PR 説明に `Closes #N` と書く
-- 公開 API を変える場合は `breaking change` ラベルを付け、README も更新する
+- 公開 API を変える場合は `breaking change` ラベルを付け、README も更新する。利用者側で対応が要る変更は、README（英・日）の「アップグレード」節に、バージョン未定の見出し（`### To x.x.x (unreleased)` / `### x.x.x へのアップグレード（未リリース）`）で移行方法を書く
 
 ## リリース手順
 
-1. `lib/resizing/version.rb` を更新する PR に `release` ラベルを付けてマージする
+1. `lib/resizing/version.rb` を更新する PR に `release` ラベルを付けてマージする。README（英・日）の「アップグレード」節に未リリースの項目があれば、同じ PR で `x.x.x` をリリースするバージョンに置き換え、見出しの `(unreleased)` / `（未リリース）` を外す
 2. `master` で `bundle exec rake release`（rubygems.org への公開と `v<version>` タグの push）
 3. GitHub の Releases で該当タグを選び、"Generate release notes" で本文を生成して公開する
 

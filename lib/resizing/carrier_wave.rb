@@ -66,38 +66,30 @@ module Resizing
       @file
     end
 
-    def url(*args)
-      return default_url unless read_column.present?
-
-      transforms = args.map do |version|
-        version = version.intern
-        raise "No version is found: #{version}, #{versions.keys} are exists." unless versions.key? version
-
-        versions[version].transform_string
-      end.compact
-
-      "#{build_url}/#{transforms.join('/')}"
-    end
-
     def read_column
       model.read_attribute(serialization_column)
     end
 
-    def build_url
-      "#{Resizing.configure.image_host}#{model.read_attribute(serialization_column)}"
-    end
-
-    # need override this. if you want to return some url when target_column is nil
-    def default_url
+    # Override this to return a URL when the column is blank. As in CarrierWave, it is
+    # called on the uploader of the requested version, so #version_name tells which
+    # version is asked for.
+    def default_url(*_args)
       nil
     end
 
+    # The transformations of this uploader, joined by '/'. A version comes after the
+    # transformations of its parent, as CarrierWave makes a version from the file
+    # processed by its parent.
+    def transform_path
+      [parent_version&.transform_path, transform_string].reject(&:blank?).join('/')
+    end
+
     def transform_string
-      transforms = processors.map do |processor|
+      transforms = processors.select { |processor| process_applicable?(*processor) }.map do |processor|
         transform_string_from processor
       end
 
-      transforms.join('/')
+      transforms.reject(&:empty?).join('/')
     end
 
     def rename
@@ -278,6 +270,19 @@ module Resizing
 
     def carrierwave3?
       Gem::Version.new(::CarrierWave::VERSION) >= Gem::Version.new('3')
+    end
+
+    # Evaluates the :if / :unless condition of a process in the same way as
+    # CarrierWave's process! (CarrierWave 2.x only supports :if and has no condition type).
+    def process_applicable?(method, args, condition = nil, condition_type = nil)
+      return true unless condition
+
+      result = if condition.respond_to?(:call)
+                 condition.call(self, args: args, method: method, file: file)
+               else
+                 send(condition, file)
+               end
+      condition_type == :unless ? !result : result
     end
 
     def temporary_public_id_from(cache_name)

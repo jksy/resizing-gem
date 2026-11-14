@@ -33,6 +33,16 @@ module Resizing
           nil
         end
 
+        # The URL of the image with the transformations of the uploader that owns this
+        # file (see Resizing::CarrierWave#transform_path). CarrierWave's Uploader::Url#url
+        # returns it, so that Uploader::Versions#url and Uploader::DefaultUrl#url work as
+        # in plain CarrierWave.
+        def url(_options = {})
+          return nil if @public_id.empty?
+
+          "#{Resizing.configure.image_host}#{@public_id}/#{uploader.transform_path}"
+        end
+
         # NOTE: Called through CarrierWave's Uploader::Proxy#content_type, so it must not
         # raise. Falls back to the metadata API when the content type is not known locally
         # (e.g. the model was reloaded from the DB), and returns nil if it cannot be fetched.

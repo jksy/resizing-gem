@@ -30,6 +30,61 @@ module Resizing
       process convert: 'png'
     end
 
+    class ConditionalProcessUploader < ::CarrierWave::Uploader::Base
+      include Resizing::CarrierWave
+
+      process resize_to_fill: [10, 10], if: :always?
+      process resize_to_fill: [20, 20], if: :never?
+      process resize_to_fill: [30, 30], if: ->(uploader, options) { uploader.always?(options[:file]) }
+      process resize_to_fill: [40, 40], if: ->(uploader, options) { uploader.never?(options[:file]) }
+
+      def always?(_file)
+        true
+      end
+
+      def never?(_file)
+        false
+      end
+    end
+
+    class VersionedUploader < ::CarrierWave::Uploader::Base
+      include Resizing::CarrierWave
+
+      version :large do
+        process resize_to_fill: [400, 400]
+
+        version :thumb do
+          process resize_to_fill: [40, 40]
+        end
+      end
+
+      def default_url(*_args)
+        "/images/fallback/#{[version_name, 'default.png'].compact.join('_')}"
+      end
+    end
+
+    class PlainUploader < ::CarrierWave::Uploader::Base
+      include Resizing::CarrierWave
+    end
+
+    class VersionedModel < ::ActiveRecord::Base
+      self.table_name = 'test_models'
+
+      mount_uploader :resizing_picture, VersionedUploader
+    end
+
+    class ConditionalProcessModel < ::ActiveRecord::Base
+      self.table_name = 'test_models'
+
+      mount_uploader :resizing_picture, ConditionalProcessUploader
+    end
+
+    class PlainModel < ::ActiveRecord::Base
+      self.table_name = 'test_models'
+
+      mount_uploader :resizing_picture, PlainUploader
+    end
+
     class NoProcessorUploader < ::CarrierWave::Uploader::Base
       include Resizing::CarrierWave
     end
@@ -90,6 +145,28 @@ module Resizing
       assert_includes error.message, 'convert'
     end
 
+    def test_transform_string_skips_processes_whose_condition_is_false
+      uploader = model_with_image(ConditionalProcessModel).resizing_picture
+
+      assert_equal 'c_fill,w_10,h_10/c_fill,w_30,h_30', uploader.transform_string
+    end
+
+    def test_process_with_unless_condition_is_skipped_when_condition_is_true
+      # CarrierWave 2.x の process は unless: に対応していないので、条件の評価だけを確かめる
+      uploader = model_with_image(ConditionalProcessModel).resizing_picture
+
+      assert uploader.send(:process_applicable?, :resize_to_fill, [10, 10], :never?, :unless)
+      refute uploader.send(:process_applicable?, :resize_to_fill, [10, 10], :always?, :unless)
+      refute uploader.send(:process_applicable?, :resize_to_fill, [10, 10], ->(*) { true }, :unless)
+    end
+
+    def test_transform_path_of_version_starts_with_parent_transforms
+      uploader = TestModel.new.resizing_picture
+
+      assert_equal 'c_limit,w_1000', uploader.transform_path
+      assert_equal 'c_limit,w_1000/c_fill,w_40,h_40', uploader.small.transform_path
+    end
+
     # ============================================================
     # url
     # ============================================================
@@ -97,17 +174,52 @@ module Resizing
     def test_url_is_built_from_configured_image_host_and_column_value
       model = model_with_image
 
-      assert_equal "http://192.168.56.101:5000#{IDENTIFIER}/", model.resizing_picture.url
+      assert_equal "http://192.168.56.101:5000#{IDENTIFIER}/c_limit,w_1000", model.resizing_picture.url
 
       # image_host を差し替えると URL も追従する (保存済みカラム値にはホストを含まない)
       configure_resizing(image_host: 'https://cdn.example.com')
-      assert_equal "https://cdn.example.com#{IDENTIFIER}/", model.resizing_picture.url
+      assert_equal "https://cdn.example.com#{IDENTIFIER}/c_limit,w_1000", model.resizing_picture.url
     end
 
-    def test_url_with_version_appends_transform_string
+    def test_url_ends_with_slash_without_processors
+      model = model_with_image(PlainModel)
+
+      assert_equal "http://192.168.56.101:5000#{IDENTIFIER}/", model.resizing_picture.url
+    end
+
+    def test_url_with_version_appends_transform_string_after_parent
       model = model_with_image
 
-      assert_equal "http://192.168.56.101:5000#{IDENTIFIER}/c_fill,w_40,h_40", model.resizing_picture.url(:small)
+      assert_equal "http://192.168.56.101:5000#{IDENTIFIER}/c_limit,w_1000/c_fill,w_40,h_40",
+                   model.resizing_picture.url(:small)
+    end
+
+    def test_version_uploader_url_matches_url_with_version
+      # CarrierWave の書き方 (version uploader の url) でも変換が付く
+      model = model_with_image
+
+      assert_equal model.resizing_picture.url(:small), model.resizing_picture.small.url
+      assert_equal model.resizing_picture.url(:small), model.resizing_picture.versions[:small].url
+    end
+
+    def test_url_with_nested_version
+      model = model_with_image(VersionedModel)
+
+      assert_equal "http://192.168.56.101:5000#{IDENTIFIER}/c_fill,w_400,h_400/c_fill,w_40,h_40",
+                   model.resizing_picture.url(:large, :thumb)
+      assert_equal model.resizing_picture.url(:large, :thumb), model.resizing_picture.large.thumb.url
+    end
+
+    def test_serializable_hash_has_url_of_each_version
+      model = model_with_image
+
+      assert_equal(
+        {
+          'url' => "http://192.168.56.101:5000#{IDENTIFIER}/c_limit,w_1000",
+          'small' => { 'url' => "http://192.168.56.101:5000#{IDENTIFIER}/c_limit,w_1000/c_fill,w_40,h_40" }
+        },
+        model.resizing_picture.serializable_hash
+      )
     end
 
     def test_url_accepts_string_version_name
@@ -119,9 +231,8 @@ module Resizing
     def test_url_raises_for_unknown_version
       model = model_with_image
 
-      error = assert_raises(RuntimeError) { model.resizing_picture.url(:nope) }
+      error = assert_raises(ArgumentError) { model.resizing_picture.url(:nope) }
       assert_includes error.message, 'nope'
-      assert_includes error.message, 'small'
     end
 
     def test_url_returns_default_url_when_column_is_blank
@@ -129,9 +240,12 @@ module Resizing
       assert_equal 'http://example.com/test.jpg', TestModelWithDefaultURL.new.resizing_picture.url
     end
 
-    def test_url_ignores_version_when_column_is_blank
-      # カラムが空なら version 指定があっても default_url を返す
-      assert_nil TestModel.new.resizing_picture.url(:small)
+    def test_url_with_version_returns_default_url_of_the_version_when_column_is_blank
+      model = VersionedModel.new
+
+      assert_equal '/images/fallback/default.png', model.resizing_picture.url
+      assert_equal '/images/fallback/large_default.png', model.resizing_picture.url(:large)
+      assert_equal '/images/fallback/large_thumb_default.png', model.resizing_picture.url(:large, :thumb)
     end
 
     def test_model_url_helper_delegates_to_uploader_url

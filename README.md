@@ -115,6 +115,40 @@ end
 `process` declares the transformation applied when the browser fetches the image URL, so
 the processors are never run as local image processing on upload.
 
+The URL is built as in plain CarrierWave: the processes of the uploader apply to the image,
+and a version adds its own processes after those of its parent.
+
+```ruby
+class ImageUploader < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  process resize_to_limit: [1000]
+
+  version :thumb do
+    process resize_to_fill: [200, 200]
+  end
+end
+
+user.image.url         # => ".../<public_id>/c_limit,w_1000"
+user.image.url(:thumb) # => ".../<public_id>/c_limit,w_1000/c_fill,w_200,h_200"
+user.image.thumb.url   # => the same as user.image.url(:thumb)
+```
+
+The supported processes are `resize_to_limit`, `resize_to_fill`, `resize_to_fit` and
+`transformation` (`{ quality:, format:, fetch_format: }`). The `if:` / `unless:` conditions of `process` are
+honoured. When the column is blank, `url` returns `default_url` of the requested version, as
+in plain CarrierWave.
+
+**Difference from CarrierWave: conditions of `process`**
+
+The `if:` / `unless:` conditions of `process` are checked every time `url` is called, not
+on upload. If a condition calls a method that reads information of the file, such as
+`file.content_type`, a request to the metadata API of Resizing is needed, which takes time
+when many URLs are built (e.g. on a list page). `content_type` is `nil` when the API fails.
+The `file` given to a condition is not the image file on your machine either, so a
+condition that opens the image, such as `MiniMagick::Image.open(file.path)`, raises an
+error every time `url` is called.
+
 The uploader validations hooked on CarrierWave's `:cache` callbacks are checked before the
 image is uploaded to Resizing:
 
@@ -231,6 +265,71 @@ Assigning `nil` or `''` is the one exception on CarrierWave 2.x: plain CarrierWa
 deletes the file, but this gem keeps the image, and prints a warning because the image is
 deleted after upgrading to CarrierWave 3.x. Use `remove_<column>!` to delete the image, or
 leave the column unassigned to keep it.
+
+## Upgrading
+
+### To x.x.x (unreleased)
+
+The CarrierWave URLs are now built as in plain CarrierWave (see
+[CarrierWave Integration](#carrierwave-integration)), which changes some URLs.
+
+**The processes of the uploader itself are now applied.** They used to be ignored, and
+only the processes inside a `version` block were added to the URL. Now they are added to
+the URL of the image and of every version:
+
+```ruby
+class ImageUploader < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  process resize_to_limit: [1000] # ignored before x.x.x
+
+  version :thumb do
+    process resize_to_fill: [200, 200]
+  end
+end
+
+# before x.x.x
+user.image.url         # => ".../<public_id>/"
+user.image.url(:thumb) # => ".../<public_id>/c_fill,w_200,h_200"
+
+# x.x.x
+user.image.url         # => ".../<public_id>/c_limit,w_1000"
+user.image.url(:thumb) # => ".../<public_id>/c_limit,w_1000/c_fill,w_200,h_200"
+```
+
+To keep the URLs as before, remove the processes outside `version` blocks. Removing them
+does not change the URLs of the versions, as a version does not inherit the processes of
+its parent uploader.
+
+**`url` with several versions means a nested version.** `url(:large, :blur)` used to join
+the transformations of the versions `large` and `blur`. It now means the version `blur`
+defined inside `large`, as in CarrierWave, and raises `ArgumentError` when there is no such
+version. To get the same URL, nest the version, or define a version with both processes:
+
+```ruby
+version :large do
+  process resize_to_fill: [1000, 866]
+
+  version :blur do
+    process ... # added after the transformations of large
+  end
+end
+
+user.image.url(:large, :blur) # => ".../<public_id>/c_fill,w_1000,h_866/<blur>"
+```
+
+Other changes:
+
+- `model.image.thumb.url`, `versions[:thumb].url` and `serializable_hash` (`to_json`) now
+  include the transformations of the version. They used to return the URL of the image
+  without them.
+- An unknown version raises `ArgumentError` instead of `RuntimeError`.
+- `default_url` is called on the uploader of the requested version with the arguments of
+  `url`, so `version_name` tells which version is asked for.
+- The `if:` / `unless:` conditions of `process` are now honoured. They used to be ignored
+  and the transformation was always added, so the URL loses the transformation when the
+  condition is false. An exception raised in a condition now makes `url` and `to_json` fail.
+- The public method `build_url` is removed.
 
 ## Development
 

@@ -107,6 +107,30 @@ end
 
 `process` は、ブラウザが画像の URL を取得するときに適用する変換を宣言するものです。アップロード時にローカルで画像処理が実行されることはありません。
 
+URL は通常の CarrierWave と同じ考え方で組み立てます。uploader の `process` は画像そのものに適用され、バージョンは親の変換のあとに自身の変換を加えます。
+
+```ruby
+class ImageUploader < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  process resize_to_limit: [1000]
+
+  version :thumb do
+    process resize_to_fill: [200, 200]
+  end
+end
+
+user.image.url         # => ".../<public_id>/c_limit,w_1000"
+user.image.url(:thumb) # => ".../<public_id>/c_limit,w_1000/c_fill,w_200,h_200"
+user.image.thumb.url   # => user.image.url(:thumb) と同じ
+```
+
+使える `process` は `resize_to_limit` / `resize_to_fill` / `resize_to_fit` / `transformation`（`{ quality:, format:, fetch_format: }`）です。`process` の `if:` / `unless:` 条件にも従います。カラムが空のときは、通常の CarrierWave と同じく、指定したバージョンの `default_url` を返します。
+
+**CarrierWave との違い：`process` の条件**
+
+`process` の `if:` / `unless:` の条件は、アップロード時ではなく、`url` を呼ぶたびに評価されます。条件の中で `file.content_type` などファイルの情報を取得するメソッドを呼ぶと、Resizing の metadata API へのリクエストが必要になるため、一覧画面など件数が多いと時間がかかります。API が失敗した場合、`content_type` は `nil` になります。また、条件に渡る `file` は手元にある画像ファイルではありません。そのため、`MiniMagick::Image.open(file.path)` のように画像を開いて判定する条件は、`url` を呼ぶたびに例外になります。
+
 CarrierWave の `:cache` コールバックに登録される uploader のバリデーションは、画像を Resizing にアップロードする前にチェックされます。
 
 ```ruby
@@ -198,6 +222,58 @@ Resizing の画像は CarrierWave がファイルを削除するときに削除�
 | 別の画像を代入 | 保存時に前の画像を削除 | 保存時に前の画像を削除 |
 
 CarrierWave 2.x での `nil` / `''` の代入だけは例外です。素の CarrierWave 2.x はファイルを削除しますが、この gem は画像を残します。CarrierWave 3.x に上げると削除されるようになるので、2.x では警告を出します。画像を削除するには `remove_<column>!` を使い、残すにはカラムに代入しないでください。
+
+## アップグレード
+
+### x.x.x へのアップグレード（未リリース）
+
+CarrierWave 連携の URL を、通常の CarrierWave と同じ考え方で組み立てるようにしました（[CarrierWave 連携](#carrierwave-連携)を参照）。これに伴い、一部の URL が変わります。
+
+**uploader 直下の `process` が URL に反映されるようになりました。** 以前は無視され、`version` ブロック内の `process` だけが URL に付いていました。x.x.x からは、元画像と全バージョンの URL に付きます。
+
+```ruby
+class ImageUploader < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  process resize_to_limit: [1000] # x.x.x より前は無視されていた
+
+  version :thumb do
+    process resize_to_fill: [200, 200]
+  end
+end
+
+# x.x.x より前
+user.image.url         # => ".../<public_id>/"
+user.image.url(:thumb) # => ".../<public_id>/c_fill,w_200,h_200"
+
+# x.x.x
+user.image.url         # => ".../<public_id>/c_limit,w_1000"
+user.image.url(:thumb) # => ".../<public_id>/c_limit,w_1000/c_fill,w_200,h_200"
+```
+
+URL を以前と同じに保つには、`version` ブロックの外にある `process` を削除してください。バージョンは親の uploader の `process` を引き継がないので、削除してもバージョンの URL は変わりません。
+
+**`url` に複数のバージョンを渡したときの意味が変わりました。** 以前の `url(:large, :blur)` は、バージョン `large` と `blur` の変換をつなげたものでした。x.x.x からは CarrierWave と同じく「`large` の中に定義したバージョン `blur`」を意味し、そのようなバージョンがなければ `ArgumentError` になります。同じ URL にするには、バージョンを入れ子にするか、両方の `process` を持つバージョンを定義してください。
+
+```ruby
+version :large do
+  process resize_to_fill: [1000, 866]
+
+  version :blur do
+    process ... # large の変換のあとに付く
+  end
+end
+
+user.image.url(:large, :blur) # => ".../<public_id>/c_fill,w_1000,h_866/<blur の変換>"
+```
+
+その他の変更点:
+
+- `model.image.thumb.url`・`versions[:thumb].url`・`serializable_hash`（`to_json`）にバージョンの変換が付くようになりました。以前は変換のない元画像の URL を返していました。
+- 存在しないバージョンを指定したときの例外が、`RuntimeError` から `ArgumentError` になりました。
+- `default_url` は、要求されたバージョンの uploader に対して `url` の引数付きで呼ばれます。`version_name` でどのバージョンが要求されたかがわかります。
+- `process` の `if:` / `unless:` の条件に従うようになりました。以前は条件を無視して常に変換を付けていたので、条件が false になるレコードでは URL から変換が外れます。また、条件の中で例外が起きると、`url` や `to_json` も失敗します。
+- 公開メソッド `build_url` を削除しました。
 
 ## 開発
 
