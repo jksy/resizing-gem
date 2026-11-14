@@ -105,8 +105,11 @@ module Resizing
       @transform.push(:resize_to_fit, *args)
     end
 
-    # Resizing has no cache storage, so the file is uploaded to Resizing directly here
-    # instead of being copied to a local workfile and handed to cache_storage.
+    # Resizing has no cache storage, so the file is uploaded to Resizing here as a
+    # temporary image instead of being copied to a local workfile. The temporary image
+    # is confirmed by #store! when the model is saved (after commit with ActiveRecord);
+    # when the model is never saved, e.g. on a validation error, Resizing deletes it at
+    # its expires_at (see #cache_expires_in).
     #
     # The :cache callbacks are still run, so that the uploader settings hooked on them
     # (extension_allowlist / extension_denylist / content_type_allowlist /
@@ -124,14 +127,51 @@ module Resizing
       return if sanitized.empty?
 
       with_callbacks(:cache, sanitized) do
-        file = storage.store!(new_file)
-        # do not assign @cache_id, bacause resizing do not support cache
-        # save to resizing directly
-        # @cache_id = file.public_id
-
+        file = storage.cache!(new_file)
+        # The public id of the temporary image serves as the cache id, so that
+        # store! confirms it and #cache_name can restore it.
+        @cache_id = file.public_id.to_s
+        @staged = true
         @filename = file.public_id.to_s
         @file = file
       end
+    end
+
+    # The public id of the temporary image while it is cached, nil otherwise.
+    # It is what `<column>_cache` returns, to be sent back with a form that is shown
+    # again (e.g. on a validation error) so that the image need not be uploaded again.
+    def cache_name
+      @cache_id
+    end
+
+    # Restores the temporary image from its cache name (see #cache_name).
+    #
+    # The cache name comes from the request, so only a temporary image of the
+    # configured project that has not expired is accepted; a confirmed image, which
+    # may belong to another record, must not be attached through it. Anything else
+    # raises CarrierWave::InvalidParameter, which CarrierWave ignores as it does an
+    # invalid cache name.
+    def retrieve_from_cache!(cache_name)
+      with_callbacks(:retrieve_from_cache, cache_name) do
+        public_id = temporary_public_id_from(cache_name)
+        @cache_id = public_id
+        @staged = true
+        @file = storage.retrieve_from_cache!(public_id)
+        model.send :write_attribute, serialization_column, public_id
+      end
+    end
+
+    # Seconds until a temporary image uploaded by #cache! expires. nil uses the default
+    # of Resizing. Override this to change it, e.g. when a form may be kept open for a
+    # long time before it is submitted.
+    def cache_expires_in
+      nil
+    end
+
+    # The file cached by #cache! is the temporary image, which becomes the stored image
+    # when it is confirmed, so it must not be deleted after storing it.
+    def delete_tmp_file_after_storage
+      false
     end
 
     # process! is called before :cache
@@ -148,6 +188,14 @@ module Resizing
     # the resulting public_id would be stored nowhere, leaving orphan images behind.
     # https://github.com/carrierwaveuploader/carrierwave/blob/28190e99299a6131c0424a5d10205f471e39f3cd/lib/carrierwave/uploader/versions.rb#L17
     def cache_versions!(*args)
+      # NOP
+    end
+
+    # retrieve_versions_from_cache! is called after :retrieve_from_cache
+    # Disable on Resizing, because the versions have no image of their own; each version
+    # would only look up the same temporary image again.
+    # https://github.com/carrierwaveuploader/carrierwave/blob/28190e99299a6131c0424a5d10205f471e39f3cd/lib/carrierwave/uploader/versions.rb#L20
+    def retrieve_versions_from_cache!(*args)
       # NOP
     end
 
@@ -191,6 +239,26 @@ module Resizing
     end
 
     private
+
+    def temporary_public_id_from(cache_name)
+      public_id = begin
+        Resizing::PublicId.new(cache_name)
+      rescue StandardError
+        nil
+      end
+      raise_invalid_cache_name if public_id.nil? || public_id.empty? ||
+                                  public_id.project_id != Resizing.configure.project_id
+
+      # Resizing answers 404 for an expired temporary image even before deleting it
+      metadata = Resizing.metadata(public_id.image_id, {})
+      raise_invalid_cache_name unless metadata['temporary'] == true && metadata['public_id'].present?
+
+      metadata['public_id']
+    end
+
+    def raise_invalid_cache_name
+      raise ::CarrierWave::InvalidParameter, 'invalid cache name'
+    end
 
     # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
     def transform_string_from(processor)

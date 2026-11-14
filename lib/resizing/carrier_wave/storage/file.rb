@@ -114,9 +114,17 @@ module Resizing
         end
         alias path current_path
 
+        # Uploads new_file to Resizing and writes its public id to the model column.
+        #
+        # === Options
+        #
+        # [:temporary] uploads it as a temporary image, which Resizing deletes at its
+        #              expires_at unless it is confirmed with #confirm
+        # [:expires_in] seconds until the temporary image expires (Resizing's default when nil)
+        #
         # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
         # rubocop:disable Metrics/MethodLength, Metrics/PerceivedComplexity
-        def store(new_file)
+        def store(new_file, options = {})
           if new_file.is_a?(self.class)
             # new_file.copy_to(path)
             raise NotImplementedError, 'new file is required duplicating'
@@ -144,7 +152,9 @@ module Resizing
                       new_file
                     end
 
-          @response = Resizing.post(content, { content_type: @content_type, filename: original_filename })
+          post_options = { content_type: @content_type, filename: original_filename }
+          post_options.merge!(temporary: true, expires_in: options[:expires_in]) if options[:temporary]
+          @response = Resizing.post(content, post_options)
           @public_id = Resizing::PublicId.new(@response['public_id'])
           @content_type = @response['content_type']
 
@@ -163,6 +173,15 @@ module Resizing
         end
         # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity
         # rubocop:enable Metrics/MethodLength, Metrics/PerceivedComplexity
+
+        # Confirms the temporary image uploaded by #store with temporary: true, so that
+        # Resizing keeps it after its expires_at. Raises APIError when it has already
+        # expired or been deleted.
+        def confirm
+          return if @public_id.empty?
+
+          client.confirm(@public_id.image_id)
+        end
 
         def name(_options = {})
           @public_id = PublicId.new(model.send(:read_attribute, serialization_column))

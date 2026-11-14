@@ -24,6 +24,40 @@ module Resizing
       end
     end
 
+    def test_post_returns_confirmed_image_by_default
+      result = @client.post(nil)
+
+      assert_equal false, result['temporary']
+      assert_nil result['expires_at']
+    end
+
+    def test_post_returns_temporary_image_with_default_expiry
+      Timecop.freeze(Time.utc(2026, 1, 1, 0, 0, 0)) do
+        result = @client.post(nil, temporary: true)
+
+        assert_equal true, result['temporary']
+        assert_equal '2026-01-02T00:00:00.000Z', result['expires_at']
+      end
+    end
+
+    def test_post_returns_temporary_image_with_given_expiry
+      Timecop.freeze(Time.utc(2026, 1, 1, 0, 0, 0)) do
+        result = @client.post(nil, temporary: true, expires_in: 3600)
+
+        assert_equal '2026-01-01T01:00:00.000Z', result['expires_at']
+      end
+    end
+
+    def test_confirm_returns_confirmed_image_with_given_name
+      name = 'test-image-123'
+      result = @client.confirm(name)
+
+      assert_equal name, result['id']
+      assert_equal name, Resizing::PublicId.new(result['public_id']).image_id
+      assert_equal false, result['temporary']
+      assert_nil result['expires_at']
+    end
+
     def test_put_returns_parsed_json_with_modified_name
       VCR.use_cassette('client/put', record: :none) do
         name = 'test-image-123'

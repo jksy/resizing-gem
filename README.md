@@ -72,6 +72,25 @@ transformation_url = Resizing.url_from_image_id(image_id, nil, ['w_200', 'h_300'
 # => "https://img.resizing.net/projects/.../upload/images/.../w_200,h_300"
 ```
 
+#### Temporary images
+
+An image uploaded with `temporary: true` is deleted by Resizing at its `expires_at`
+unless it is confirmed before then. `expires_in` is the number of seconds until it
+expires (Resizing's default when omitted).
+
+```ruby
+response = client.post(file, content_type: 'image/jpeg', temporary: true, expires_in: 3600)
+response['temporary']  # => true
+response['expires_at'] # => "2020-05-15T16:33:10.711Z"
+
+# Keep the image
+client.confirm(response['id'])
+```
+
+A temporary image can be fetched and transformed like any other image until it expires.
+Confirming an image that is already confirmed succeeds without changing it; confirming
+an expired or deleted image raises `Resizing::APIError`.
+
 ### CarrierWave Integration
 
 ```ruby
@@ -125,6 +144,40 @@ extension of the file name is used as in plain CarrierWave.
 
 Versions are not uploaded separately: a version only changes the transformation in the
 generated URL, so a single upload backs every version.
+
+#### Cache
+
+Assigning a file to the mounted column uploads it to Resizing as a temporary image, and
+saving the model confirms it (after commit with ActiveRecord). When the model is never
+saved, e.g. because a validation fails or the transaction is rolled back, the image is
+left unconfirmed and Resizing deletes it when it expires, so no orphan image is left
+behind.
+
+`<column>_cache` returns the public id of the temporary image while it is not confirmed.
+Send it back with a form that is shown again after a validation error, and the image does
+not need to be uploaded again:
+
+```erb
+<%= form.file_field :image %>
+<%= form.hidden_field :image_cache %>
+```
+
+Only a temporary image of the configured project that has not expired is restored from
+`<column>_cache`; anything else (such as a confirmed image) is ignored, as CarrierWave
+ignores an invalid cache name.
+
+The temporary image expires after Resizing's default period. Override `cache_expires_in`
+(in seconds) to change it, e.g. when a form may be kept open for a long time:
+
+```ruby
+class ImageUploader < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  def cache_expires_in
+    2.days.to_i
+  end
+end
+```
 
 ## Development
 

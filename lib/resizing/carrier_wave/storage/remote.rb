@@ -6,7 +6,14 @@ module Resizing
       # ref.
       # https://github.com/carrierwaveuploader/carrierwave/blob/master/lib/carrierwave/storage/abstract.rb
       class Remote < ::CarrierWave::Storage::Abstract
+        # A file cached by #cache! has already been uploaded as a temporary image, so
+        # storing it only confirms it instead of uploading it again.
         def store!(file)
+          if file.is_a?(Resizing::CarrierWave::Storage::File)
+            file.confirm
+            return file
+          end
+
           f = Resizing::CarrierWave::Storage::File.new(uploader)
           f.store(file)
           f
@@ -30,33 +37,31 @@ module Resizing
           f
         end
 
+        # Uploads the file as a temporary image. It is confirmed by #store! when the
+        # model is saved; otherwise Resizing deletes it at its expires_at, so a file
+        # assigned to a model that is never saved (e.g. on a validation error) does not
+        # leave an orphan image behind.
         def cache!(new_file)
           f = Resizing::CarrierWave::Storage::File.new(uploader)
-          f.store(new_file)
+          f.store(new_file, temporary: true, expires_in: uploader.cache_expires_in)
           f
         end
 
+        # The cache name of a Resizing uploader is the public id of the temporary image
+        # (see Resizing::CarrierWave#cache_name).
         def retrieve_from_cache!(identifier)
-          # NOP
-          # Resizing::CarrierWave::Storage::File..new(uploader, uploader.cache_path(identifier))
+          return nil if identifier.blank?
+
+          Resizing::CarrierWave::Storage::File.new(uploader, identifier)
         end
 
         def delete_dir!(path)
           # do nothing, because there's no such things as 'empty directory'
         end
 
+        # Resizing deletes the expired temporary images by itself.
         def clean_cache!(seconds)
           # do nothing
-          #
-          # connection.directories.new(
-          #   :key    => uploader.fog_directory,
-          #   :public => uploader.fog_public
-          # ).files.all(:prefix => uploader.cache_dir).each do |file|
-          #   # generate_cache_id returns key formated TIMEINT-PID(-COUNTER)-RND
-          #   time = file.key.scan(/(\d+)-\d+-\d+(?:-\d+)?/).first.map { |t| t.to_i }
-          #   time = Time.at(*time)
-          #   file.destroy if time < (Time.now.utc - seconds)
-          # end
         end
       end
     end

@@ -1,0 +1,23 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d/metadata
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - Faraday v1.0.1
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      content-type:
+      - application/json; charset=utf-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"14ea7aac-a194-4330-931f-6b562aec413d","project_id":"e06e710d-f026-4dcf-b2c0-eab0de8bb83f","content_type":"image/jpeg","latest_version_id":"_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e","latest_etag":"\"5766f95a7f28e6a53dd6fd179bf03a32\"","size":848590,"created_at":"2020-10-11T04:56:48.340Z","updated_at":"2020-10-11T04:56:48.340Z","filename":"sample1.jpg","width":4032,"height":3016,"format":"jpeg","version":"_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e","public_id":"/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e","temporary":true,"expires_at":"2020-10-12T04:56:48.340Z"}'
+  recorded_at: Sun, 11 Oct 2020 04:57:05 GMT
+recorded_with: VCR 6.0.0

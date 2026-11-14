@@ -58,6 +58,10 @@ module Resizing
     client.put name, file_or_binary, options
   end
 
+  def self.confirm(name)
+    client.confirm name
+  end
+
   def self.delete(name)
     client.delete name
   end

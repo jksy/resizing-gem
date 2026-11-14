@@ -150,6 +150,46 @@ module Resizing
           end
         end
 
+        def test_store_with_temporary_option_posts_temporary_image
+          model = TestModel.new
+          file = Resizing::CarrierWave::Storage::File.new(model.resizing_picture)
+          posted = []
+          response = { 'public_id' => IDENTIFIER, 'content_type' => 'image/jpeg' }
+          spy = lambda do |_content, options|
+            posted << options
+            response
+          end
+
+          Resizing.stub(:post, spy) do
+            file.store(::File.open('test/data/images/sample1.jpg', 'r'), temporary: true, expires_in: 60)
+          end
+
+          assert_equal true, posted.first[:temporary]
+          assert_equal 60, posted.first[:expires_in]
+          assert_equal 'image/jpeg', posted.first[:content_type]
+          assert_equal 'sample1.jpg', posted.first[:filename]
+        end
+
+        def test_confirm_confirms_image_of_public_id
+          model = TestModel.new
+          file = Resizing::CarrierWave::Storage::File.new(model.resizing_picture, IDENTIFIER)
+
+          with_fake_api_client({ 'id' => IMAGE_ID }) do |fake|
+            assert_equal({ 'id' => IMAGE_ID }, file.confirm)
+            assert_equal [IMAGE_ID], fake.confirmed_ids
+          end
+        end
+
+        def test_confirm_does_nothing_without_public_id
+          model = TestModel.new
+          file = Resizing::CarrierWave::Storage::File.new(model.resizing_picture)
+
+          with_fake_api_client({}) do |fake|
+            assert_nil file.confirm
+            assert_empty fake.confirmed_ids
+          end
+        end
+
         def test_delete_with_valid_public_id
           VCR.use_cassette 'carrier_wave_test/remove_resizing_picture' do
             model = TestModel.new

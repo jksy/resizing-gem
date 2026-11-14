@@ -21,6 +21,18 @@ module Resizing
           # NOP
         end
 
+        # ブロック内で Resizing.post に渡されたオプションを記録する (リクエストはそのまま発行する)
+        def capture_post_options(&block)
+          posted = []
+          original = Resizing.method(:post)
+          spy = lambda do |file, options|
+            posted << options
+            original.call(file, options)
+          end
+          Resizing.stub(:post, spy, &block)
+          posted
+        end
+
         def test_storage_has_required_methods
           assert_respond_to @storage, :store!
           assert_respond_to @storage, :remove!
@@ -30,9 +42,16 @@ module Resizing
           assert_respond_to @storage, :clean_cache!
         end
 
-        def test_retrieve_from_cache_returns_nil
-          result = @storage.retrieve_from_cache!('identifier')
-          assert_nil result
+        def test_retrieve_from_cache_returns_nil_for_blank_identifier
+          assert_nil @storage.retrieve_from_cache!(nil)
+          assert_nil @storage.retrieve_from_cache!('')
+        end
+
+        def test_retrieve_from_cache_returns_file_without_request
+          result = @storage.retrieve_from_cache!(IDENTIFIER)
+
+          assert_instance_of Resizing::CarrierWave::Storage::File, result
+          assert_equal IDENTIFIER, result.public_id.to_s
         end
 
         def test_delete_dir_does_nothing
@@ -79,16 +98,54 @@ module Resizing
           assert_equal IDENTIFIER, @uploader.model.read_attribute(:resizing_picture)
         end
 
-        def test_cache_uploads_immediately_like_store
-          # Resizing はキャッシュをサポートしないため cache! でも直接アップロードする
-          VCR.use_cassette 'carrier_wave_test/save', record: :none do
-            file = @storage.cache!(::File.open('test/data/images/sample1.jpg', 'r'))
-
-            assert_instance_of Resizing::CarrierWave::Storage::File, file
-            assert_equal IDENTIFIER, file.public_id.to_s
+        def test_store_uploads_without_temporary_option
+          posted = capture_post_options do
+            VCR.use_cassette('carrier_wave_test/save', record: :none) do
+              @storage.store!(::File.open('test/data/images/sample1.jpg', 'r'))
+            end
           end
 
+          refute posted.first.key?(:temporary)
+        end
+
+        def test_store_confirms_cached_file_instead_of_uploading_it
+          cached = Resizing::CarrierWave::Storage::File.new(@uploader, IDENTIFIER)
+
+          result = with_fake_api_client({ 'id' => IMAGE_ID }) do |fake|
+            stored = @storage.store!(cached)
+            assert_equal [IMAGE_ID], fake.confirmed_ids
+            stored
+          end
+
+          assert_same cached, result
+        end
+
+        def test_cache_uploads_temporary_image
+          # Resizing にはキャッシュ用のストレージがないので、一時画像としてアップロードする
+          posted = capture_post_options do
+            VCR.use_cassette 'carrier_wave_test/save', record: :none do
+              file = @storage.cache!(::File.open('test/data/images/sample1.jpg', 'r'))
+
+              assert_instance_of Resizing::CarrierWave::Storage::File, file
+              assert_equal IDENTIFIER, file.public_id.to_s
+            end
+          end
+
+          assert_equal true, posted.first[:temporary]
+          assert_nil posted.first[:expires_in]
           assert_equal IDENTIFIER, @uploader.model.read_attribute(:resizing_picture)
+        end
+
+        def test_cache_sends_cache_expires_in_of_uploader
+          storage = Remote.new(TestModelWithCacheExpiresIn.new.resizing_picture)
+
+          posted = capture_post_options do
+            VCR.use_cassette 'carrier_wave_test/save', record: :none do
+              storage.cache!(::File.open('test/data/images/sample1.jpg', 'r'))
+            end
+          end
+
+          assert_equal 3600, posted.first[:expires_in]
         end
 
         def test_retrieve_returns_new_file_instance_each_time

@@ -12,9 +12,16 @@ module Resizing
       TestJPGModel.delete_all
 
       configure_resizing
+
+      # 画像を代入したモデルを保存すると、コミット時に一時画像の確定 (PUT confirm) が発行される
+      # このクラスのテストは確定以外のリクエストを対象にしているので、確定は外側のこのカセットで応答する
+      # (確定そのものは CarrierWaveTemporaryImageTest でテストする)
+      VCR.insert_cassette 'carrier_wave_test/confirm', record: :none, allow_playback_repeats: true
     end
 
-    def teardown; end
+    def teardown
+      VCR.eject_cassette
+    end
 
     def test_remove_resizing_picture
       model = prepare_model TestModel
@@ -254,8 +261,10 @@ module Resizing
       # 画像更新時に古い画像を削除する DELETE リクエストが発行されることを確認
       # VCR カセット update_image.yml には以下が含まれる:
       # 1. POST (古い画像のアップロード) -> old-image-id を返す
-      # 2. POST (新しい画像のアップロード) -> new-image-id を返す
-      # 3. DELETE (古い画像の削除) -> old-image-id を削除
+      # 2. PUT confirm (古い画像の確定)
+      # 3. POST (新しい画像のアップロード) -> new-image-id を返す
+      # 4. PUT confirm (新しい画像の確定)
+      # 5. DELETE (古い画像の削除) -> old-image-id を削除
 
       assert_vcr_requests_made 'carrier_wave_test/update_image' do
         model = TestModel.new
@@ -276,7 +285,7 @@ module Resizing
         new_public_id = model.read_attribute(:resizing_picture)
         assert_match(/new-image-id/, new_public_id)
       end
-      # カセット内の全リクエスト（POST x2, DELETE x1）が発行されたことを確認
+      # カセット内の全リクエスト（POST x2, PUT confirm x2, DELETE x1）が発行されたことを確認
     end
 
     # ============================================================
@@ -534,7 +543,7 @@ module Resizing
     def test_save_after_assignment_does_not_upload_again
       model = prepare_model TestModel
 
-      # 代入時に既にアップロード済みなので、save! で再度 POST は発行されない
+      # 代入時に既にアップロード済みなので、save! で再度 POST は発行されない (一時画像の確定だけ行う)
       assert_vcr_no_requests 'carrier_wave_test/save' do
         model.save!
       end
@@ -596,7 +605,7 @@ module Resizing
     # ============================================================
 
     def test_updated_image_is_persisted_and_old_image_deleted
-      # update_image カセット: POST(old) -> POST(new) -> DELETE(old)
+      # update_image カセット: POST(old) -> confirm(old) -> POST(new) -> confirm(new) -> DELETE(old)
       model = nil
       assert_vcr_requests_made 'carrier_wave_test/update_image' do
         model = TestModel.new

@@ -4,9 +4,27 @@ require 'securerandom'
 
 module Resizing
   class MockClient
-    def post(_file_or_binary, _options = {})
+    # Resizing の既定の一時画像の有効期限 (秒)
+    DEFAULT_TEMPORARY_EXPIRES_IN = 24 * 60 * 60
+
+    def post(_file_or_binary, options = {})
       r = load_yaml('test/vcr/client/post.yml')
-      JSON.parse(r['string'])
+      result = JSON.parse(r['string'])
+      # temporary を指定したときは一時画像として返す
+      result['temporary'] = options[:temporary] ? true : false
+      result['expires_at'] = (temporary_expires_at(options[:expires_in]) if options[:temporary])
+      result
+    end
+
+    def confirm(name)
+      r = load_yaml('test/vcr/client/metadata.yml')
+      result = JSON.parse(r['string'])
+      # カセット内の値に依存せず、name で id / public_id を組み立て直す
+      result['id'] = name
+      result['public_id'] = build_public_id(result['public_id'], image_id: name)
+      result['temporary'] = false
+      result['expires_at'] = nil
+      result
     end
 
     def put(name, _file_or_binary, _options)
@@ -47,6 +65,11 @@ module Resizing
       version ||= parsed.version
       identifier = "/projects/#{parsed.project_id}/upload/images/#{image_id}"
       version.nil? ? identifier : "#{identifier}/v#{version}"
+    end
+
+    def temporary_expires_at(expires_in)
+      seconds = expires_in.nil? ? DEFAULT_TEMPORARY_EXPIRES_IN : expires_in.to_i
+      (Time.now + seconds).utc.strftime('%Y-%m-%dT%H:%M:%S.%LZ')
     end
 
     def generate_version
