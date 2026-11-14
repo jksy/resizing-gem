@@ -30,8 +30,11 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'faraday-multipart', '>= 1.0'
   spec.add_development_dependency 'carrierwave', '>= 2.2.5', '< 4'
   spec.add_development_dependency 'fog-aws'
-  spec.add_development_dependency 'minitest', '~> 5.16'
+  # minitest 6 needs Ruby 3.2+, so Ruby 3.1 keeps resolving to 5.x.
+  spec.add_development_dependency 'minitest', '>= 5.16', '< 7'
   spec.add_development_dependency 'minitest-ci'
+  # minitest/mock moved out of minitest into this gem in minitest 6.
+  spec.add_development_dependency 'minitest-mock'
   spec.add_development_dependency 'mysql2'
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'simplecov'
