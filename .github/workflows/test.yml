@@ -63,9 +63,19 @@ jobs:
         run: |
           bundle install
 
-      - name: Show Faraday version
+      # Fail when the resolved Rails is not the one the matrix asks for, so that a
+      # loose Gemfile requirement cannot silently test another version
+      - name: Check Rails and Faraday versions
         run: |
-          bundle list | grep faraday
+          bundle exec ruby -e '
+            require "rails"
+            require "faraday"
+            puts "Rails #{Rails::VERSION::STRING} / Faraday #{Faraday::VERSION}"
+            expected = ENV.fetch("RAILS_VERSION")
+            unless Rails::VERSION::STRING.start_with?("#{expected}.")
+              abort "Rails #{Rails::VERSION::STRING} is installed, but RAILS_VERSION is #{expected}"
+            end
+          '
 
       - name: Run test
         run: |

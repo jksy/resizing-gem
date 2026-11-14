@@ -9,6 +9,9 @@ gemspec
 # Unset, the newest supported Rails that runs on the current Ruby is used:
 # Rails 8.x needs Ruby 3.2+, so Ruby 3.1 falls back to 7.2.
 rails_version = ENV['RAILS_VERSION'] || (RUBY_VERSION >= '3.2' ? '8.1' : '7.2')
+# "~> 7.0" would allow any 7.x, so a major.minor version is pinned to that
+# minor series ("~> 7.0.0").
+rails_version = "#{rails_version}.0" if rails_version.count('.') == 1
 gem 'rails', "~> #{rails_version}"
 
 # Allow testing against different Faraday versions (e.g. FARADAY_VERSION=1.10).
