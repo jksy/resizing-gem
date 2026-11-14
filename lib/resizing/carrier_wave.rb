@@ -270,10 +270,14 @@ module Resizing
     # made for nil / '', so the column and the image are kept, unlike plain CarrierWave.
     # CarrierWave 3.x does not read #filename there and deletes the image.
     def warn_blank_assignment
-      return if Gem::Version.new(::CarrierWave::VERSION) >= Gem::Version.new('3')
+      return if carrierwave3?
       return if read_column.blank?
 
       warn BLANK_ASSIGNMENT_MESSAGE
+    end
+
+    def carrierwave3?
+      Gem::Version.new(::CarrierWave::VERSION) >= Gem::Version.new('3')
     end
 
     def temporary_public_id_from(cache_name)

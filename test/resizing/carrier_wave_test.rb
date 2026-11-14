@@ -627,10 +627,24 @@ module Resizing
       end
     end
 
-    def test_assigning_nil_to_new_record_does_not_warn
-      model = TestModel.new
+    def test_blank_assignment_warns_only_on_carrierwave2
+      # CI のジョブごとに CarrierWave のバージョンは 1 つなので、両方の分岐をここで通す
+      model = prepare_model TestModel
+      model.save!
+      uploader = model.resizing_picture
 
-      assert_output('', '') { model.resizing_picture = nil }
+      uploader.stub(:carrierwave3?, false) do
+        assert_output('', /#{Regexp.escape(Resizing::CarrierWave::BLANK_ASSIGNMENT_MESSAGE)}/) { uploader.cache!(nil) }
+      end
+      uploader.stub(:carrierwave3?, true) do
+        assert_output('', '') { uploader.cache!(nil) }
+      end
+
+      # 画像の無い (新規レコードなど) カラムへの代入では警告しない
+      new_uploader = TestModel.new.resizing_picture
+      new_uploader.stub(:carrierwave3?, false) do
+        assert_output('', '') { new_uploader.cache!(nil) }
+      end
     end
 
     def test_assigning_plain_file_object_uploads_image
