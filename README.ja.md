@@ -136,21 +136,6 @@ end
 
 マウントしたカラムにファイルを代入すると、Resizing に一時画像としてアップロードされ、モデルを保存すると確定します（ActiveRecord ではコミット後）。バリデーションの失敗やトランザクションのロールバックなどでモデルが保存されなかった場合、画像は確定されず、期限が来ると Resizing が削除します。そのため、どこからも参照されない画像が残りません。
 
-`<column>_cache` は、確定前の一時画像の public id を返します。バリデーションエラーでフォームを再表示するときにこれを送り返すと、画像をアップロードし直す必要がありません。
-
-```erb
-<%= form.file_field :image %>
-<%= form.hidden_field :image_cache %>
-```
-
-strong parameters ではカラムと一緒に `<column>_cache` も permit してください。permit しないと、フォームから送り返しても値が捨てられます。
-
-```ruby
-params.require(:user).permit(:image, :image_cache)
-```
-
-`<column>_cache` から復元されるのは、設定したプロジェクトの、期限切れでない一時画像だけです。それ以外（確定済みの画像など）は、CarrierWave が不正なキャッシュ名を扱うのと同じく無視されます。
-
 一時画像は Resizing の既定の期間で期限切れになります。フォームを長時間開いたままにすることがある場合などは、`cache_expires_in`（秒）を上書きして変更できます。
 
 ```ruby
@@ -162,6 +147,39 @@ class ImageUploader < CarrierWave::Uploader::Base
   end
 end
 ```
+
+##### フォームの再表示でアップロードを引き継ぐ
+
+通常の CarrierWave と同じく、フォームで `<column>_cache` を送り返すと、バリデーションエラーでフォームを再表示したときに画像をアップロードし直す必要がありません。strong parameters ではカラムと一緒に `<column>_cache` も permit してください。permit しないと値が捨てられます。
+
+```erb
+<%= form_with model: @user do |form| %>
+  <%= form.file_field :image %>
+  <%= form.hidden_field :image_cache %>
+  <%= form.submit %>
+<% end %>
+```
+
+```ruby
+class UsersController < ApplicationController
+  def create
+    @user = User.new(user_params)
+    if @user.save
+      redirect_to @user
+    else
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  private
+
+  def user_params
+    params.require(:user).permit(:image, :image_cache)
+  end
+end
+```
+
+`<column>_cache` は、確定前の一時画像の public id を返します。復元されるのは、設定したプロジェクトの、期限切れでない一時画像だけです。それ以外（確定済みの画像など）は、CarrierWave が不正なキャッシュ名を扱うのと同じく無視されます。
 
 ## 開発
 

@@ -157,26 +157,6 @@ saved, e.g. because a validation fails or the transaction is rolled back, the im
 left unconfirmed and Resizing deletes it when it expires, so no orphan image is left
 behind.
 
-`<column>_cache` returns the public id of the temporary image while it is not confirmed.
-Send it back with a form that is shown again after a validation error, and the image does
-not need to be uploaded again:
-
-```erb
-<%= form.file_field :image %>
-<%= form.hidden_field :image_cache %>
-```
-
-Permit `<column>_cache` along with the column in the strong parameters, or it is
-dropped when the form is submitted:
-
-```ruby
-params.require(:user).permit(:image, :image_cache)
-```
-
-Only a temporary image of the configured project that has not expired is restored from
-`<column>_cache`; anything else (such as a confirmed image) is ignored, as CarrierWave
-ignores an invalid cache name.
-
 The temporary image expires after Resizing's default period. Override `cache_expires_in`
 (in seconds) to change it, e.g. when a form may be kept open for a long time:
 
@@ -189,6 +169,44 @@ class ImageUploader < CarrierWave::Uploader::Base
   end
 end
 ```
+
+##### Making uploads work across form redisplays
+
+As in plain CarrierWave, send `<column>_cache` back with the form, so that the image does
+not need to be uploaded again when the form is shown again after a validation error.
+Permit it along with the column in the strong parameters, or it is dropped:
+
+```erb
+<%= form_with model: @user do |form| %>
+  <%= form.file_field :image %>
+  <%= form.hidden_field :image_cache %>
+  <%= form.submit %>
+<% end %>
+```
+
+```ruby
+class UsersController < ApplicationController
+  def create
+    @user = User.new(user_params)
+    if @user.save
+      redirect_to @user
+    else
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  private
+
+  def user_params
+    params.require(:user).permit(:image, :image_cache)
+  end
+end
+```
+
+`<column>_cache` returns the public id of the temporary image while it is not confirmed.
+Only a temporary image of the configured project that has not expired is restored from
+it; anything else (such as a confirmed image) is ignored, as CarrierWave ignores an
+invalid cache name.
 
 ## Development
 
