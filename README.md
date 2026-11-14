@@ -258,7 +258,7 @@ leave the column unassigned to keep it.
 
 ## Upgrading
 
-### To 2.0.0
+### To x.x.x (unreleased)
 
 The CarrierWave URLs are now built as in plain CarrierWave (see
 [CarrierWave Integration](#carrierwave-integration)), which changes some URLs.
@@ -271,18 +271,18 @@ the URL of the image and of every version:
 class ImageUploader < CarrierWave::Uploader::Base
   include Resizing::CarrierWave
 
-  process resize_to_limit: [1000] # ignored before 2.0.0
+  process resize_to_limit: [1000] # ignored before x.x.x
 
   version :thumb do
     process resize_to_fill: [200, 200]
   end
 end
 
-# before 2.0.0
+# before x.x.x
 user.image.url         # => ".../<public_id>/"
 user.image.url(:thumb) # => ".../<public_id>/c_fill,w_200,h_200"
 
-# 2.0.0
+# x.x.x
 user.image.url         # => ".../<public_id>/c_limit,w_1000"
 user.image.url(:thumb) # => ".../<public_id>/c_limit,w_1000/c_fill,w_200,h_200"
 ```
