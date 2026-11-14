@@ -4,6 +4,8 @@
 [![test](https://github.com/jksy/resizing-gem/actions/workflows/test.yml/badge.svg)](https://github.com/jksy/resizing-gem/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/jksy/resizing-gem/graph/badge.svg)](https://codecov.io/gh/jksy/resizing-gem)
 
+English | [日本語](README.ja.md)
+
 Client and utilities for [Resizing](https://www.resizing.net/) - an image hosting and transformation service.
 
 ## Requirements
@@ -42,7 +44,9 @@ Resizing.configure = {
 }
 ```
 
-`video_host` は動画 API の廃止にともない非推奨です。指定しても利用されず、`Configuration#video_host` や `Configuration::DEFAULT_VIDEO_HOST` を参照すると警告が出ます。将来のバージョンで削除します。
+`video_host` is deprecated because the video API has been discontinued. It is ignored
+when given, and referring to `Configuration#video_host` or
+`Configuration::DEFAULT_VIDEO_HOST` emits a warning. It will be removed in a future version.
 
 ## Usage
 
