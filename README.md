@@ -139,6 +139,16 @@ The supported processes are `resize_to_limit`, `resize_to_fill`, `resize_to_fit`
 honoured. When the column is blank, `url` returns `default_url` of the requested version, as
 in plain CarrierWave.
 
+**Difference from CarrierWave: conditions of `process`**
+
+The `if:` / `unless:` conditions of `process` are checked every time `url` is called, not
+on upload. If a condition calls a method that reads information of the file, such as
+`file.content_type`, a request to the metadata API of Resizing is needed, which takes time
+when many URLs are built (e.g. on a list page). `content_type` is `nil` when the API fails.
+The `file` given to a condition is not the image file on your machine either, so a
+condition that opens the image, such as `MiniMagick::Image.open(file.path)`, raises an
+error every time `url` is called.
+
 The uploader validations hooked on CarrierWave's `:cache` callbacks are checked before the
 image is uploaded to Resizing:
 
@@ -316,6 +326,9 @@ Other changes:
 - An unknown version raises `ArgumentError` instead of `RuntimeError`.
 - `default_url` is called on the uploader of the requested version with the arguments of
   `url`, so `version_name` tells which version is asked for.
+- The `if:` / `unless:` conditions of `process` are now honoured. They used to be ignored
+  and the transformation was always added, so the URL loses the transformation when the
+  condition is false. An exception raised in a condition now makes `url` and `to_json` fail.
 - The public method `build_url` is removed.
 
 ## Development

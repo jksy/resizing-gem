@@ -127,6 +127,10 @@ user.image.thumb.url   # => user.image.url(:thumb) と同じ
 
 使える `process` は `resize_to_limit` / `resize_to_fill` / `resize_to_fit` / `transformation`（`{ quality:, format:, fetch_format: }`）です。`process` の `if:` / `unless:` 条件にも従います。カラムが空のときは、通常の CarrierWave と同じく、指定したバージョンの `default_url` を返します。
 
+**CarrierWave との違い：`process` の条件**
+
+`process` の `if:` / `unless:` の条件は、アップロード時ではなく、`url` を呼ぶたびに評価されます。条件の中で `file.content_type` などファイルの情報を取得するメソッドを呼ぶと、Resizing の metadata API へのリクエストが必要になるため、一覧画面など件数が多いと時間がかかります。API が失敗した場合、`content_type` は `nil` になります。また、条件に渡る `file` は手元にある画像ファイルではありません。そのため、`MiniMagick::Image.open(file.path)` のように画像を開いて判定する条件は、`url` を呼ぶたびに例外になります。
+
 CarrierWave の `:cache` コールバックに登録される uploader のバリデーションは、画像を Resizing にアップロードする前にチェックされます。
 
 ```ruby
@@ -268,6 +272,7 @@ user.image.url(:large, :blur) # => ".../<public_id>/c_fill,w_1000,h_866/<blur �
 - `model.image.thumb.url`・`versions[:thumb].url`・`serializable_hash`（`to_json`）にバージョンの変換が付くようになりました。以前は変換のない元画像の URL を返していました。
 - 存在しないバージョンを指定したときの例外が、`RuntimeError` から `ArgumentError` になりました。
 - `default_url` は、要求されたバージョンの uploader に対して `url` の引数付きで呼ばれます。`version_name` でどのバージョンが要求されたかがわかります。
+- `process` の `if:` / `unless:` の条件に従うようになりました。以前は条件を無視して常に変換を付けていたので、条件が false になるレコードでは URL から変換が外れます。また、条件の中で例外が起きると、`url` や `to_json` も失敗します。
 - 公開メソッド `build_url` を削除しました。
 
 ## 開発
