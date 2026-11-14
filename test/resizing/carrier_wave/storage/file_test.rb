@@ -84,6 +84,23 @@ module Resizing
           assert_nil file.authenticated_url
         end
 
+        def test_url_returns_nil_when_public_id_empty
+          uploader = TestModel.new.resizing_picture
+          file = Resizing::CarrierWave::Storage::File.new(uploader)
+
+          assert_nil file.url
+        end
+
+        def test_url_appends_transform_path_of_uploader
+          identifier = ResizingTestConfiguration::UPLOADED_IDENTIFIER
+          uploader = TestModel.new.resizing_picture
+          file = Resizing::CarrierWave::Storage::File.new(uploader, identifier)
+
+          assert_equal "http://192.168.56.101:5000#{identifier}/c_limit,w_1000", file.url
+          assert_equal "http://192.168.56.101:5000#{identifier}/c_limit,w_1000/c_fill,w_40,h_40",
+                       Resizing::CarrierWave::Storage::File.new(uploader.small, identifier).url
+        end
+
         def test_authenticated_url_with_options_returns_nil
           model = TestModel.new
           uploader = model.resizing_picture

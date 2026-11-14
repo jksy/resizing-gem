@@ -115,6 +115,30 @@ end
 `process` declares the transformation applied when the browser fetches the image URL, so
 the processors are never run as local image processing on upload.
 
+The URL is built as in plain CarrierWave: the processes of the uploader apply to the image,
+and a version adds its own processes after those of its parent.
+
+```ruby
+class ImageUploader < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  process resize_to_limit: [1000]
+
+  version :thumb do
+    process resize_to_fill: [200, 200]
+  end
+end
+
+user.image.url         # => ".../<public_id>/c_limit,w_1000"
+user.image.url(:thumb) # => ".../<public_id>/c_limit,w_1000/c_fill,w_200,h_200"
+user.image.thumb.url   # => the same as user.image.url(:thumb)
+```
+
+The supported processes are `resize_to_limit`, `resize_to_fill`, `resize_to_fit` and
+`transformation` (`{ quality:, format:, fetch_format: }`). The `if:` / `unless:` conditions of `process` are
+honoured. When the column is blank, `url` returns `default_url` of the requested version, as
+in plain CarrierWave.
+
 The uploader validations hooked on CarrierWave's `:cache` callbacks are checked before the
 image is uploaded to Resizing:
 

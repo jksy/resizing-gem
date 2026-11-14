@@ -108,16 +108,16 @@ module Resizing
     def test_picture_url_return_correct_value_and_when_model_reloaded
       model = prepare_model TestModel
       model.save!
-      assert_equal("#{expect_url}/", model.resizing_picture_url)
+      assert_equal("#{expect_url}/c_limit,w_1000", model.resizing_picture_url)
 
       model.reload
-      assert_equal("#{expect_url}/", model.resizing_picture_url)
+      assert_equal("#{expect_url}/c_limit,w_1000", model.resizing_picture_url)
     end
 
     def test_picture_url_return_with_transform_strings
       model = prepare_model TestModel
       model.save!
-      assert_equal("#{expect_url}/c_fill,w_40,h_40", model.resizing_picture_url(:small))
+      assert_equal("#{expect_url}/c_limit,w_1000/c_fill,w_40,h_40", model.resizing_picture_url(:small))
     end
 
     def test_format_method_is_callable
@@ -154,7 +154,7 @@ module Resizing
         model.resizing_picture = file
       end
 
-      assert_equal('http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e/', model.resizing_picture_url)
+      assert_equal('http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/14ea7aac-a194-4330-931f-6b562aec413d/v_8c5lEhDB5RT3PZp1Fn5PYGm9YVx_x0e/c_limit,w_1000', model.resizing_picture_url)
     end
 
     def test_file_returns_same_instance_on_multiple_calls
@@ -479,8 +479,8 @@ module Resizing
 
       loaded = TestModel.find(model.id)
 
-      assert_equal "#{expect_url}/", loaded.resizing_picture_url
-      assert_equal "#{expect_url}/c_fill,w_40,h_40", loaded.resizing_picture_url(:small)
+      assert_equal "#{expect_url}/c_limit,w_1000", loaded.resizing_picture_url
+      assert_equal "#{expect_url}/c_limit,w_1000/c_fill,w_40,h_40", loaded.resizing_picture_url(:small)
       refute loaded.resizing_picture.blank?
     end
 
@@ -596,7 +596,7 @@ module Resizing
         assert_includes err, Resizing::CarrierWave::BLANK_ASSIGNMENT_MESSAGE
 
         assert_equal expect_identifier, model.read_attribute(:resizing_picture)
-        assert_equal "#{expect_url}/", model.resizing_picture_url
+        assert_equal "#{expect_url}/c_limit,w_1000", model.resizing_picture_url
       end
     end
 
@@ -695,7 +695,7 @@ module Resizing
         loaded.read_attribute(:resizing_picture)
       )
       assert_equal(
-        'http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/new-image-id-2222-2222-222222222222/v2/',
+        'http://192.168.56.101:5000/projects/e06e710d-f026-4dcf-b2c0-eab0de8bb83f/upload/images/new-image-id-2222-2222-222222222222/v2/c_limit,w_1000',
         loaded.resizing_picture_url
       )
     end

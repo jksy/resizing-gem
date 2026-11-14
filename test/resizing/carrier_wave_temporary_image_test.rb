@@ -157,7 +157,7 @@ module Resizing
       end
 
       assert_equal expect_identifier, model.read_attribute(:resizing_picture)
-      assert_equal "#{expect_url}/", model.resizing_picture_url
+      assert_equal "#{expect_url}/c_limit,w_1000", model.resizing_picture_url
       assert_equal expect_identifier, model.resizing_picture_cache
 
       # 復元した一時画像は保存時に確定する

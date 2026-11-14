@@ -107,6 +107,26 @@ end
 
 `process` は、ブラウザが画像の URL を取得するときに適用する変換を宣言するものです。アップロード時にローカルで画像処理が実行されることはありません。
 
+URL は通常の CarrierWave と同じ考え方で組み立てます。uploader の `process` は画像そのものに適用され、バージョンは親の変換のあとに自身の変換を加えます。
+
+```ruby
+class ImageUploader < CarrierWave::Uploader::Base
+  include Resizing::CarrierWave
+
+  process resize_to_limit: [1000]
+
+  version :thumb do
+    process resize_to_fill: [200, 200]
+  end
+end
+
+user.image.url         # => ".../<public_id>/c_limit,w_1000"
+user.image.url(:thumb) # => ".../<public_id>/c_limit,w_1000/c_fill,w_200,h_200"
+user.image.thumb.url   # => user.image.url(:thumb) と同じ
+```
+
+使える `process` は `resize_to_limit` / `resize_to_fill` / `resize_to_fit` / `transformation`（`{ quality:, format:, fetch_format: }`）です。`process` の `if:` / `unless:` 条件にも従います。カラムが空のときは、通常の CarrierWave と同じく、指定したバージョンの `default_url` を返します。
+
 CarrierWave の `:cache` コールバックに登録される uploader のバリデーションは、画像を Resizing にアップロードする前にチェックされます。
 
 ```ruby
