@@ -143,6 +143,12 @@ end
 <%= form.hidden_field :image_cache %>
 ```
 
+strong parameters ではカラムと一緒に `<column>_cache` も permit してください。permit しないと、フォームから送り返しても値が捨てられます。
+
+```ruby
+params.require(:user).permit(:image, :image_cache)
+```
+
 `<column>_cache` から復元されるのは、設定したプロジェクトの、期限切れでない一時画像だけです。それ以外（確定済みの画像など）は、CarrierWave が不正なキャッシュ名を扱うのと同じく無視されます。
 
 一時画像は Resizing の既定の期間で期限切れになります。フォームを長時間開いたままにすることがある場合などは、`cache_expires_in`（秒）を上書きして変更できます。

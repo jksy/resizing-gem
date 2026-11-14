@@ -166,6 +166,13 @@ not need to be uploaded again:
 <%= form.hidden_field :image_cache %>
 ```
 
+Permit `<column>_cache` along with the column in the strong parameters, or it is
+dropped when the form is submitted:
+
+```ruby
+params.require(:user).permit(:image, :image_cache)
+```
+
 Only a temporary image of the configured project that has not expired is restored from
 `<column>_cache`; anything else (such as a confirmed image) is ignored, as CarrierWave
 ignores an invalid cache name.
