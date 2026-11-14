@@ -42,8 +42,17 @@ module Resizing
       file
     end
 
+    # CarrierWave 3.x reads #path of the removed uploaders again after commit
+    # (Mounter#remove_previous), and #file would retrieve the deleted image from the
+    # identifier and delete it again, so the identifier is dropped with the image.
+    def remove!
+      super
+      @retrieved_identifier = nil
+      @identifier = nil
+    end
+
     def file
-      file_identifier = @retrieved_identifier || identifier || read_column
+      file_identifier = @retrieved_identifier || @identifier || read_column
 
       return nil if file_identifier.blank?
 
@@ -218,6 +227,14 @@ module Resizing
     # Disable on Resizing, because transform the image when browser fetch the image URL
     # https://github.com/carrierwaveuploader/carrierwave/blob/28190e99299a6131c0424a5d10205f471e39f3cd/lib/carrierwave/uploader/versions.rb#L18
     def remove_versions!(*args)
+      # NOP
+    end
+
+    # deduplicate is called by CarrierWave 3.x before saving, and appends "(2)" to the
+    # identifier when it equals one of the replaced images.
+    # Disable on Resizing, because the identifier is the public id given by Resizing,
+    # which must be written to the column as is.
+    def deduplicate(*args)
       # NOP
     end
 

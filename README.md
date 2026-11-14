@@ -13,6 +13,7 @@ Client and utilities for [Resizing](https://www.resizing.net/) - an image hostin
 - Ruby 3.1.0 or later (tested against 3.1, 3.2, 3.3, 3.4 and 4.0)
 - Rails 7.0 or later for the CarrierWave integration (tested against 7.0, 7.1, 7.2, 8.0 and 8.1)
 - Faraday 1.x or 2.x (tested against 1.10 and the latest 2.x)
+- CarrierWave 2.2.5 or later, or 3.x, for the CarrierWave integration (tested against 2.2 and 3.1)
 
 The exact combinations exercised in CI are listed in `.github/workflows/test.yml`.
 Support for a Ruby or Rails series that has reached upstream end-of-life may be dropped in
@@ -152,10 +153,17 @@ generated URL, so a single upload backs every version.
 #### Cache
 
 Assigning a file to the mounted column uploads it to Resizing as a temporary image, and
-saving the model confirms it (after commit with ActiveRecord). When the model is never
-saved, e.g. because a validation fails or the transaction is rolled back, the image is
-left unconfirmed and Resizing deletes it when it expires, so no orphan image is left
-behind.
+saving the model confirms it. When the model is never saved, e.g. because a validation
+fails, the image is left unconfirmed and Resizing deletes it when it expires, so no orphan
+image is left behind.
+
+When the transaction is rolled back, no image is left behind either, but how depends on
+the CarrierWave version:
+
+- CarrierWave 2.x confirms the image after commit, so the image is left unconfirmed and
+  Resizing deletes it when it expires
+- CarrierWave 3.x confirms the image when the model is saved, before commit, and deletes it
+  when the transaction is rolled back
 
 The temporary image expires after Resizing's default period. Override `cache_expires_in`
 (in seconds) to change it, e.g. when a form may be kept open for a long time:
@@ -207,6 +215,17 @@ end
 Only a temporary image of the configured project that has not expired is restored from
 it; anything else (such as a confirmed image) is ignored, as CarrierWave ignores an
 invalid cache name.
+
+#### Removing images
+
+The image is deleted from Resizing when CarrierWave removes the file, so when it happens
+follows the CarrierWave version:
+
+| Operation | CarrierWave 2.x | CarrierWave 3.x |
+|---|---|---|
+| `remove_<column>!` | deleted on save | deleted immediately |
+| Assigning `nil` or `''` to the column | ignored (the image is kept) | deleted on save |
+| Assigning another image | the previous image is deleted on save | the previous image is deleted on save |
 
 ## Development
 

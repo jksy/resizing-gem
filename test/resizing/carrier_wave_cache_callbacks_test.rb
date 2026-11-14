@@ -154,8 +154,12 @@ module Resizing
 
     def test_content_type_takes_precedence_over_extension_of_uploaded_file
       # ローカルからのアップロードでも、ファイル名の拡張子 (jpg) より content_type (image/png) が優先される
+      # (CarrierWave 3.x は申告された Content-Type よりファイルの中身から判定した型を使うので、中身も PNG にする)
       model = TestModelWithJpegAllowlist.new
-      file = File.open('test/data/images/sample1.jpg', 'r')
+      file = Tempfile.new(['sample1', '.jpg'])
+      file.binmode
+      file.write("\x89PNG\r\n\x1a\n".b)
+      file.rewind
       uploaded_file = ActionDispatch::Http::UploadedFile.new(filename: 'sample1.jpg', type: 'image/png', tempfile: file)
 
       assert_vcr_no_requests 'carrier_wave_test/save' do
