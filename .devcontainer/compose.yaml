@@ -1,13 +1,3 @@
-# No project name is set here on purpose: the devcontainer CLI and VS Code then
-# name the project after the checkout (<folder>_devcontainer), so that each git
-# worktree gets its own containers. With a fixed name, `devcontainer up` in a
-# second worktree would reuse the containers of the first one, which mount the
-# first worktree's files. The volumes below are per project as well, so that
-# worktrees do not share gems built against another image or a MySQL data
-# directory. The name also differs from the project of the docker-compose.yml in
-# the repository root (resizing-gem), and so do the service names (app/db here,
-# mysql there).
-
 services:
   app:
     build:
