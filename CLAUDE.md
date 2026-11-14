@@ -4,7 +4,7 @@
 
 ## 開発環境
 
-devcontainer（`.devcontainer/`）を用意してある。VS Code の "Reopen in Container"、または `devcontainer up --workspace-folder .` で、Ruby・MySQL・`bundle install` まで揃った状態になる。
+devcontainer（`.devcontainer/`）を用意してある。VS Code の "Reopen in Container"、または `devcontainer up --workspace-folder .` で、Ruby・MySQL・`bundle install` まで揃った状態になる。compose のプロジェクト名はチェックアウトのフォルダ名から決まる（`<フォルダ名>_devcontainer`）ので、git worktree ごとに別のコンテナと MySQL が立つ。gem の volume（`resizing-gem-devcontainer_bundle`）だけは全 worktree で共有する。
 
 Ruby は rbenv 管理で `.ruby-version` に従う。別バージョンを試す場合はコンテナ内で `rbenv install <version>` → `rbenv local <version>` → `bundle install`（sudo 不要）。イメージに焼くバージョンを変える場合は `.devcontainer/compose.yaml` の `RUBY_VERSION` を変更してリビルドする。
 
@@ -37,7 +37,7 @@ bin/setup                        # bundle install + git hooks の有効化
 PRE_PUSH_SKIP_TESTS=1 git push   # RuboCop だけにしてテストを省く
 ```
 
-チェックは gem が入っている環境で走る。`bundle check` が通る環境（devcontainer の中、または `bundle install` 済みのホスト）ならそのまま、通らなければ devcontainer CLI か docker compose 経由で devcontainer 内で実行する。
+チェックは gem が入っている環境で走る。`bundle check` が通る環境（devcontainer の中、または `bundle install` 済みのホスト）ならそのまま、通らなければそのチェックアウト用に起動した devcontainer の中で実行する（コンテナの `devcontainer.local_folder` ラベルで探すので、別の worktree のコンテナは使わない）。見つからなければ `devcontainer up --workspace-folder .` を促して中断する。
 
 ## PR 運用
 

@@ -1,6 +1,10 @@
-# A distinct project name and service name so this does not collide with the
-# docker-compose.yml in the repository root (project resizing-gem, service mysql)
-name: resizing-gem-devcontainer
+# No project name is set here on purpose: the devcontainer CLI and VS Code then
+# name the project after the checkout (<folder>_devcontainer), so that each git
+# worktree gets its own containers. With a fixed name, `devcontainer up` in a
+# second worktree would reuse the containers of the first one, which mount the
+# first worktree's files. The name also differs from the project of the
+# docker-compose.yml in the repository root (resizing-gem), and the service names
+# differ as well (app/db here, mysql there).
 
 services:
   app:
@@ -58,7 +62,12 @@ services:
       start_period: 30s
 
 volumes:
+  # Shared by every worktree, so that a new worktree does not install all the
+  # gems again. Gems of different versions live side by side in it. The name is
+  # the one the volume had while the project name was fixed, to keep the gems
+  # installed before.
   bundle:
+    name: resizing-gem-devcontainer_bundle
   vendor:
   bundle-config:
   ruby-lsp:
