@@ -585,11 +585,15 @@ module Resizing
 
         assert_nil model.read_attribute(:resizing_picture)
       else
-        # CarrierWave 2.x は空の値の代入を無視する
-        assert_vcr_no_requests 'carrier_wave_test/save' do
-          model.resizing_picture = nil
-          model.save!
+        # CarrierWave 2.x では空の値の代入を無視するが、3.x で削除になることを警告する
+        _out, err = capture_io do
+          assert_vcr_no_requests 'carrier_wave_test/save' do
+            model.resizing_picture = nil
+            model.save!
+          end
         end
+
+        assert_includes err, Resizing::CarrierWave::BLANK_ASSIGNMENT_MESSAGE
 
         assert_equal expect_identifier, model.read_attribute(:resizing_picture)
         assert_equal "#{expect_url}/", model.resizing_picture_url
@@ -609,14 +613,24 @@ module Resizing
 
         assert_nil model.read_attribute(:resizing_picture)
       else
-        # CarrierWave 2.x は空の値の代入を無視する
-        assert_vcr_no_requests 'carrier_wave_test/save' do
-          model.resizing_picture = ''
-          model.save!
+        # CarrierWave 2.x では空の値の代入を無視するが、3.x で削除になることを警告する
+        _out, err = capture_io do
+          assert_vcr_no_requests 'carrier_wave_test/save' do
+            model.resizing_picture = ''
+            model.save!
+          end
         end
+
+        assert_includes err, Resizing::CarrierWave::BLANK_ASSIGNMENT_MESSAGE
 
         assert_equal expect_identifier, model.read_attribute(:resizing_picture)
       end
+    end
+
+    def test_assigning_nil_to_new_record_does_not_warn
+      model = TestModel.new
+
+      assert_output('', '') { model.resizing_picture = nil }
     end
 
     def test_assigning_plain_file_object_uploads_image

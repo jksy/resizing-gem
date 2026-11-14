@@ -7,6 +7,11 @@ require 'resizing/carrier_wave/storage/remote'
 module Resizing
   # rubocop:disable Metrics/ModuleLength
   module CarrierWave
+    BLANK_ASSIGNMENT_MESSAGE = '[resizing] Assigning nil or an empty string to a column with an image ' \
+                               'keeps the image on CarrierWave 2.x, but deletes it on CarrierWave 3.x ' \
+                               'as plain CarrierWave does. Use remove_<column>! to delete the image, ' \
+                               'or do not assign the column to keep it.'
+
     class Railtie < ::Rails::Railtie
       # Railtie skelton codes
       rake_tasks do
@@ -126,7 +131,10 @@ module Resizing
     # The callbacks that do not fit the Resizing flow (process! and cache_versions!)
     # are disabled below.
     def cache!(new_file)
-      return if new_file.nil?
+      if new_file.nil?
+        warn_blank_assignment
+        return
+      end
 
       # CallbackFile responds to #extension / #content_type / #size, which the
       # before :cache callbacks need, with the extension derived from the content type
@@ -161,6 +169,7 @@ module Resizing
     # raises CarrierWave::InvalidParameter, which CarrierWave ignores as it does an
     # invalid cache name.
     def retrieve_from_cache!(cache_name)
+      warn_blank_assignment if cache_name.blank?
       with_callbacks(:retrieve_from_cache, cache_name) do
         public_id = temporary_public_id_from(cache_name)
         @cache_id = public_id
@@ -256,6 +265,16 @@ module Resizing
     end
 
     private
+
+    # On CarrierWave 2.x, #filename (the column) is the identifier of the blank uploader
+    # made for nil / '', so the column and the image are kept, unlike plain CarrierWave.
+    # CarrierWave 3.x does not read #filename there and deletes the image.
+    def warn_blank_assignment
+      return if Gem::Version.new(::CarrierWave::VERSION) >= Gem::Version.new('3')
+      return if read_column.blank?
+
+      warn BLANK_ASSIGNMENT_MESSAGE
+    end
 
     def temporary_public_id_from(cache_name)
       public_id = begin

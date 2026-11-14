@@ -227,6 +227,11 @@ follows the CarrierWave version:
 | Assigning `nil` or `''` to the column | ignored (the image is kept) | deleted on save |
 | Assigning another image | the previous image is deleted on save | the previous image is deleted on save |
 
+Assigning `nil` or `''` is the one exception on CarrierWave 2.x: plain CarrierWave 2.x
+deletes the file, but this gem keeps the image, and prints a warning because the image is
+deleted after upgrading to CarrierWave 3.x. Use `remove_<column>!` to delete the image, or
+leave the column unassigned to keep it.
+
 ## Development
 
 ### Dev Container (recommended)
