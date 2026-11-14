@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   test:
-    name: Ruby ${{ matrix.ruby }} / Rails ${{ matrix.rails }} / Faraday ${{ matrix.faraday }}
+    name: Ruby ${{ matrix.ruby }} / Rails ${{ matrix.rails }} / Faraday ${{ matrix.faraday }} / CarrierWave ${{ matrix.rails == '7.0' && '2.2' || '3.1' }}
     strategy:
       fail-fast: false
       matrix:
@@ -35,6 +35,8 @@ jobs:
     env:
       RAILS_VERSION: ${{ matrix.rails }}
       FARADAY_VERSION: ${{ matrix.faraday }}
+      # CarrierWave 2.2 only with the oldest Rails, 3.1 with the others
+      CARRIERWAVE_VERSION: ${{ matrix.rails == '7.0' && '2.2' || '3.1' }}
 
     steps:
       - uses: actions/checkout@v7.0.1
@@ -65,15 +67,20 @@ jobs:
 
       # Fail when the resolved Rails is not the one the matrix asks for, so that a
       # loose Gemfile requirement cannot silently test another version
-      - name: Check Rails and Faraday versions
+      - name: Check Rails, Faraday and CarrierWave versions
         run: |
           bundle exec ruby -e '
             require "rails"
             require "faraday"
-            puts "Rails #{Rails::VERSION::STRING} / Faraday #{Faraday::VERSION}"
+            require "carrierwave"
+            puts "Rails #{Rails::VERSION::STRING} / Faraday #{Faraday::VERSION} / CarrierWave #{CarrierWave::VERSION}"
             expected = ENV.fetch("RAILS_VERSION")
             unless Rails::VERSION::STRING.start_with?("#{expected}.")
               abort "Rails #{Rails::VERSION::STRING} is installed, but RAILS_VERSION is #{expected}"
+            end
+            expected = ENV.fetch("CARRIERWAVE_VERSION")
+            unless CarrierWave::VERSION.start_with?("#{expected}.")
+              abort "CarrierWave #{CarrierWave::VERSION} is installed, but CARRIERWAVE_VERSION is #{expected}"
             end
           '
 

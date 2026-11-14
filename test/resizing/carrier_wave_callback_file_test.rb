@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'test_helper'
+# CarrierWave 3.x does not load MiniMime, which apps get through the mail gem
+require 'mini_mime'
 
 module Resizing
   # :cache コールバックに渡されるファイル (CallbackFile) の拡張子が content_type から決まることをテストする
@@ -69,9 +71,20 @@ module Resizing
       uploaded_file = ActionDispatch::Http::UploadedFile.new(
         filename: filename,
         type: content_type,
-        tempfile: File.open('test/data/images/sample1.jpg', 'r')
+        tempfile: tempfile_for(content_type)
       )
       Resizing::CarrierWave::CallbackFile.new(uploaded_file)
+    end
+
+    # CarrierWave 3.x は申告された Content-Type よりファイルの中身から判定した型を使うので、
+    # 未登録の Content-Type を試すときは中身から型が判定できないファイルにする
+    def tempfile_for(content_type)
+      return File.open('test/data/images/sample1.jpg', 'r') if content_type == 'image/jpeg'
+
+      file = Tempfile.new('upload')
+      file.write('data')
+      file.rewind
+      file
     end
   end
 end

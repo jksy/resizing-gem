@@ -21,6 +21,7 @@ bundle exec rake ci                                         # RuboCop + テス�
 bundle exec rake test                                       # 全件
 bundle exec ruby -Itest -Ilib test/resizing/client_test.rb  # 単一ファイル
 RAILS_VERSION=7.1 bundle exec rake test                     # Rails バージョンを変えて実行（既定は Ruby 3.2 以上で 8.1、3.1 で 7.2）
+CARRIERWAVE_VERSION=2.2 bundle exec rake test              # CarrierWave を変えて実行（既定は最新。切り替えたら先に bundle install）
 bundle exec rubocop
 ```
 

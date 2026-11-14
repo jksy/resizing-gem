@@ -75,15 +75,24 @@ module Resizing
       assert_nil model.resizing_picture_cache
     end
 
-    def test_rolled_back_save_does_not_confirm_image
-      # 保存がロールバックされた場合は確定しない (一時画像は期限で削除される)
+    def test_rolled_back_save_leaves_no_image
       model = prepare_model
 
-      assert_vcr_no_requests 'carrier_wave_test/confirm' do
-        ActiveRecord::Base.transaction do
-          model.save!
-          raise ActiveRecord::Rollback
+      if carrierwave3?
+        # CarrierWave 3.x は保存中 (after_save) に確定し、ロールバックされると追加した画像を削除する
+        VCR.use_cassette('carrier_wave_test/confirm', record: :none) do
+          assert_vcr_requests_made('carrier_wave_test/remove_resizing_picture') { save_and_roll_back(model) }
         end
+      else
+        # CarrierWave 2.x はコミット後に確定するので、ロールバックされると確定しない (一時画像は期限で削除される)
+        assert_vcr_no_requests('carrier_wave_test/confirm') { save_and_roll_back(model) }
+      end
+    end
+
+    def save_and_roll_back(model)
+      ActiveRecord::Base.transaction do
+        model.save!
+        raise ActiveRecord::Rollback
       end
     end
 

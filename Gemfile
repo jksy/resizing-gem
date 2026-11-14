@@ -19,6 +19,11 @@ gem 'rails', "~> #{rails_version}"
 faraday_version = ENV['FARADAY_VERSION']
 gem 'faraday', "~> #{faraday_version}" if faraday_version
 
+# Allow testing against different CarrierWave versions (e.g. CARRIERWAVE_VERSION=2.2).
+# Unset, the gemspec constraint picks the latest release.
+carrierwave_version = ENV['CARRIERWAVE_VERSION']
+gem 'carrierwave', "~> #{carrierwave_version}" if carrierwave_version
+
 gem 'byebug'
 gem 'mysql2'
 gem 'pry-byebug'

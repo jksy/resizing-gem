@@ -47,6 +47,25 @@ module Resizing
       end
     end
 
+    def test_remove_column_deletes_image
+      model = prepare_model TestModel
+      model.save!
+
+      if carrierwave3?
+        # CarrierWave 3.x は remove_<column>! の時点で画像を削除する
+        assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+          model.remove_resizing_picture!
+        end
+        model.save!
+      else
+        # CarrierWave 2.x は remove_<column>! ではカラムを空にするだけで、保存時に削除する
+        assert_vcr_no_requests('carrier_wave_test/remove_resizing_picture') { model.remove_resizing_picture! }
+        assert_vcr_requests_made('carrier_wave_test/remove_resizing_picture') { model.save! }
+      end
+
+      assert_nil TestModel.find(model.id).read_attribute(:resizing_picture)
+    end
+
     def test_blank_returns_true_after_remove
       model = prepare_model TestModel
       model.save!
@@ -320,20 +339,22 @@ module Resizing
     def test_after_save_store_previous_changes_is_called
       # after_save :store_previous_changes_for_#{column} が呼ばれ、
       # 前の変更が追跡されることを確認
-      model = prepare_model TestModel
-      model.save!
+      VCR.use_cassette 'carrier_wave_test/update_image', record: :none do
+        model = TestModel.new
+        model.resizing_picture = File.open('test/data/images/sample1.jpg', 'r')
+        model.save!
 
-      model.read_attribute(:resizing_picture)
+        # 別の public id が返る新しい画像をアップロード
+        model.resizing_picture = File.open('test/data/images/sample1.jpg', 'r')
+        ActiveRecord::Base.transaction do
+          model.save!
+        end
 
-      # 新しい画像をアップロード
-      upload_new_image(model)
-
-      model.save!
-
-      # previous_changes に resizing_picture の変更が記録されていることを確認
-      # (CarrierWave が store_previous_changes_for_#{column} で追跡)
-      assert model.previous_changes.key?('resizing_picture'),
-             'previous_changes should track resizing_picture changes'
+        # previous_changes に resizing_picture の変更が記録されていることを確認
+        # (CarrierWave が store_previous_changes_for_#{column} で追跡)
+        assert model.previous_changes.key?('resizing_picture'),
+               'previous_changes should track resizing_picture changes'
+      end
     end
 
     # ============================================================
@@ -551,29 +572,79 @@ module Resizing
       assert_equal expect_identifier, TestModel.find(model.id).read_attribute(:resizing_picture)
     end
 
-    def test_assigning_nil_keeps_existing_image
+    def test_assigning_nil
       model = prepare_model TestModel
       model.save!
 
-      assert_vcr_no_requests 'carrier_wave_test/save' do
-        model.resizing_picture = nil
-        model.save!
-      end
+      if carrierwave3?
+        # CarrierWave 3.x は空の値の代入を画像の削除として扱う
+        assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+          model.resizing_picture = nil
+          model.save!
+        end
 
-      assert_equal expect_identifier, model.read_attribute(:resizing_picture)
-      assert_equal "#{expect_url}/", model.resizing_picture_url
+        assert_nil model.read_attribute(:resizing_picture)
+      else
+        # CarrierWave 2.x では空の値の代入を無視するが、3.x で削除になることを警告する
+        _out, err = capture_io do
+          assert_vcr_no_requests 'carrier_wave_test/save' do
+            model.resizing_picture = nil
+            model.save!
+          end
+        end
+
+        assert_includes err, Resizing::CarrierWave::BLANK_ASSIGNMENT_MESSAGE
+
+        assert_equal expect_identifier, model.read_attribute(:resizing_picture)
+        assert_equal "#{expect_url}/", model.resizing_picture_url
+      end
     end
 
-    def test_assigning_blank_string_keeps_existing_image
+    def test_assigning_blank_string
       model = prepare_model TestModel
       model.save!
 
-      assert_vcr_no_requests 'carrier_wave_test/save' do
-        model.resizing_picture = ''
-        model.save!
+      if carrierwave3?
+        # CarrierWave 3.x は空の値の代入を画像の削除として扱う
+        assert_vcr_requests_made 'carrier_wave_test/remove_resizing_picture' do
+          model.resizing_picture = ''
+          model.save!
+        end
+
+        assert_nil model.read_attribute(:resizing_picture)
+      else
+        # CarrierWave 2.x では空の値の代入を無視するが、3.x で削除になることを警告する
+        _out, err = capture_io do
+          assert_vcr_no_requests 'carrier_wave_test/save' do
+            model.resizing_picture = ''
+            model.save!
+          end
+        end
+
+        assert_includes err, Resizing::CarrierWave::BLANK_ASSIGNMENT_MESSAGE
+
+        assert_equal expect_identifier, model.read_attribute(:resizing_picture)
+      end
+    end
+
+    def test_blank_assignment_warns_only_on_carrierwave2
+      # CI のジョブごとに CarrierWave のバージョンは 1 つなので、両方の分岐をここで通す
+      model = prepare_model TestModel
+      model.save!
+      uploader = model.resizing_picture
+
+      uploader.stub(:carrierwave3?, false) do
+        assert_output('', /#{Regexp.escape(Resizing::CarrierWave::BLANK_ASSIGNMENT_MESSAGE)}/) { uploader.cache!(nil) }
+      end
+      uploader.stub(:carrierwave3?, true) do
+        assert_output('', '') { uploader.cache!(nil) }
       end
 
-      assert_equal expect_identifier, model.read_attribute(:resizing_picture)
+      # 画像の無い (新規レコードなど) カラムへの代入では警告しない
+      new_uploader = TestModel.new.resizing_picture
+      new_uploader.stub(:carrierwave3?, false) do
+        assert_output('', '') { new_uploader.cache!(nil) }
+      end
     end
 
     def test_assigning_plain_file_object_uploads_image

@@ -7,6 +7,11 @@ require 'resizing/carrier_wave/storage/remote'
 module Resizing
   # rubocop:disable Metrics/ModuleLength
   module CarrierWave
+    BLANK_ASSIGNMENT_MESSAGE = '[resizing] Assigning nil or an empty string to a column with an image ' \
+                               'keeps the image on CarrierWave 2.x, but deletes it on CarrierWave 3.x ' \
+                               'as plain CarrierWave does. Use remove_<column>! to delete the image, ' \
+                               'or do not assign the column to keep it.'
+
     class Railtie < ::Rails::Railtie
       # Railtie skelton codes
       rake_tasks do
@@ -42,8 +47,17 @@ module Resizing
       file
     end
 
+    # CarrierWave 3.x reads #path of the removed uploaders again after commit
+    # (Mounter#remove_previous), and #file would retrieve the deleted image from the
+    # identifier and delete it again, so the identifier is dropped with the image.
+    def remove!
+      super
+      @retrieved_identifier = nil
+      @identifier = nil
+    end
+
     def file
-      file_identifier = @retrieved_identifier || identifier || read_column
+      file_identifier = @retrieved_identifier || @identifier || read_column
 
       return nil if file_identifier.blank?
 
@@ -117,7 +131,10 @@ module Resizing
     # The callbacks that do not fit the Resizing flow (process! and cache_versions!)
     # are disabled below.
     def cache!(new_file)
-      return if new_file.nil?
+      if new_file.nil?
+        warn_blank_assignment
+        return
+      end
 
       # CallbackFile responds to #extension / #content_type / #size, which the
       # before :cache callbacks need, with the extension derived from the content type
@@ -152,6 +169,7 @@ module Resizing
     # raises CarrierWave::InvalidParameter, which CarrierWave ignores as it does an
     # invalid cache name.
     def retrieve_from_cache!(cache_name)
+      warn_blank_assignment if cache_name.blank?
       with_callbacks(:retrieve_from_cache, cache_name) do
         public_id = temporary_public_id_from(cache_name)
         @cache_id = public_id
@@ -221,6 +239,14 @@ module Resizing
       # NOP
     end
 
+    # deduplicate is called by CarrierWave 3.x before saving, and appends "(2)" to the
+    # identifier when it equals one of the replaced images.
+    # Disable on Resizing, because the identifier is the public id given by Resizing,
+    # which must be written to the column as is.
+    def deduplicate(*args)
+      # NOP
+    end
+
     def requested_format
       # TODO
       # The request with uploading format parameter is not working on the Resizing until 2020/09/25
@@ -239,6 +265,20 @@ module Resizing
     end
 
     private
+
+    # On CarrierWave 2.x, #filename (the column) is the identifier of the blank uploader
+    # made for nil / '', so the column and the image are kept, unlike plain CarrierWave.
+    # CarrierWave 3.x does not read #filename there and deletes the image.
+    def warn_blank_assignment
+      return if carrierwave3?
+      return if read_column.blank?
+
+      warn BLANK_ASSIGNMENT_MESSAGE
+    end
+
+    def carrierwave3?
+      Gem::Version.new(::CarrierWave::VERSION) >= Gem::Version.new('3')
+    end
 
     def temporary_public_id_from(cache_name)
       public_id = begin

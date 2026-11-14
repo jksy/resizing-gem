@@ -204,6 +204,12 @@ module ResizingTestConfiguration
     Resizing.configure = CONFIGURATION_TEMPLATE.merge(overrides)
   end
 
+  # CarrierWave 3.x では、nil の代入・remove_<column>!・ロールバックで画像を削除する
+  # タイミングが 2.x と異なる
+  def carrierwave3?
+    Gem::Version.new(::CarrierWave::VERSION) >= Gem::Version.new('3')
+  end
+
   def expect_identifier
     UPLOADED_IDENTIFIER
   end
