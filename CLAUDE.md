@@ -4,7 +4,7 @@
 
 ## 開発環境
 
-devcontainer（`.devcontainer/`）を用意してある。VS Code の "Reopen in Container"、または `devcontainer up --workspace-folder .` で、Ruby・MySQL・`bundle install` まで揃った状態になる。compose のプロジェクト名はチェックアウトのフォルダ名から決まる（`<フォルダ名>_devcontainer`）ので、git worktree ごとに別のコンテナと MySQL が立つ。gem の volume（`resizing-gem-devcontainer_bundle`）だけは全 worktree で共有する。
+devcontainer（`.devcontainer/`）を用意してある。VS Code の "Reopen in Container"、または `devcontainer up --workspace-folder .` で、Ruby・MySQL・`bundle install` まで揃った状態になる。compose のプロジェクト名はチェックアウトのフォルダ名から決まる（`<フォルダ名>_devcontainer`）ので、git worktree ごとに別のコンテナと MySQL が立つ。gem や MySQL のデータの volume も worktree ごとに分かれる（使い終わった worktree の分は `docker compose -p <フォルダ名>_devcontainer -f .devcontainer/compose.yaml down -v` で消す）。
 
 Ruby は rbenv 管理で `.ruby-version` に従う。別バージョンを試す場合はコンテナ内で `rbenv install <version>` → `rbenv local <version>` → `bundle install`（sudo 不要）。イメージに焼くバージョンを変える場合は `.devcontainer/compose.yaml` の `RUBY_VERSION` を変更してリビルドする。
 
